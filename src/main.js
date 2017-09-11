@@ -1,5 +1,23 @@
+require('creep')
+
+if(!Room.prototype.structures)
+Object.defineProperty(Room.prototype, 'structures', {
+  get: function() { 
+    if(!this._structures || _.isEmpty(this._structures)) {
+      this._all_structures = this.find(FIND_STRUCTURES)
+      this._structures = _.groupBy(this._all_structures, 'structureType');
+      this._structures.all = this._all_structures
+    }
+    return this._structures;
+  },
+  enumerable: false,
+  configurable: true
+});  
+
 if(!Memory.lastTick)
     Memory.lastTick = Date.now()
+const Scout = require('scout')
+const scout = new Scout()
 var Traveler = require('Traveler');    
 let sayings = `
 Wandering
@@ -35,17 +53,17 @@ module.exports.loop = function(){
     avg = avg + (t - avg) / ++n
     Memory.avg = avg
     Memory.avgCnt = n
-    vis.text(`Tick Timing ${(t/1000).toFixed(3)}s`,25,3,{ size: 3 })
-    vis.text(`Avg ${(avg/1000).toFixed(3)}s`,25,6,{ size: 3 })
+    // vis.text(`Tick Timing ${(t/1000).toFixed(3)}s`,25,3,{ size: 3 })
+    // vis.text(`Avg ${(avg/1000).toFixed(3)}s`,25,6,{ size: 3 })
     let workers = _.filter(Game.creeps,c=>c.getActiveBodyparts(WORK) && c.getActiveBodyparts(CARRY))
     let ccnt = _.size(Game.creeps)
-    vis.text(`${ccnt} alive (${workers.length}W,${ccnt-workers.length}S)`,25,8,{ size: 1 })
+    // vis.text(`${ccnt} alive (${workers.length}W,${ccnt-workers.length}S)`,25,8,{ size: 1 })
     Memory.lastTick = now
     Memory.wn = Memory.wn || 1
     Memory.ledger = Memory.ledger || []
     let ea = Game.spawns.Spawn1.room.energyAvailable
     let sp = Game.spawns.Spawn1.pos
-    vis.text(ea,sp.x,sp.y+2.5,{size: 2})
+    // vis.text(ea,sp.x,sp.y+2.5,{size: 2})
     if(Game.spawns.Spawn1.room.energyAvailable >= 50){
         Memory.ledger = []
         let n = Game.time.toString(36)
@@ -63,7 +81,7 @@ module.exports.loop = function(){
             let wanted = room.find(FIND_SOURCES).length * mult
             if(w.length < wanted){
                 if(!sw && Game.spawns.Spawn1.room.energyAvailable >= 200){
-                    Game.spawns.Spawn1.createCreep([MOVE,WORK,CARRY],[n,room.memory.wn++,room.name].join('.'))
+                    // Game.spawns.Spawn1.createCreep([MOVE,WORK,CARRY],[n,room.memory.wn++,room.name].join('.'))
                     Memory.ledger.unshift(['spawn',room.name])
                     sw = true
                 }    
@@ -76,10 +94,10 @@ module.exports.loop = function(){
         }else{
             Memory.ledger.unshift([`NEXT: scout (${Math.max(0,100-ea)})`])
             let body = [MOVE]
-            if(Game.flags.target || true){
+            if(Game.flags.target && Math.random() > 0.75){
                 body.push(([RANGED_ATTACK,ATTACK,ATTACK,ATTACK,ATTACK,WORK,WORK])[Math.floor(Math.random()*7)])
             }
-            Game.spawns.Spawn1.createCreep(body,n)
+            // Game.spawns.Spawn1.createCreep(body,n)
         }
     }
     
@@ -91,17 +109,35 @@ module.exports.loop = function(){
         // vis.text(l,0,50-(a.length*sc)+(i*sc),{ align: 'left', size })
         // vis.text(l,49,50-(a.length*sc)+(i*sc),{ align: 'right', size })
     })
-    _.each(Game.creeps,c=>{
-        if(c.getActiveBodyparts(WORK) && c.getActiveBodyparts(CARRY)){
-            runWorker(c)
-        }else{
-            runScout(c)
-        }
-    })
+    // _.each(Game.creeps,c=>{
+    //     if(c.getActiveBodyparts(WORK) && c.getActiveBodyparts(CARRY)){
+    //         runWorker(c)
+    //     }else{
+    //         runScout(c)
+    //     }
+    // })
     _.each(Memory.creeps,(c,name)=>{
         if(!Game.creeps[name]) delete Memory.creeps[name]
     })
-    vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`,25,7,{ size: 1 })
+    _.invoke(Game.structures,'run')
+    _.invoke(Game.creeps,'run')
+    vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`,25,0.5,{ size: 1 })
+}
+
+let protoCache = {}
+RoomObject.prototype.run = function(){
+    if(protoCache[this.structureType] === false) return
+    if(protoCache[this.structureType]) {
+        protoCache[this.structureType].run(this)
+    } else {
+        try{ 
+            let c = require(this.structureType)
+            protoCache[this.structureType] = new c()
+        }catch(e){
+            console.log(`Could not find handler for ${this.structureType} ${e.stack}`)
+            protoCache[this.structureType] = false
+        }
+    }
 }
 
 function runWorker(c){
@@ -140,7 +176,11 @@ function runWorker(c){
 }
 
 function runScout(c){
+
     if(Game.cpu.getUsed() >= 90) return
+    if(!c.getActiveBodyparts(WORK) && !c.getActiveBodyparts(ATTACK) && !c.getActiveBodyparts(RANGED_ATTACK)){
+        return scout.run(c)
+    }
     if(target.room && target.room != c.room.name){
         c.say(`tgt ${target.room}`)    
         return c.travelTo(new RoomPosition(25,25,target.room),{ preferHighway: true })
@@ -179,7 +219,7 @@ function runScout(c){
     c.memory.ld = dir
     {
         let target = c.pos.findClosestByRange(FIND_HOSTILE_CREEPS, { filter: c=>c.owner.username != 'Source Keeper' })
-        if(target && (!c.room.controller || (c.room.controller && (!c.room.controller.safeMode || c.room.controller.my))) && !c.getActiveBodyparts(WORK)){
+        if(target && (!c.room.controller || (c.room.controller && (!c.room.controller.safeMode || c.room.controller.my))) && (c.getActiveBodyparts(ATTACK) || c.getActiveBodyparts(RANGED_ATTACK))){
             if(target.pos.getRangeTo(c) <= 3){
                 let txt = shooting[Math.floor(Math.random()*shooting.length)]
                 if(target.pos.isNearTo(c)){
@@ -212,7 +252,7 @@ function runScout(c){
     }
     {
         let target = c.pos.findClosestByRange(FIND_STRUCTURES,{ filter(s){ return !s.my && s.structureType != 'controller' } })
-        if(target && target.pos.getRangeTo(c) <= 30 && c.room.controller && !c.room.controller.safeMode){
+        if(target && target.pos.getRangeTo(c) <= 30 && c.room.controller && !c.room.controller.safeMode && (c.getActiveBodyparts(ATTACK) || c.getActiveBodyparts(RANGED_ATTACK) || c.getActiveBodyparts(WORK))){
             let towers = c.room.find(FIND_STRUCTURES,{ filter(s){ return s.structureType == 'tower'}}) || []
             if(!towers.length){
                 c.room.createFlag(c.pos, 'target',COLOR_RED,COLOR_YELLOW)
