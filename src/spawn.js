@@ -1,45 +1,68 @@
 const census = require('census')
+const C = require('constants')
 
 class Spawn {
-  run(spawn){
+  get hostileRooms() {
+    Memory.hostileRooms = Memory.hostileRooms || {}
+    return Memory.hostileRooms
+  }
+  run (spawn) {
     let room = spawn.room
-    if(spawn.spawning) return
-    if(room.energyAvailable < 50) return
+    if (spawn.spawning) return
+    if (room.energyAvailable < 50) return
     let want = {}
     let cost = room.energyAvailable
-    let have = census.rooms[room.name] && census.rooms[room.name].roles || {}
-    let hostileConSites = room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
-    let maxSize = false
-    if(hostileConSites.length){
+    let have = (census.rooms[room.name] && census.rooms[room.name].roles) || {}
+    let hostileConSites = room.find(C.FIND_HOSTILE_CONSTRUCTION_SITES)
+    if (hostileConSites.length) {
       want.stomper = 1
     }
-    switch(room.controller.level) {
+    switch (room.controller.level) {
       case 1:
-        want.harv = 4
-        want.up = 2
-        want.scout = 4
+        // want.harv = 4
+        want.up = 3
+        // want.scout = 4
         break
       case 2:
-        want.harv = 6
+        want.harv = 2
         // want.scout = 1
-        want.build = 6
-        want.up = 0
+        want.build = 4
+        want.up = 5
         break
+      default:
       case 3:
-        want.harv = 6
-        want.build = 5
+        want.harv = 4
+        want.build = 4
         want.up = 0
-        want.scout = 4
-        maxSize = true
+        want.scout = 8
         break
     }
-    for(let type in want){
+    if (room.controller.level >= 3 && _.size(this.hostileRooms)) {
+      let rooms = Object.keys(this.hostileRooms)
+      let h = this.hostileRooms[rooms[0]]
+      if (h.safemode < 100) {
+        if (h.towers) {
+          // want.suicide = 12
+        } else {
+          want.atk = 5
+        }
+      }
+    }
+    let types = Object.keys(want)
+    _.sortBy(types, t => {
+      if (t === 'suicide') return 100
+      if (t === 'scout') return 9
+      return 10
+    })
+    for (let i = 0; i < types.length; i++) {
+      let type = types[i]
       let amount = want[type] - (have[type] || []).length
       let body = []
-      if(amount <= 0) continue
-      switch(type){
+      console.log(want[type], type)
+      if (amount <= 0) continue
+      switch (type) {
         case 'harv':
-          body = buildCreepBody(cost,[WORK,CARRY],[CARRY,WORK], { 
+          body = buildCreepBody(cost, [C.WORK, C.CARRY], [C.CARRY, C.WORK], {
             maxWork: 6,
             minWork: 1,
             maxCarry: 2
@@ -47,17 +70,26 @@ class Spawn {
           break
         case 'build':
         case 'up':
-          body = buildCreepBody(cost,[WORK,CARRY],[CARRY,WORK])
+          body = buildCreepBody(cost, [C.WORK, C.CARRY], [C.CARRY, C.WORK])
           break
         case 'scout':
         case 'stomper':
-          body = [MOVE]
+          body = [C.MOVE, C.TOUGH]
+          break
+        case 'atk':
+          body = [C.MOVE, C.RANGED_ATTACK]
+          break
+        case 'drainer':
+          body = [C.WORK, C.TOUGH, C.HEAL, C.MOVE, C.MOVE]
+          break
+        case 'suicide':
+          body = [C.MOVE, C.MOVE, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH]
           break
       }
-      if(!body || !body.length) continue
+      if (!body || !body.length) continue
       body = sortBody(body)
-      let ret = spawn.createCreep(body,type + uid(),{ homeRoom: room.name, role: type })
-      console.log(ret,body,room.energyAvailable)
+      let ret = spawn.createCreep(body, type + uid(), { homeRoom: room.name, role: type })
+      console.log(ret, body, room.energyAvailable)
       return
     }
   }

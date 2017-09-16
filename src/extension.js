@@ -1,6 +1,6 @@
 class Extension {
-  run(ext){
-    
+  run (ext) {
+
   }
 }
 

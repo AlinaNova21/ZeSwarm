@@ -24,5 +24,8 @@
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-screeps": "^1.0.3"
+  },
+  "standard":{
+    "globals":["Game","PathFinder","RoomObject","_"]
   }
 }

@@ -1,29 +1,31 @@
 const roles = {}
-
-Creep.prototype.run = function(){
-  let role = this.memory.role || 'scout'
-  let rolec = tryLoadRole(role)
-  if(rolec) {
-    let start = Game.cpu.getUsed()
-    try{
-      rolec.run(this)
-    }catch(e){
-      console.log(`Creep ${this.name} Error: ${e.stack}`)
+class Creep {
+  run (creep) {
+    let role = creep.memory.role || 'scout'
+    let rolec = this.tryLoadRole(role)
+    if (rolec) {
+      let start = Game.cpu.getUsed()
+      try {
+        rolec.run(creep)
+      } catch (e) {
+        console.log(`Creep ${creep.name} Error: ${e.stack}`)
+      }
+      let end = Game.cpu.getUsed()
+      creep.room.visual.text(Math.round((end - start) * 100) / 100, creep.pos.x + 1, creep.pos.y, { size: 0.6 })
+    } else {
+      console.log(`Missing role: ${role}`)
     }
-    let end = Game.cpu.getUsed()
-    this.room.visual.text(Math.round((end-start)*100)/100, this.pos.x+1, this.pos.y, { size: 0.6 })
-  } else {
-    console.log(`Missing role: ${role}`)
+  }
+  tryLoadRole (role) {
+    if (roles[role]) return roles[role]
+    try {
+      let Cl = require(role)
+      roles[role] = new Cl()
+      return roles[role]
+    } catch (e) {
+      console.log(`Could not load role ${role}`)
+    }
   }
 }
 
-function tryLoadRole(role){
-  if(roles[role]) return roles[role]
-  try{
-    let c = require(role)
-    roles[role] = new c()
-    return roles[role]
-  }catch(e){
-    console.log(`Could not load role ${role}`)
-  }
-}
+module.exports = Creep

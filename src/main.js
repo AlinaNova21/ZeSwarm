@@ -1,4 +1,5 @@
 require('creep')
+const C = require('constants')
 
 if(!Room.prototype.structures)
 Object.defineProperty(Room.prototype, 'structures', {
@@ -41,7 +42,9 @@ Scouting|USER
 ...
 `.split("\n").filter(s=>s)
 let target = {}
-let user = Game.spawns.Spawn1.owner.username
+let user = (Game.spawns.Spawn1 || _.find(Game.creeps, c=>c)).owner.username || 'ZeSwarm'
+C.USER = user
+
 module.exports.loop = function(){
     target = { name: '', room: Game.flags.target && Game.flags.target.pos.roomName } 
     let now = Date.now()
@@ -61,10 +64,10 @@ module.exports.loop = function(){
     Memory.lastTick = now
     Memory.wn = Memory.wn || 1
     Memory.ledger = Memory.ledger || []
-    let ea = Game.spawns.Spawn1.room.energyAvailable
-    let sp = Game.spawns.Spawn1.pos
+    // let ea = Game.spawns.Spawn1.room.energyAvailable
+    // let sp = Game.spawns.Spawn1.pos
     // vis.text(ea,sp.x,sp.y+2.5,{size: 2})
-    if(Game.spawns.Spawn1.room.energyAvailable >= 50){
+    if(false && Game.spawns.Spawn1.room.energyAvailable >= 50){
         Memory.ledger = []
         let n = Game.time.toString(36)
         let sw = false
@@ -121,16 +124,35 @@ module.exports.loop = function(){
     })
     _.invoke(Game.structures,'run')
     _.invoke(Game.creeps,'run')
+    _.each(Game.rooms, room => {
+        let hr = Memory.hostileRooms = Memory.hostileRooms || {}
+        let { controller } = room
+        if (controller && controller.level && !controller.my) {
+            hr[room.name] = {
+              name: room.name,
+              level: room.controller.level,
+              owner: room.controller.owner.username,
+              towers: room.find(C.FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_TOWER } }).length,
+              walls: room.find(C.FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_WALL } }).length,
+              ramparts: room.find(C.FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_RAMPART } }).length,
+              creeps: room.find(C.FIND_HOSTILE_CREEPS).length,
+              safemode: controller.safeMode || 0
+            }
+        } else {
+            delete hr[room.name]
+        }
+    })
     vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`,25,0.5,{ size: 1 })
 }
 
 let protoCache = {}
 RoomObject.prototype.run = function(){
+    if (this instanceof Creep) this.structureType = 'creep'
     if(protoCache[this.structureType] === false) return
     if(protoCache[this.structureType]) {
         protoCache[this.structureType].run(this)
     } else {
-        try{ 
+        try{
             let c = require(this.structureType)
             protoCache[this.structureType] = new c()
         }catch(e){
