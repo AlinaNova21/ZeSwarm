@@ -1,0 +1,4 @@
+branch: default
+directory: src
+badge: { "type": 24, "color1": "#ff0000", "color2": "#ffb400", "color3": "#ff6a27", "param": 0, "flip": false }
+
