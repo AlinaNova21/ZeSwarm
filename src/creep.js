@@ -1,6 +1,8 @@
 const roles = {}
 class Creep {
   run (creep) {
+    creep.say('TEST')
+    return
     let role = creep.memory.role || 'scout'
     let rolec = this.tryLoadRole(role)
     if (rolec) {
