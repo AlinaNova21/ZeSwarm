@@ -10,14 +10,19 @@ module.exports = {
     let rooms = Object.keys(this.hostileRooms)
     return this.hostileRooms[rooms[0]]
   },
-  run (creep, fullMode = 'upgrade', emptyMode = 'gather') {
+  run (creep, fullMode = 'upgrade', emptyMode = 'gather', allowAlt = true) {
     this.fullMode = fullMode
     this.emptyMode = emptyMode
+    this.allowAlt = allowAlt
     if (creep.carry.energy === 0 && creep.carryCapacity) creep.memory.mode = emptyMode
     return this.exec(creep)
   },
   exec (creep) {
     return this[creep.memory.mode || this.fullMode](creep)
+  },
+  harvest (creep) {
+    creep.memory.mode = 'gather'
+    this.gather(creep)
   },
   gather (creep) {
     if (creep.carry.energy === creep.carryCapacity) creep.memory.mode = this.fullMode
@@ -83,8 +88,8 @@ module.exports = {
         ...(creep.room.structures[C.STRUCTURE_CONTAINER] || []),
         ...(creep.room.structures[C.STRUCTURE_STORAGE] || [])
       ]
-      targets = targets.filter(t => (t.energy || (t.store && t.store.energy)) >= creep.carryCapacity)
-      let tgt = creep.pos.findClosestByRange(targets)
+      targets = targets.filter(t => (t.store && t.store.energy) || t.energy)
+      tgt = creep.pos.findClosestByRange(targets)
       creep.memory.tgt = tgt && tgt.id
     }
     if (tgt) {
@@ -94,25 +99,31 @@ module.exports = {
       } else {
         creep.travelTo(tgt)
       }
+    } else if (this.allowAlt) {
+      creep.memory.mode = 'gather'
+      this.gather(creep)
     }
   },
   deposit (creep) {
     let tgt = Game.getObjectById(creep.memory.tgt)
+    let n = false
     if (!tgt) {
       let targets = [
         ...(creep.room.structures[C.STRUCTURE_TOWER] || []),
-        ...(creep.room.structures[C.STRUCTURE_STORAGE] || []),
         ...(creep.room.structures[C.STRUCTURE_EXTENSION] || []),
-        ...(creep.room.structures[C.STRUCTURE_CONTAINER] || []),
-        ...(creep.room.structures[C.STRUCTURE_SPAWN] || [])
+        ...(creep.room.structures[C.STRUCTURE_SPAWN] || []),
+        ...(creep.room.structures[C.STRUCTURE_STORAGE] || []),
+        ...(creep.room.structures[C.STRUCTURE_CONTAINER] || [])
       ]
-      let tgt = targets.find(t => ((t.storeCapacity || t.energyCapacity || 50) - ((t.store && t.store.energy) || t.energy)) >= Math.min(25, creep.carry.energy))
+      targets = targets.filter(t => (t.storeCapacity || t.energyCapacity || 50) - ((t.store && t.store.energy) || t.energy || 0))
+      tgt = creep.pos.findClosestByRange(targets)
       creep.memory.tgt = tgt && tgt.id
+      n |= !!tgt
     }
     if (tgt) {
       if (creep.pos.isNearTo(tgt)) {
         let r = creep.transfer(tgt, C.RESOURCE_ENERGY)
-        if (r !== C.OK) creep.memory.mode = 'build'
+        if (!n && r !== C.OK) creep.memory.mode = 'build'
         creep.memory.tgt = false
       } else {
         creep.travelTo(tgt)
@@ -123,7 +134,7 @@ module.exports = {
     const { room, memory } = creep
     let drainers = census.rooms[memory.homeRoom].roles['drainer']
     if (memory.ready) {
-      let lowest = drainers.reduce((l, v) => l.hits > v.hits ? v : l, { hits: 1000})
+      let lowest = drainers.reduce((l, v) => l.hits > v.hits ? v : l, { hits: 1000 })
       if (creep.pos.isNearTo(lowest)) {
         creep.heal(lowest)
       } else {
@@ -139,7 +150,7 @@ module.exports = {
         let tgt = creep.pos.findClosestByRange(structures[C.STRUCTURE_TOWER])
         let obst = creep.pos.findClosestByRange([...structures[C.STRUCTURE_WALL], ...structures[C.STRUCTURE_RAMPART]])
         if (creep.pos.isNearTo(obst)) {
-          creep.dismabntle(obst)
+          creep.dismantle(obst)
         }
         if (creep.pos.isNearTo(tgt)) {
           creep.dismantle(tgt)

@@ -38,13 +38,13 @@ class Controller {
     let range = 1
     let { pos, x, y, roomName } = s
     if (!pos) pos = { x, y, roomName }
-    switch (s.structureType) {
+    switch (s.structureType || s.type || '') {
+      case '':
       case 'exit':
       case 'controller':
-        range = 3
-        break
       case 'source':
         range = 3
+        break
     }
     return { pos, range }
   }

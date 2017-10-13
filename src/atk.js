@@ -1,22 +1,26 @@
 const C = require('constants')
+const hostileTracker = require('HostileTracker')
 
 class Atk {
-  get hostileRooms () {
-    Memory.hostileRooms = Memory.hostileRooms || {}
-    return Memory.hostileRooms
-  }
   get firstHostile () {
-    let rooms = Object.keys(this.hostileRooms)
-    return this.hostileRooms[rooms[0]]
+    let room = _.find(hostileTracker.getRooms(), r => r.hostile && !r.towers)
+    return room
   }
   run (creep) {
     let tgtroom = creep.memory.tgt = creep.memory.tgt || this.firstHostile.name
     if (!tgtroom) return
-    let { room } = creep
+    let { name, room } = creep
     if (room.name !== tgtroom) {
+      console.log(`${name} Going to ${tgtroom} ${JSON.stringify(hostileTracker.getRoom(tgtroom))}`)
+      creep.say(`TGT:${tgtroom}`)
       return creep.travelTo(new RoomPosition(25, 25, tgtroom), {
         offroad: true,
-        roomCallback: (room) => { if(this.hostileRooms[room]) return false }
+        roomCallback: (room) => {
+          let hostile = hostileTracker.getRoom(room)
+          let skip = hostile.hostile && room !== tgtroom || false
+          console.log(`cb ${room} ${skip ? 'HOSTILE' : 'SAFE'} ${JSON.stringify(hostile)}`)
+          if (skip) return false
+        }
       })
     }
     let tgt

@@ -1,10 +1,15 @@
 const census = require('census')
 const C = require('constants')
+const hostileTracker = require('HostileTracker')
 
 class Spawn {
-  get hostileRooms() {
-    Memory.hostileRooms = Memory.hostileRooms || {}
-    return Memory.hostileRooms
+  get firstHostile () {
+    let room = _.find(hostileTracker.getRooms(), r => r.hostile && !r.towers)
+    return room
+  }
+  constructor () {
+    this.seedRange = 10
+    this.seed = Math.floor(Math.random() * this.seedRange)
   }
   run (spawn) {
     let room = spawn.room
@@ -28,6 +33,7 @@ class Spawn {
         // want.scout = 1
         want.build = 4
         want.up = 5
+        want.scout = 4
         break
       default:
       case 3:
@@ -35,18 +41,23 @@ class Spawn {
         want.build = 4
         want.up = 0
         want.scout = 8
+	      want.cart = 1
         break
     }
-    if (room.controller.level >= 3 && _.size(this.hostileRooms)) {
-      let rooms = Object.keys(this.hostileRooms)
-      let h = this.hostileRooms[rooms[0]]
+    if (room.controller.level >= 3 && _.size(this.firstHostile)) {
+      let h = this.firstHostile
       if (h.safemode < 100) {
         if (h.towers) {
           // want.suicide = 12
         } else {
           want.atk = 5
+          want.drainer = 2
+          console.log(JSON.stringify(h))
         }
       }
+    }
+    if (Game.gcl.level > _.filter(Game.rooms, 'my').length && room.controller.level >= 3) {
+      want.claim = 1
     }
     let types = Object.keys(want)
     _.sortBy(types, t => {
@@ -54,15 +65,24 @@ class Spawn {
       if (t === 'scout') return 9
       return 10
     })
+    console.log(JSON.stringify(want))
+    let sbody = []
+    let spriority = -100
+    let stype = ''
+    let scost = 0
     for (let i = 0; i < types.length; i++) {
       let type = types[i]
       let amount = want[type] - (have[type] || []).length
       let body = []
-      console.log(want[type], type)
+      let priority = 0
+      let bcost = cost
       if (amount <= 0) continue
       switch (type) {
         case 'harv':
-          body = buildCreepBody(cost, [C.WORK, C.CARRY], [C.CARRY, C.WORK], {
+          priority = 10
+          if (amount === want[type]) priority = 100
+          if (priority < 100) bcost = room.energyCapacityAvailable
+          body = buildCreepBody(bcost, [C.WORK, C.CARRY], [C.CARRY, C.WORK], {
             maxWork: 6,
             minWork: 1,
             maxCarry: 2
@@ -70,10 +90,18 @@ class Spawn {
           break
         case 'build':
         case 'up':
-          body = buildCreepBody(cost, [C.WORK, C.CARRY], [C.CARRY, C.WORK])
+          priority = type === 'up' ? 1 : 2
+          if (amount === want[type]) priority = 100
+          if (priority < 100) bcost = room.energyCapacityAvailable
+          body = buildCreepBody(bcost, [C.WORK, C.CARRY], [C.CARRY, C.WORK])
+          break
+        case 'cart':
+          priority = 5
+          body = buildCreepBody(bcost, [C.CARRY], [C.CARRY], { minCarry: 2, maxCarry: 40 })
           break
         case 'scout':
         case 'stomper':
+          priority = 10
           body = [C.MOVE, C.TOUGH]
           break
         case 'atk':
@@ -85,12 +113,25 @@ class Spawn {
         case 'suicide':
           body = [C.MOVE, C.MOVE, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH, C.TOUGH]
           break
+        case 'claim':
+          body = [C.MOVE, C.CLAIM]
+          continue
+          break
       }
       if (!body || !body.length) continue
       body = sortBody(body)
-      let ret = spawn.createCreep(body, type + uid(), { homeRoom: room.name, role: type })
-      console.log(ret, body, room.energyAvailable)
-      return
+      if (body && body.length && priority > spriority) {
+        sbody = body
+        spriority = priority
+        stype = type
+        scost = bcost || cost
+      }
+    }
+    console.log(spriority,stype,scost)
+    if (spriority < 100 && Game.time % this.seedRange !== this.seed) return
+    if (sbody && sbody.length) {
+      let ret = spawn.createCreep(sbody, stype + uid(), { homeRoom: room.name, role: stype })
+      console.log(ret, sbody, room.energyAvailable, scost, room.energyCapacityAvailable)
     }
   }
 }

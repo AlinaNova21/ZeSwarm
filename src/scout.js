@@ -1,14 +1,10 @@
 const C = require('constants')
 const SIGN_MSG = 'Territory of ZeSwarm'
-
+const SIGN_MY_MSG = 'ZeSwarm - https://github.com/ags131/ZeSwarm'
 
 class Scout {
   get mem () {
     return this.creep.memory
-  }
-  get hostileRooms() {
-    Memory.hostileRooms = Memory.hostileRooms || {}
-    return Memory.hostileRooms
   }
   run (creep) {
     this.creep = creep
@@ -34,9 +30,10 @@ class Scout {
     }
     let roomCallback = r => r == room.name ? undefined : false
     let exit = creep.pos.findClosestByRange(this.mem.tgt)
-    if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== SIGN_MSG)) {
+    let msg = controller && controller.my && SIGN_MY_MSG || SIGN_MSG
+    if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
       if (creep.pos.isNearTo(controller)) {
-        creep.signController(controller, SIGN_MSG)
+        creep.signController(controller, msg)
       } else {
         return creep.travelTo(controller, { roomCallback })
       }

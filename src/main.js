@@ -1,5 +1,6 @@
 require('creep')
 const C = require('constants')
+const hostileTracker = require('HostileTracker')
 
 if(!Room.prototype.structures)
 Object.defineProperty(Room.prototype, 'structures', {
@@ -46,6 +47,7 @@ let user = (Game.spawns.Spawn1 || _.find(Game.creeps, c=>c)).owner.username || '
 C.USER = user
 
 module.exports.loop = function(){
+    hostileTracker.tick()
     target = { name: '', room: Game.flags.target && Game.flags.target.pos.roomName } 
     let now = Date.now()
     let lt = Memory.lastTick
@@ -123,25 +125,7 @@ module.exports.loop = function(){
         if(!Game.creeps[name]) delete Memory.creeps[name]
     })
     _.invoke(Game.structures,'run')
-    _.invoke(Game.creeps,'run')
-    _.each(Game.rooms, room => {
-        let hr = Memory.hostileRooms = Memory.hostileRooms || {}
-        let { controller } = room
-        if (controller && controller.level && !controller.my) {
-            hr[room.name] = {
-              name: room.name,
-              level: room.controller.level,
-              owner: room.controller.owner.username,
-              towers: room.find(C.FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_TOWER } }).length,
-              walls: room.find(C.FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_WALL } }).length,
-              ramparts: room.find(C.FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_RAMPART } }).length,
-              creeps: room.find(C.FIND_HOSTILE_CREEPS).length,
-              safemode: controller.safeMode || 0
-            }
-        } else {
-            delete hr[room.name]
-        }
-    })
+    _.invoke(Game.creeps,'run')    
     vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`,25,0.5,{ size: 1 })
 }
 
