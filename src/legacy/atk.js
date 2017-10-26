@@ -1,5 +1,5 @@
-const C = require('constants')
-const hostileTracker = require('HostileTracker')
+const C = require('./constants')
+const hostileTracker = require('./HostileTracker')
 
 class Atk {
   get firstHostile () {

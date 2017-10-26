@@ -1,4 +1,4 @@
-const modes = require('creepMode')
+const modes = require('./creepMode')
 
 class Harv {
   run (creep) {

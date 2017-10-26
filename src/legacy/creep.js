@@ -1,5 +1,21 @@
-const roles = {}
-class Creep {
+import scout from './scout'
+import atk from './atk'
+import build from './build'
+import drainer from './drainer'
+import harv from './harv'
+import stomper from './stomper'
+import up from './up'
+
+const roles = {
+  scout: new scout(),
+  atk: new atk(),
+  build: new build(),
+  drainer: new drainer(),
+  harv: new harv(),
+  stomper: new stomper(),
+  up: new up(),
+}
+export default class Creep {
   run (creep) {
     let role = creep.memory.role || 'scout'
     let rolec = this.tryLoadRole(role)
@@ -27,5 +43,3 @@ class Creep {
     }
   }
 }
-
-module.exports = Creep

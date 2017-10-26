@@ -1,4 +1,4 @@
-const C = require('constants')
+const C = require('./constants')
 const SIGN_MSG = 'Territory of ZeSwarm'
 const SIGN_MY_MSG = 'ZeSwarm - https://github.com/ags131/ZeSwarm'
 

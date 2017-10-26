@@ -1,6 +1,6 @@
 /**
- * To start using Traveler, require it in main.js:
- * Example: var Traveler = require('Traveler.js');
+ * To start using Traveler, require('./'+it in main.js:
+ * Example: var Traveler = require('./Traveler.js');
  */
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });

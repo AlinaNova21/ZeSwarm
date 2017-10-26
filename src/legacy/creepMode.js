@@ -1,5 +1,5 @@
-const C = require('constants')
-const census = require('census')
+const C = require('./constants')
+const census = require('./census')
 
 module.exports = {
   get hostileRooms () {

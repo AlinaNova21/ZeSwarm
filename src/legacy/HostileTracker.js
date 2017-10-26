@@ -1,10 +1,11 @@
-const C = require('constants')
+const C = require('./constants')
 
 class HostileTracker {
   constructor () {
     Memory.hostileTracker = Memory.hostileTracker || {}
   }
   get mem () {
+    Memory.hostileTracker = Memory.hostileTracker || {}
     return Memory.hostileTracker
   }
   tick () {

@@ -1,6 +1,6 @@
-const census = require('census')
-const C = require('constants')
-const hostileTracker = require('HostileTracker')
+const census = require('./census')
+const C = require('./constants')
+const hostileTracker = require('./HostileTracker')
 
 class Spawn {
   get firstHostile () {

@@ -1,4 +1,4 @@
-const C = require('constants')
+const C = require('./constants')
 
 class Controller {
   run (controller) {
