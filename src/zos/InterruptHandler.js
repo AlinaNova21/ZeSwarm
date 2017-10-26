@@ -39,7 +39,6 @@ export default class InterruptHandler {
       if (hook.stage !== stage) return
       if (!trackers[hook.type]) return
       _.each(trackers[hook.type], key => {
-        console.log(JSON.stringify(hook), stage, key, hook.key === stage.key)
         if (!hook.key || hook.key === key) {
           list.push([hook, key])
         }
