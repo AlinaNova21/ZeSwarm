@@ -8,7 +8,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "gulp"
+    "build": "rollup -c",
+    "postinstall": "typings install",
+    "deploy": "rollup -c && gulp"
   },
   "repository": {
     "type": "git",
@@ -20,9 +22,18 @@
     "url": "https://github.com/ags131/screeps/issues"
   },
   "homepage": "https://github.com/ags131/screeps#readme",
-  "dependencies": {},
+  "dependencies": {
+    "lodash-es": "^4.17.4"
+  },
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-screeps": "^1.0.3"
+    "gulp-screeps": "^1.0.3",
+    "rollup": "^0.43.0",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-watch": "^4.0.0"
+  },
+  "standard":{
+    "globals":["Game","Memory","RawMemory","PathFinder","RoomObject","_"]
   }
 }
