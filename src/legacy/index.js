@@ -31,16 +31,9 @@ class Legacy {
     this.context = context
   }
   run () {
-    let console = global.console
-    // global.console = {
-    //   context: this.context,
-    //   log (...a) {
-    //     console.log('fb', ...a)
-    //     this.context.log.info(...a)
-    //   }
-    // }
+    this.context.log.hook('warn')
     main.loop()
-    global.console = console
+    this.context.log.unhook()
   }
 }
 

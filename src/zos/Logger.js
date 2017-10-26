@@ -30,15 +30,27 @@ export default class Logger {
   constructor (prefix = '') {
     this.prefix = prefix
     this.level = LogLevel.INFO
+    this._log = console.log // This allows for console hooking
   }
-
+  hook (level = 'info') {
+    Object.defineProperty(console, 'log', {
+      value: (...a) => {
+        this[level](a.join(' '))
+      }
+    })
+  }
+  unhook () {
+    Object.defineProperty(console, 'log', {
+      value: this._log
+    })
+  }
   log (level, message) {
     if (level >= this.level) {
       if (typeof message === 'function') {
         message = message()
       }
       let style = styles[level] || styles.default
-      console.log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix} ${message}</log>`)
+      this._log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix} ${message}</log>`)
       this.vlog(level, `[${level}] ${this.prefix} ${message}`)
     }
   }

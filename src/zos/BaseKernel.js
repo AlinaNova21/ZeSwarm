@@ -59,6 +59,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.memget = () => this.mem
     this.processRegistry = processRegistry
     this.extensionRegistry = extensionRegistry
+    extensionRegistry.register('memoryManager', this.mm)
     this.processInstanceCache = {
       // [id: string]: {
       //   context: IPosisProcessContext,
@@ -197,7 +198,6 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
 
   loop () {
     this.mem = this.mm.load(KERNEL_SEGMENT)
-    console.log(this.mem)
     if (this.mem === false) {
       this.mm.activate(KERNEL_SEGMENT)
       this.mm.endOfTick()

@@ -1,3 +1,5 @@
+import { minBy, map } from 'lodash-es'
+
 export default class MemoryManager {
   get mem () {
     return this.memget()
@@ -7,6 +9,7 @@ export default class MemoryManager {
       Memory.__segments = Memory.__segments || {}
       return Memory.__segments
     })
+    this.fixed = [0]
     this.segments = {}
     this.versions = {}
     this.pendingSaves = {}
@@ -14,6 +17,7 @@ export default class MemoryManager {
     this.mem.versions = this.mem.versions || {}
     this.mem.active = this.mem.active || [0]
     this.mem.readable = this.mem.readable || {}
+    this.mem.lru = this.mem.lru || {}
     if (this.mem.active.indexOf(0) === -1) this.mem.active.splice(0, 0, 0)
     this.config = this.getSegment(0)
     if (this.config) {
@@ -40,6 +44,14 @@ export default class MemoryManager {
   }
   endOfTick () {
     try {
+      while (this.mem.active > 10) {
+        let min = minBy(map(this.mem.lru, (time, id) => ({ id, time })), 'time')
+        let ind = this.mem.active.indexOf(min.id)
+        delete this.mem.lru[min.id]
+        if (ind !== -1) {
+          this.mem.active.splice(ind, 1)
+        }
+      }
       RawMemory.setActiveSegments(this.mem.active)
     } catch (e) {
       this.mem.active = [0]
@@ -89,9 +101,15 @@ export default class MemoryManager {
     this.mem.versions[id]++
   }
   load (id) {
+    if (!~this.fixed.indexOf(id)) {
+      this.mem.lru[id] = Game.time
+    }
     return this.getSegment(id)
   }
   save (id, v) {
+    if (!~this.fixed.indexOf(id)) {
+      this.mem.lru[id] = Game.time
+    }
     this.markForSaving(id, v)
   }
   wrap (name, id) {
