@@ -123,6 +123,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.log.warn(() => `killed ${id}`)
     pinfo.status = 'killed'
     pinfo.ended = Game.time
+    this.interruptHandler.clear(id)
     if (pinfo.pid === '') return
     let ids = Object.keys(this.processTable)
     for (let i = 0; i < ids.length; i++) {
@@ -159,20 +160,30 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   clearInterrupt (type, stage, key) {
     return this.interruptHandler.remove(this.currentId, type, stage, key)
   }
+  clearAllInterrupts () {
+    return this.interruptHandler.clear(this.currentId)
+  }
 
   runProc (id, func = 'run', ...params) {
     let pinfo = this.processTable[id]
     if (!pinfo) return false
-    if (func === 'run' && pinfo.status !== 'running' && pinfo.ended < Game.time - 100) {
+    if (pinfo.status !== 'running' && pinfo.ended < Game.time - 100) {
       delete this.processTable[id]
     }
-    if (pinfo.status !== 'running') return
+    if (pinfo.status !== 'running') return false
+    if (func === 'wake') {
+      delete pinfo.wait
+    } else if (pinfo.wait) {
+      return false
+    }
     try {
       let proc = this.getProcessById(id)
       if (!proc) throw new Error(`Could not get process ${id} ${pinfo.name}`)
-      this.currentId = id
-      proc[func](...params)
-      this.currentId = 'ROOT'
+      if (proc[func]) {
+        this.currentId = id
+        proc[func](...params)
+        this.currentId = 'ROOT'
+      }
       return true
     } catch (e) {
       this.killProcess(id)
@@ -237,5 +248,10 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let pinfo = this.processTable[this.currentId]
     if (!pinfo) return
     pinfo.wake = Game.time + ticks
+  }
+
+  wait (type, stage, key) {
+    this.interruptHandler.add(this.currentId, type, stage, key, 'wake')
+    this.processTable[this.currentId].wait = true
   }
 }

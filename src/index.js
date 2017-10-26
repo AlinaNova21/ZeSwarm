@@ -25,6 +25,8 @@ extensionRegistry.register('sleep', pkernel)
 processRegistry.install(bin)
 processRegistry.install(legacy)
 
+global.kernel = pkernel
+
 export function loop () {
   pkernel.loop()
 }

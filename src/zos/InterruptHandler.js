@@ -5,21 +5,26 @@ export default class InterruptHandler {
       Memory.interruptHandler = Memory.interruptHandler || {}
       return Memory.interruptHandler
     })
-    this.memget().hooks = this.memget().hooks || {}
   }
   get memory () {
     return this.memget()
   }
   get hooks () {
+    this.memory.hooks = this.memory.hooks || {}
     return this.memory.hooks
   }
-  add (pid, type, stage, key) {
+  add (pid, type, stage, key, func = 'interrupt') {
     let hkey = [type, stage, key, pid].join(':')
-    this.hooks[hkey] = { type, stage, key, pid }
+    this.hooks[hkey] = { type, stage, key, pid, func }
   }
   remove (pid, type, stage, key) {
     let hkey = [type, stage, key, pid].join(':')
     delete this.hooks[hkey]
+  }
+  clear (pid) {
+    // Not efficient, but shouldn't be called often
+    let hkeys = Object.keys(this.hooks).filter(h => h.match(pid))
+    hkeys.forEach(hkey => delete this.hooks[hkey])
   }
   run (stage = 'start') {
     let list = []
@@ -34,6 +39,7 @@ export default class InterruptHandler {
       if (hook.stage !== stage) return
       if (!trackers[hook.type]) return
       _.each(trackers[hook.type], key => {
+        console.log(JSON.stringify(hook), stage, key, hook.key === stage.key)
         if (!hook.key || hook.key === key) {
           list.push([hook, key])
         }
@@ -55,7 +61,7 @@ export const trackers = [
     type: 'segment',
     stages: ['start'],
     getEvents () {
-      return Object.keys(RawMemory.segments)
+      return Object.keys(RawMemory.segments).map(parseInt)
     }
   },
   {
