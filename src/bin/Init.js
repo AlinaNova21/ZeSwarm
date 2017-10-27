@@ -21,9 +21,7 @@ export default class Init {
     this.kernel = context.queryPosisInterface('baseKernel')
     this.etc = context.queryPosisInterface('etc')
     each(this.etc.init.services, ({ id, name, params, restart, enabled }) => {
-      if (enabled) {
-        this.addService(id, name, params, restart)
-      }
+      this.addService(id, name, params, restart, enabled)
     })
     // each(Game.rooms,room=>{
     //   this.addService('spawnTest','ags131/SpawnTest',{ room },true)
@@ -51,14 +49,22 @@ export default class Init {
     this.manageServices()
   }
 
-  addService (id, name, context = {}, restart = false) {
-    if (this.services[id]) return
-    this.log.warn(`Adding service ${id}`)
-    this.services[id] = {
-      name,
-      context,
-      restart,
-      status: 'started'
+  addService (id, name, context = {}, restart = false, enabled = true) {
+    if (this.services[id]) {
+      let serv = this.services[id]
+      serv.restart = restart
+      serv.name = name
+      serv.context = context
+      serv.enabled = enabled
+    } else {
+      this.log.warn(`Adding service ${id}`)
+      this.services[id] = {
+        name,
+        context,
+        restart,
+        status: 'started',
+        enabled
+      }
     }
   }
 
@@ -66,6 +72,9 @@ export default class Init {
     each(this.services, (service, id) => {
       let proc
       if (service.pid) proc = this.kernel.getProcessById(service.pid)
+      if (!service.enabled) {
+        service.status = 'stopped'
+      }
       switch (service.status) {
         case 'started':
           if (!proc) {

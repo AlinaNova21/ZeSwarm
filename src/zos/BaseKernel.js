@@ -169,6 +169,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let pinfo = this.processTable[id]
     if (!pinfo) return false
     if (pinfo.status !== 'running' && pinfo.ended < Game.time - 100) {
+      delete this.processMemory[this.processTable[id].ns]
       delete this.processTable[id]
     }
     if (pinfo.status !== 'running') return false
