@@ -1,3 +1,6 @@
+import stats from './lib/stats'
+import globals from './lib/GlobalTracker'
+
 import { BaseKernel } from './zos/BaseKernel'
 import { ProcessRegistry } from './zos/ProcessRegistry'
 import { ExtensionRegistry } from './zos/ExtensionRegistry'
@@ -6,6 +9,9 @@ import { bundle as bin } from './bin/index'
 import { bundle as legacy } from './legacy/index'
 
 import etc from './etc'
+
+globals.statsDriver = stats
+globals.init()
 
 // import { SpawnExtension } from './bin/SpawnManager'
 
@@ -17,13 +23,6 @@ let pkernel = new BaseKernel(processRegistry, extensionRegistry)
 extensionRegistry.register('baseKernel', pkernel)
 extensionRegistry.register('sleep', pkernel)
 extensionRegistry.register('etc', etc)
-// let spawn = new SpawnExtension({
-//   get memory () {
-//     Memory.spawnExtension = Memory.spawnExtension || {}
-//     return Memory.spawnExtension
-//   }
-// })
-// extensionRegistry.register('spawn', spawn)
 
 processRegistry.install(bin)
 processRegistry.install(legacy)
@@ -31,5 +30,8 @@ processRegistry.install(legacy)
 global.kernel = pkernel
 
 export function loop () {
+  stats.reset()
+  globals.tick()
   pkernel.loop()
+  stats.commit()
 }

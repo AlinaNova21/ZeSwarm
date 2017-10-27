@@ -1,5 +1,6 @@
 export default {
   crons: [
-    [5, 'ags131/CronTestJob', {}]
+    // [interval, name, params]
+    // [5, 'ags131/CronTestJob', {}]
   ]
 }
