@@ -33,7 +33,14 @@
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-watch": "^4.0.0"
   },
-  "standard":{
-    "globals":["Game","Memory","RawMemory","PathFinder","RoomObject","_"]
+  "standard": {
+    "globals": [
+      "Game",
+      "Memory",
+      "RawMemory",
+      "PathFinder",
+      "RoomObject",
+      "_"
+    ]
   }
 }

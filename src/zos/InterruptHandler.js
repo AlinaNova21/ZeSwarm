@@ -33,13 +33,17 @@ export default class InterruptHandler {
       if (tracker.stages.indexOf(stage) === -1) {
         return
       }
-      trackers[tracker.type] = tracker.getEvents()
+      trackers[tracker.type] = {
+        keys: tracker.getEvents(),
+        cond: tracker.cond || ((hook, key) => hook.key === key)
+      }
     })
     _.each(this.hooks, hook => {
       if (hook.stage !== stage) return
       if (!trackers[hook.type]) return
-      _.each(trackers[hook.type], key => {
-        if (!hook.key || hook.key === key) {
+      let { keys, cond } = trackers[hook.type]
+      _.each(keys, key => {
+        if (!hook.key || cond(hook, key)) {
           list.push([hook, key])
         }
       })
@@ -60,7 +64,7 @@ export const trackers = [
     type: 'segment',
     stages: ['start'],
     getEvents () {
-      return Object.keys(RawMemory.segments).map(parseInt)
+      return Object.keys(RawMemory.segments).map(v => parseInt(v))
     }
   },
   {
@@ -75,6 +79,16 @@ export const trackers = [
     stages: ['start', 'end'],
     getEvents () {
       return [Game.time]
+    }
+  },
+  {
+    type: 'sleep',
+    stages: ['start', 'end'],
+    getEvents () {
+      return [Game.time]
+    },
+    cond (hook, key) {
+      return Game.time >= parseInt(hook.key)
     }
   }
 ]

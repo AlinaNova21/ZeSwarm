@@ -212,7 +212,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let interrupts = this.interruptHandler.run('start')
     interrupts.forEach(([hook, key]) => {
       let ret = this.runProc(hook.pid, hook.func || 'interrupt', { hook, key })
-      if (ret === false) {
+      if (ret === false || hook.func === 'wake') {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
@@ -236,7 +236,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     interrupts = this.interruptHandler.run('end')
     interrupts.forEach(([hook, key]) => {
       let ret = this.runProc(hook.pid, hook.func || 'interrupt', { hook, key })
-      if (ret === false) {
+      if (ret === false || hook.func === 'wake') {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
@@ -245,9 +245,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   sleep (ticks) {
-    let pinfo = this.processTable[this.currentId]
-    if (!pinfo) return
-    pinfo.wake = Game.time + ticks
+    this.wait('sleep', 'start', Game.time + ticks, 'wake')
   }
 
   wait (type, stage, key) {

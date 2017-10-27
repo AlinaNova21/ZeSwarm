@@ -11,8 +11,6 @@ export default {
     })
   ],
   targets: [
-    { dest: 'dist/kernel.cjs.js', format: 'cjs' },
-    { dest: 'dist/main.js', format: 'cjs' },
-    { dest: 'dist/kernel.es.js', format: 'es' }
+    { dest: 'dist/main.js', format: 'cjs' }
   ]
 }

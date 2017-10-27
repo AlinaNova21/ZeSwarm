@@ -4,6 +4,9 @@ import { ExtensionRegistry } from './zos/ExtensionRegistry'
 
 import { bundle as bin } from './bin/index'
 import { bundle as legacy } from './legacy/index'
+
+import etc from './etc'
+
 // import { SpawnExtension } from './bin/SpawnManager'
 
 let extensionRegistry = new ExtensionRegistry()
@@ -13,7 +16,7 @@ let pkernel = new BaseKernel(processRegistry, extensionRegistry)
 
 extensionRegistry.register('baseKernel', pkernel)
 extensionRegistry.register('sleep', pkernel)
-
+extensionRegistry.register('etc', etc)
 // let spawn = new SpawnExtension({
 //   get memory () {
 //     Memory.spawnExtension = Memory.spawnExtension || {}

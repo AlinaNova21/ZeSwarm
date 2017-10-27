@@ -19,17 +19,18 @@ export default class Init {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
-    this.addService('legacy', 'legacy', {}, true)
-    this.addService('intTest', 'intTest', {}, true)
-    // this.addService('spawnManager','ags131/SpawnManager',{},true)
-    // this.addService('sleeperTest','ags131/SleeperTest',{},true)
+    this.etc = context.queryPosisInterface('etc')
+    each(this.etc.init.services, ({ id, name, params, restart, enabled }) => {
+      if (enabled) {
+        this.addService(id, name, params, restart)
+      }
+    })
     // each(Game.rooms,room=>{
     //   this.addService('spawnTest','ags131/SpawnTest',{ room },true)
     //   if (room.controller && room.controller.my) {
     //     this.addService('upgrader','ags131/Upgrader',{ room: room.name },true)
     //   }
     // })
-    // this.addService('baseTest','POSISTest/PosisBaseTestProcess',{ maxRunTime: 5 })
   }
   get id () {
     return this.context.id

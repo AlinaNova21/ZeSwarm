@@ -20,7 +20,7 @@ RoomObject.prototype.run = function(){
             let c = require(this.structureType)
             protoCache[this.structureType] = new c()
         }catch(e){
-            console.log(`Could not find handler for ${this.structureType} ${e.stack}`)
+            // console.log(`Could not find handler for ${this.structureType} ${e.stack}`)
             protoCache[this.structureType] = false
         }
     }

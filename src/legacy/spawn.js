@@ -41,7 +41,7 @@ class Spawn {
         want.build = 4
         want.up = 0
         want.scout = 8
-	      want.cart = 1
+        want.cart = 1
         break
     }
     if (room.controller.level >= 3 && _.size(this.firstHostile)) {
