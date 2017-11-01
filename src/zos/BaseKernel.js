@@ -2,8 +2,10 @@ import Logger from './Logger'
 import InterruptHandler from './InterruptHandler'
 
 import MemoryManager from './MemoryManager'
+import Scheduler from './Scheduler'
 
 const KERNEL_SEGMENT = 1
+const INTERRUPT_SEGMENT = 2
 // export interface ProcessInfo {
 //   id: PosisPID
 //   pid: PosisPID
@@ -39,21 +41,20 @@ const KERNEL_SEGMENT = 1
 export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   get memory () {
     return this.memget()
-    Memory.zos = Memory.zos || {}
-    Memory.zos.kernel = Memory.zos.kernel || { processTable: {}, processMemory: {} }
-    return Memory.zos.kernel
   }
   get processTable () {
     this.memory.processTable = this.memory.processTable || {}
     return this.memory.processTable
   }
   get processMemory () {
-    this.memory.processMemory = this.memory.processMemory || {}
-    return this.memory.processMemory
+    Memory.zos = Memory.zos || {}
+    Memory.zos.processMemory = Memory.zos.processMemory || {}
+    return Memory.zos.processMemory
   }
 
   constructor (processRegistry, extensionRegistry) {
     this.mm = new MemoryManager()
+    this.scheduler = new Scheduler(this)
     this.mm.activate(KERNEL_SEGMENT)
     this.mem = this.mm.load(KERNEL_SEGMENT)
     this.memget = () => this.mem
@@ -198,9 +199,13 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   loop () {
+    let loopStart = Game.cpu.getUsed()
+    let procUsed = 0
     this.mem = this.mm.load(KERNEL_SEGMENT)
-    if (this.mem === false) {
+    this.imem = this.mm.load(INTERRUPT_SEGMENT)
+    if (this.mem === false || this.imem === false) {
       this.mm.activate(KERNEL_SEGMENT)
+      this.mm.activate(INTERRUPT_SEGMENT)
       this.mm.endOfTick()
       return
     }
@@ -208,41 +213,102 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.memory.processMemory = this.memory.processMemory || {}
     this.memory.interruptHandler = this.memory.interruptHandler || {}
     if (!this.interruptHandler) {
-      this.interruptHandler = new InterruptHandler(() => this.memory.interruptHandler)
+      this.interruptHandler = new InterruptHandler(() => this.mm.load(INTERRUPT_SEGMENT))
     }
     let interrupts = this.interruptHandler.run('start')
     interrupts.forEach(([hook, key]) => {
+      let start = Game.cpu.getUsed()
       let ret = this.runProc(hook.pid, hook.func || 'interrupt', { hook, key })
+      let end = Game.cpu.getUsed()
+      procUsed += end - start
       if (ret === false || hook.func === 'wake') {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
-    let ids = Object.keys(this.processTable)
-    if (ids.length === 0) {
-      let proc = this.startProcess('init', {})
-      // Due to breaking changes in the standard,
-      // init can no longer be ran on first tick.
-      if (proc) ids.push(proc.pid.toString())
-    }
-    let runCnt = 0
-    for (let i = 0; i < ids.length; i++) {
-      let id = ids[i]
-      if (this.runProc(id)) {
-        runCnt++
-      }
-    }
-    if (runCnt === 0) {
+    this.scheduler.setup()
+
+    if (_.size(this.processTable) === 0) {
       this.startProcess('init', {})
     }
+
+    let stats = []
+    this.log.debug('loop')
+    while (true) {
+      let pid = this.scheduler.getNextProcess()
+      this.log.debug('pid', pid)
+      if (pid === false) { // Hard stop
+        stats.forEach(stat => {
+          this.log.debug(`-- ${stat.id} ${stat.cpu.toFixed(3)} ${stat.end.toFixed(3)} ${stat.pinfo.name}`)
+        })
+      }
+      if (!pid) break
+      this.log.debug('process')
+      let start = Game.cpu.getUsed()
+      this.runProc(pid)
+      let pinfo = this.getProcessById(pid)
+      let end = Game.cpu.getUsed()
+      let dur = end - start
+      let ts
+      let te
+      ts = Game.cpu.getUsed()
+      this.scheduler.setCPU(pid, dur.toFixed(3))
+      pinfo.cpu = dur
+      procUsed += dur
+      te = Game.cpu.getUsed()
+      this.log.debug(() => `${pinfo.id} scheduler setCPU ${(te - ts).toFixed(3)}`)
+      ts = Game.cpu.getUsed()
+      global.stats.addStat('process', {
+        name: pinfo.name
+      }, {
+        cpu: dur,
+        id: pinfo.id,
+        parent: pinfo.parentPID
+      })
+      te = Game.cpu.getUsed()
+      this.log.debug(() => `${pinfo.id} influx addStat ${(te - ts).toFixed(3)}`)
+      ts = Game.cpu.getUsed()
+      stats.push({
+        pinfo,
+        cpu: dur,
+        id: pinfo.id,
+        end,
+        parent: pinfo.parentPID
+      })
+      te = Game.cpu.getUsed()
+      this.log.debug(() => `${pinfo.id} stats push ${(te - ts).toFixed(3)}`)
+    }
+    this.scheduler.cleanup()
+    // let ids = Object.keys(this.processTable)
+    // if (ids.length === 0) {
+    //   let proc = this.startProcess('init', {})
+    //   // Due to breaking changes in the standard,
+    //   // init can no longer be ran on first tick.
+    //   if (proc) ids.push(proc.pid.toString())
+    // }
+    // for (let i = 0; i < ids.length; i++) {
+    //   let id = ids[i]
+    //   if (this.runProc(id)) {
+    //     runCnt++
+    //   }
+    // }
+    let i2start = Game.cpu.getUsed()
     interrupts = this.interruptHandler.run('end')
     interrupts.forEach(([hook, key]) => {
+      let start = Game.cpu.getUsed()
       let ret = this.runProc(hook.pid, hook.func || 'interrupt', { hook, key })
+      let end = Game.cpu.getUsed()
+      procUsed += end - start
       if (ret === false || hook.func === 'wake') {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
     this.mm.save(KERNEL_SEGMENT, this.memory)
+    this.mm.save(INTERRUPT_SEGMENT, this.mm.load(INTERRUPT_SEGMENT))
     this.mm.endOfTick()
+    let loopEnd = Game.cpu.getUsed()
+    let loopDur = loopEnd - loopStart
+    let ktime = loopDur - procUsed
+    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, ktime: ${ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[KERNEL_SEGMENT].length}`)
   }
 
   sleep (ticks) {
@@ -252,5 +318,10 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   wait (type, stage, key) {
     this.interruptHandler.add(this.currentId, type, stage, key, 'wake')
     this.processTable[this.currentId].wait = true
+  }
+
+  reboot () {
+    this.mm.save(KERNEL_SEGMENT, {})
+    this.mm.endOfTick()
   }
 }

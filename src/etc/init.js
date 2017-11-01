@@ -7,8 +7,20 @@ const RUN_TEST_CRON = false
 const RUN_CRONS = true
 const RUN_LEGACY = true
 
+const STRESS_TEST_ENABLED = true
+const STRESS_TEST_PROC = 'ags131/SleeperTest'
+const STRESS_TEST_CNT = 500
+const STRESS_TEST_SERVICES = _.times(STRESS_TEST_CNT, (i) => ({
+  id: `stress_${i}`,
+  name: STRESS_TEST_PROC,
+  params: {},
+  restart: true,
+  enabled: STRESS_TEST_ENABLED
+}))
+
 export default {
   services: [
+    ...STRESS_TEST_SERVICES,
     {
       id: 'cron',
       name: 'cron',

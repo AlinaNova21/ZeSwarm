@@ -28,10 +28,13 @@ processRegistry.install(bin)
 processRegistry.install(legacy)
 
 global.kernel = pkernel
+global.stats = stats
 
 export function loop () {
   stats.reset()
   globals.tick()
   pkernel.loop()
   stats.commit()
+
+  pkernel.log.info(`CPU Used: ${Game.cpu.getUsed()} (FINAL)`)
 }
