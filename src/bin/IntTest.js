@@ -1,3 +1,5 @@
+import C from '../include/constants'
+
 export default class IntTest {
   constructor (context) {
     this.context = context
@@ -10,15 +12,15 @@ export default class IntTest {
   }
 
   run () {
-    this.kernel.setInterrupt('tick', 'start')
-    this.kernel.setInterrupt('tick', 'end')
-    this.kernel.setInterrupt('vision', 'start')
-    this.kernel.setInterrupt('segment', 'start')
-    this.kernel.setInterrupt('creep', 'start')
+    this.kernel.setInterrupt(C.INT_TYPE.TICK, C.INT_STAGE.START)
+    this.kernel.setInterrupt(C.INT_TYPE.TICK, C.INT_STAGE.END)
+    this.kernel.setInterrupt(C.INT_TYPE.VISION, C.INT_STAGE.START)
+    this.kernel.setInterrupt(C.INT_TYPE.SEGMENT, C.INT_STAGE.START)
+    this.kernel.setInterrupt(C.INT_TYPE.CREEP, C.INT_STAGE.START)
     if (this.mm.load(10) === false) {
       this.mm.activate(10)
       this.kernel.clearAllInterrupts()
-      this.kernel.wait('segment', 'start', 10)
+      this.kernel.wait(C.INT_TYPE.SEGMENT, C.INT_STAGE.START, 10)
     }
   }
 

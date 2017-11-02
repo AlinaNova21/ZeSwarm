@@ -1,3 +1,24 @@
+export const INT_STAGE = (function (Enum) {
+  Enum[Enum['START'] = 1] = 'START'
+  Enum[Enum['END'] = 2] = 'END'
+  return Enum
+})({})
+
+export const INT_TYPE = (function (Enum) {
+  Enum[Enum['VISION'] = 1] = 'VISION'
+  Enum[Enum['SEGMENT'] = 2] = 'SEGMENT'
+  Enum[Enum['CREEP'] = 3] = 'CREEP'
+  Enum[Enum['TICK'] = 4] = 'TICK'
+  Enum[Enum['SLEEP'] = 5] = 'SLEEP'
+  return Enum
+})({})
+
+export const INT_FUNC = (function (Enum) {
+  Enum[Enum['INTERRUPT'] = 1] = 'INTERRUPT'
+  Enum[Enum['WAKE'] = 2] = 'WAKE'
+  return Enum
+})({})
+
 export default class InterruptHandler {
   constructor (memget) {
     this.trackers = trackers
@@ -13,7 +34,8 @@ export default class InterruptHandler {
     this.memory.hooks = this.memory.hooks || {}
     return this.memory.hooks
   }
-  add (pid, type, stage, key, func = 'interrupt') {
+  add (pid, type, stage, key, func = INT_FUNC.INTERRUPT) {
+    if (typeof func === 'string' && INT_FUNC[func]) func = INT_FUNC[func]
     let hkey = [type, stage, key, pid].join(':')
     this.hooks[hkey] = { type, stage, key, pid, func }
   }
@@ -26,7 +48,7 @@ export default class InterruptHandler {
     let hkeys = Object.keys(this.hooks).filter(h => h.match(pid))
     hkeys.forEach(hkey => delete this.hooks[hkey])
   }
-  run (stage = 'start') {
+  run (stage = INT_STAGE.START) {
     let list = []
     let trackers = {}
     _.each(this.trackers, tracker => {
@@ -54,36 +76,36 @@ export default class InterruptHandler {
 
 export const trackers = [
   {
-    type: 'vision',
-    stages: ['start'],
+    type: INT_TYPE.VISION,
+    stages: [INT_STAGE.START],
     getEvents () {
       return Object.keys(Game.rooms)
     }
   },
   {
-    type: 'segment',
-    stages: ['start'],
+    type: INT_TYPE.SEGMENT,
+    stages: [INT_STAGE.START],
     getEvents () {
       return Object.keys(RawMemory.segments).map(v => parseInt(v))
     }
   },
   {
-    type: 'creep',
-    stages: ['start'],
+    type: INT_TYPE.CREEP,
+    stages: [INT_STAGE.START],
     getEvents () {
       return Object.keys(Game.creeps)
     }
   },
   {
-    type: 'tick',
-    stages: ['start', 'end'],
+    type: INT_TYPE.TICK,
+    stages: [INT_STAGE.START, INT_STAGE.END],
     getEvents () {
       return [Game.time]
     }
   },
   {
-    type: 'sleep',
-    stages: ['start', 'end'],
+    type: INT_TYPE.SLEEP,
+    stages: [INT_STAGE.START, INT_STAGE.END],
     getEvents () {
       return [Game.time]
     },

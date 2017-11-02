@@ -1,4 +1,6 @@
 import Logger from './Logger'
+import C from './constants'
+
 // https://docs.google.com/spreadsheets/d/1qw1KppNsfHE5qolZM5hDeoF5v_lqSmUJUlr6MW0eeoE/edit#gid=0
 const MIN_NORM_CPU_PERC = 0.5   // K3
 const GCL_FACTOR = 0.92     // K4
@@ -74,7 +76,7 @@ export default class Scheduler {
 
     _.each(this.procs, proc => {
       proc._s = proc._s || { q: 0 }
-      if (!proc.id || proc.status !== 'running') {
+      if (!proc.id || proc.status !== C.PROC_RUNNING) {
         return
       }
       let q = proc._s.q || 0
