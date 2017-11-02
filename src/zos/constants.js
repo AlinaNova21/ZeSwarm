@@ -11,6 +11,18 @@ const PROC_RUNNING = 1
 const PROC_KILLED = 2
 const PROC_CRASHED = 3
 
+const PINFO = {
+  ID: 'i',
+  PID: 'p',
+  NAME: 'n',
+  STATUS: 's',
+  STARTED: 'S',
+  WAIT: 'w',
+  ENDED: 'e',
+  PROCESS: 'P',
+  ERROR: 'E'
+}
+
 export default {
   INT_FUNC,
   INT_STAGE,
@@ -19,5 +31,6 @@ export default {
   INTERRUPT_SEGMENT,
   PROC_RUNNING,
   PROC_KILLED,
-  PROC_CRASHED
+  PROC_CRASHED,
+  PINFO
 }

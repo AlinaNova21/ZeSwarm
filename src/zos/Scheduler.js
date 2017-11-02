@@ -76,7 +76,7 @@ export default class Scheduler {
 
     _.each(this.procs, proc => {
       proc._s = proc._s || { q: 0 }
-      if (!proc.id || proc.status !== C.PROC_RUNNING) {
+      if (!proc[C.PINFO.ID] || proc[C.PINFO.STATUS] !== C.PROC_RUNNING) {
         return
       }
       let q = proc._s.q || 0
@@ -124,7 +124,7 @@ export default class Scheduler {
     let queueCPU = QUEUE_CPU_AMT[this.queue]
     this.usedQueueCPU += queueCPU
     let proc = queue.pop()
-    let pid = proc.id
+    let pid = proc[C.PINFO.ID]
     let avail = this.remainingCPU - Math.max(Game.cpu.getUsed(), this.usedQueueCPU)
     if (avail < 0) {
       this.log.error(`CPU Threshhold reached. Used:${Game.cpu.getUsed()} Allowance:${Math.round(this.remainingCPU * 100) / 100} Avail: ${Math.round(avail * 100) / 100} Bucket:${Game.cpu.bucket} QueueCPU: ${queueCPU} UsedQueueCPU: ${Math.round(this.usedQueueCPU * 100) / 100}`)
