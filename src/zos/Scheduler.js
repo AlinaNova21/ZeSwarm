@@ -105,6 +105,7 @@ export default class Scheduler {
     this.log.info(`Setup Time: ${dur.toFixed(3)}   Total Queue Length: ${this.cnt}`)
   }
   addProcess (pid) {
+    this.queues[this.queue].push(pid)
   }
   removeProcess (pid) {
     let p = this.procs[pid]

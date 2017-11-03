@@ -84,6 +84,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.processMemory[pinfo[C.PINFO.ID]] = startContext || {}
     let process = this.createProcess(id)
     this.log.debug(() => `startProcess ${imageName}`)
+    this.scheduler.addProcess(id)
     return { pid: id, process }
   }
 
