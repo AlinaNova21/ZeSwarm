@@ -68,7 +68,7 @@ export default class MemoryManager {
     if (!this.mem.versions[id] || !this.versions[id] || this.mem.versions[id] !== this.versions[id]) {
       this.reloadSegment(id)
     }
-    return this.mem.pendingSaves[id] || this.segments[id] || false
+    return this.mem.pendingSaves[id] || (typeof this.segments[id] === 'undefined' ? false : this.segments[id])
   }
   reloadSegment (id) {
     this.versions[id] = this.mem.versions[id] || 0

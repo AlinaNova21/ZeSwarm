@@ -54,13 +54,13 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   constructor (processRegistry, extensionRegistry) {
     this.mm = new MemoryManager()
     this.scheduler = new Scheduler(this)
-    this.mm.activate(C.KERNEL_SEGMENT)
-    this.mem = this.mm.load(C.KERNEL_SEGMENT)
+    this.mm.activate(C.SEGMENTS.KERNEL)
+    this.mem = this.mm.load(C.SEGMENTS.KERNEL)
     this.memget = () => this.mem
     this.processRegistry = processRegistry
     this.extensionRegistry = extensionRegistry
     extensionRegistry.register('memoryManager', this.mm)
-    this.interruptHandler = new InterruptHandler(() => this.mm.load(C.INTERRUPT_SEGMENT))
+    this.interruptHandler = new InterruptHandler(() => this.mm.load(C.SEGMENTS.INTERRUPT))
     this.processInstanceCache = {}
     this.currentId = 'ROOT'
     this.log = new Logger('[Kernel]')
@@ -74,14 +74,14 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let id = this.UID()
 
     let pinfo = {
-      [C.PINFO.ID]: id,
-      [C.PINFO.PID]: this.currentId,
-      [C.PINFO.NAME]: imageName,
-      [C.PINFO.STATUS]: C.PROC_RUNNING,
-      [C.PINFO.STARTED]: Game.time
+      i: id,
+      p: this.currentId,
+      n: imageName,
+      s: C.PROC_RUNNING,
+      S: Game.time
     }
     this.processTable[id] = pinfo
-    this.processMemory[pinfo[C.PINFO.ID]] = startContext || {}
+    this.processMemory[pinfo.i] = startContext || {}
     let process = this.createProcess(id)
     this.log.debug(() => `startProcess ${imageName}`)
     this.scheduler.addProcess(id)
@@ -91,24 +91,24 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   createProcess (id) {
     this.log.debug(() => `createProcess ${id}`)
     let pinfo = this.processTable[id]
-    if (!pinfo || pinfo[C.PINFO.STATUS] !== C.PROC_RUNNING) throw new Error(`Process ${pinfo[C.PINFO.ID]} ${pinfo[C.PINFO.NAME]} not running`)
+    if (!pinfo || pinfo.s !== C.PROC_RUNNING) throw new Error(`Process ${pinfo.i} ${pinfo.n} not running`)
     let self = this
     let context = {
-      id: pinfo[C.PINFO.ID],
+      id: pinfo.i,
       get parentId () {
         return (self.processTable[id] && self.processTable[id].pid) || ''
       },
-      imageName: pinfo[C.PINFO.NAME],
-      log: new Logger(`[${pinfo[C.PINFO.ID]}) ${pinfo[C.PINFO.NAME]}]`),
+      imageName: pinfo.n,
+      log: new Logger(`[${pinfo.i}) ${pinfo.n}]`),
       get memory () {
-        self.processMemory[pinfo[C.PINFO.ID]] = self.processMemory[pinfo[C.PINFO.ID]] || {}
-        return self.processMemory[pinfo[C.PINFO.ID]]
+        self.processMemory[pinfo.i] = self.processMemory[pinfo.i] || {}
+        return self.processMemory[pinfo.i]
       },
       queryPosisInterface: self.extensionRegistry.getExtension.bind(self.extensionRegistry)
     }
     Object.freeze(context)
-    let process = this.processRegistry.getNewProcess(pinfo[C.PINFO.NAME], context)
-    if (!process) throw new Error(`Could not create process ${pinfo[C.PINFO.ID]} ${pinfo[C.PINFO.NAME]}`)
+    let process = this.processRegistry.getNewProcess(pinfo.n, context)
+    if (!process) throw new Error(`Could not create process ${pinfo.i} ${pinfo.n}`)
     this.processInstanceCache[id] = { context, process }
     return process
   }
@@ -119,15 +119,15 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let pinfo = this.processTable[id]
     if (!pinfo) return
     this.log.warn(() => `killed ${id}`)
-    pinfo[C.PINFO.STATUS] = C.PROC_KILLED
-    pinfo[C.PINFO.ENDED] = Game.time
+    pinfo.s = C.PROC_KILLED
+    pinfo.e = Game.time
     this.interruptHandler.clear(id)
-    if (pinfo[C.PINFO.PID] === '') return
+    if (pinfo.p === '') return
     let ids = Object.keys(this.processTable)
     for (let i = 0; i < ids.length; i++) {
       let id = ids[i]
       let pi = this.processTable[id]
-      if (pi.pid === pinfo[C.PINFO.ID]) {
+      if (pi.pid === pinfo.i) {
         if (pi.status === C.PROC_RUNNING) {
           this.killProcess(id)
         }
@@ -137,7 +137,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
 
   getProcessById (id) {
     return this.processTable[id] &&
-      this.processTable[id][C.PINFO.STATUS] === C.PROC_RUNNING &&
+      this.processTable[id].s === C.PROC_RUNNING &&
       ((this.processInstanceCache[id] &&
         this.processInstanceCache[id].process) ||
         this.createProcess(id))
@@ -164,19 +164,19 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   runProc (id, func = 'run', ...params) {
     let pinfo = this.processTable[id]
     if (!pinfo) return false
-    if (pinfo[C.PINFO.STATUS] !== C.PROC_RUNNING && pinfo[C.PINFO.ENDED] < Game.time - 100) {
+    if (pinfo.s !== C.PROC_RUNNING && pinfo.e < Game.time - 100) {
       delete this.processMemory[this.processTable[id].ns]
       delete this.processTable[id]
     }
-    if (pinfo[C.PINFO.STATUS] !== C.PROC_RUNNING) return false
+    if (pinfo.s !== C.PROC_RUNNING) return false
     if (func === C.INT_FUNC.WAKE) {
-      delete pinfo[C.PINFO.WAIT]
-    } else if (pinfo[C.PINFO.WAIT]) {
+      delete pinfo.w
+    } else if (pinfo.w) {
       return false
     }
     try {
       let proc = this.getProcessById(id)
-      if (!proc) throw new Error(`Could not get process ${id} ${pinfo[C.PINFO.NAME]}`)
+      if (!proc) throw new Error(`Could not get process ${id} ${pinfo.n}`)
       if (proc[func]) {
         this.currentId = id
         proc[func](...params)
@@ -186,8 +186,8 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     } catch (e) {
       this.killProcess(id)
       this.currentId = 'ROOT'
-      pinfo[C.PINFO.ERROR] = e.stack || e.toString()
-      this.log.error(() => `[${id}] ${pinfo[C.PINFO.NAME]} crashed\n${e.stack}`)
+      pinfo.Eq = e.stack || e.toString()
+      this.log.error(() => `[${id}] ${pinfo.n} crashed\n${e.stack}`)
       return false
     }
   }
@@ -195,13 +195,21 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   loop () {
     let loopStart = Game.cpu.getUsed()
     let procUsed = 0
-    this.mem = this.mm.load(C.KERNEL_SEGMENT)
-    this.imem = this.mm.load(C.INTERRUPT_SEGMENT)
+    this.mem = this.mm.load(C.SEGMENTS.KERNEL)
+    this.imem = this.mm.load(C.SEGMENTS.INTERRUPT)
     if (this.mem === false || this.imem === false) {
-      this.mm.activate(C.KERNEL_SEGMENT)
-      this.mm.activate(C.INTERRUPT_SEGMENT)
+      this.mm.activate(C.SEGMENTS.KERNEL)
+      this.mm.activate(C.SEGMENTS.INTERRUPT)
       this.mm.endOfTick()
       return
+    }
+    if (!this.mem.type === 'kernel') {
+      this.mem = { type: 'kernel' }
+      this.mm.save(C.SEGMENTS.KERNEL, this.mem)
+    }
+    if (!this.imem.type === 'interrupt') {
+      this.imem = { type: 'interrupt' }
+      this.mm.save(C.SEGMENTS.INTERRUPT, this.imem)
     }
     this.memory.processTable = this.memory.processTable || {}
     let interrupts = this.interruptHandler.run(C.INT_STAGE.START)
@@ -228,7 +236,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       this.log.debug('pid', pid)
       if (pid === false) { // Hard stop
         _.each(stats, stat => {
-          this.log.debug(`-- ${stat.id} ${stat.cpu.toFixed(3)} ${stat.end.toFixed(3)} ${stat.pinfo[C.PINFO.NAME]}`)
+          this.log.debug(`-- ${stat.id} ${stat.cpu.toFixed(3)} ${stat.end.toFixed(3)} ${stat.pinfo.n}`)
         })
       }
       if (!pid) break
@@ -246,30 +254,30 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         this.log.info(`Stats collection: PID ${pid} was not found`)
         return
       }
-      pinfo[C.PINFO.CPU] = dur
+      pinfo.c = dur
       procUsed += dur
       te = Game.cpu.getUsed()
-      this.log.debug(() => `${pinfo[C.PINFO.ID]} scheduler setCPU ${(te - ts).toFixed(3)}`)
+      this.log.debug(() => `${pinfo.i} scheduler setCPU ${(te - ts).toFixed(3)}`)
       ts = Game.cpu.getUsed()
       global.stats.addStat('process', {
-        name: pinfo[C.PINFO.NAME]
+        name: pinfo.n
       }, {
         cpu: dur,
-        id: pinfo[C.PINFO.ID],
-        parent: pinfo[C.PINFO.PID]
+        id: pinfo.i,
+        parent: pinfo.p
       })
       te = Game.cpu.getUsed()
-      this.log.debug(() => `${pinfo[C.PINFO.ID]} influx addStat ${(te - ts).toFixed(3)}`)
+      this.log.debug(() => `${pinfo.i} influx addStat ${(te - ts).toFixed(3)}`)
       ts = Game.cpu.getUsed()
       stats.push({
         pinfo,
         cpu: dur,
-        id: pinfo[C.PINFO.ID],
+        id: pinfo.i,
         end,
-        parent: pinfo[C.PINFO.PID]
+        parent: pinfo.p
       })
       te = Game.cpu.getUsed()
-      this.log.debug(() => `${pinfo[C.PINFO.ID]} stats push ${(te - ts).toFixed(3)}`)
+      this.log.debug(() => `${pinfo.i} stats push ${(te - ts).toFixed(3)}`)
     }
     this.scheduler.cleanup()
     interrupts = this.interruptHandler.run(C.INT_STAGE.END)
@@ -283,13 +291,13 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
-    this.mm.save(C.KERNEL_SEGMENT, this.memory)
-    this.mm.save(C.INTERRUPT_SEGMENT, this.mm.load(C.INTERRUPT_SEGMENT))
+    this.mm.save(C.SEGMENTS.KERNEL, this.memory)
+    this.mm.save(C.SEGMENTS.INTERRUPT, this.mm.load(C.SEGMENTS.INTERRUPT))
     this.mm.endOfTick()
     let loopEnd = Game.cpu.getUsed()
     let loopDur = loopEnd - loopStart
     let ktime = loopDur - procUsed
-    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, ktime: ${ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[C.KERNEL_SEGMENT].length}`)
+    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, ktime: ${ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[C.SEGMENTS.KERNEL].length}`)
   }
 
   sleep (ticks) {
@@ -302,7 +310,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   reboot () {
-    this.mm.save(C.KERNEL_SEGMENT, {})
+    this.mm.save(C.SEGMENTS.KERNEL, {})
     this.mm.endOfTick()
   }
 }

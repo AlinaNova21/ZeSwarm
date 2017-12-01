@@ -3,6 +3,7 @@ const RUN_TEST_INT = false
 const RUN_TEST_SLEEPER = false
 const RUN_TEST_BASE = false
 const RUN_TEST_CRON = false
+const RUN_TEST_SPAWN = true
 
 const RUN_CRONS = true
 const RUN_LEGACY = true
@@ -55,6 +56,13 @@ export default {
       params: {},
       restart: true,
       enabled: RUN_TEST_ALL || RUN_TEST_CRON
+    },
+    {
+      id: 'spawnTest',
+      name: 'ags131/SpawnTest',
+      params: {},
+      restart: true,
+      enabled: RUN_TEST_ALL || RUN_TEST_SPAWN
     },
     {
       id: 'baseTest',

@@ -4,7 +4,7 @@ export default {
     return Memory.__globals
   },
   get meta () {
-    return this.memory.meta[this.id]
+    return (this.memory.meta && this.memory.meta[this.id]) || {}
   },
   init () {
     this.memory.nextID = this.memory.nextID || 1

@@ -3,18 +3,19 @@ import etc from '../etc'
 /* USAGE:
 Configure CONFIG below
 At VERY top of main.js:
-require('influxdb')
+> const stats = require('stats')
 
 At top of loop():
-influxdb.reset()
+> stats.reset()
 
 At bottom of loop():
-influxdb.commit()
+> stats.commit()
 
 to add a stat, just call
-influxdb.addSimpleStat(key,value)
+> stats.addSimpleStat(key,value)
 or more advanced
-influxdb.addStat('scheduler',{ queue: 1 },{ count: 5, max: 5, min: 2, amount: 3 })
+> stats.addStat('scheduler',{ queue: 1 },{ count: 5, max: 5, min: 2, amount: 3 })
+
 Tags (second argument) should not contain data that varies a lot, for example, don't
 put stuff like object ids in tags doing so ends up causing massive performance hits
 as the tag indexes get too large too quickly. Good data for tags is more static stuff
@@ -23,7 +24,7 @@ such as roomName, sectorName, etc, low overall spread.
 */
 const CONFIG = {
   driver: 'Graphite',
-  types: ['memory'], // segment, console (Only console supported by agent at this time)
+  types: ['memory'], // memory, segment, console
   key: '__stats',
   ticksToKeep: 20,
   segmentBase: 30,

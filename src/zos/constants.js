@@ -4,8 +4,19 @@ import {
   INT_FUNC
 } from './InterruptHandler'
 
-const KERNEL_SEGMENT = 1
-const INTERRUPT_SEGMENT = 2
+const segCnt = Symbol('segCnt')
+const SEGMENTS = {
+  [segCnt]: 0
+}
+
+function addSegment (segment) {
+  console.log(`AddSegment ${segment} ${SEGMENTS[segCnt]}`)
+  SEGMENTS[segment] = SEGMENTS[SEGMENTS[segCnt]++]
+}
+
+addSegment('CONFIG')
+addSegment('KERNEL')
+addSegment('INTERRUPT')
 
 const PROC_RUNNING = 1
 const PROC_KILLED = 2
@@ -27,10 +38,10 @@ export default {
   INT_FUNC,
   INT_STAGE,
   INT_TYPE,
-  KERNEL_SEGMENT,
-  INTERRUPT_SEGMENT,
   PROC_RUNNING,
   PROC_KILLED,
   PROC_CRASHED,
-  PINFO
+  PINFO,
+  SEGMENTS,
+  addSegment
 }

@@ -23,7 +23,8 @@
   },
   "homepage": "https://github.com/ags131/screeps#readme",
   "dependencies": {
-    "lodash-es": "^4.17.4"
+    "lodash-es": "^4.17.4",
+    "rollup-plugin-root-import": "^0.2.2"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
@@ -40,6 +41,7 @@
       "RawMemory",
       "PathFinder",
       "RoomObject",
+      "RoomVisual",
       "_"
     ]
   }

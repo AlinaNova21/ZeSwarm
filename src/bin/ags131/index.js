@@ -1,9 +1,11 @@
 import { bundle as SleeperTest } from './SleeperTest'
 import { bundle as CronTest } from './CronTest'
+import { bundle as SpawnTest } from './SpawnTest'
 
 export const bundle = {
-  install (registry) {
-    SleeperTest.install(registry)
-    CronTest.install(registry)
+  install (processRegistry, extensionRegistry) {
+    SleeperTest.install(processRegistry, extensionRegistry)
+    CronTest.install(processRegistry, extensionRegistry)
+    SpawnTest.install(processRegistry, extensionRegistry)
   }
 }

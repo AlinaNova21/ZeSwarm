@@ -62,7 +62,7 @@ export default class Logger {
     let vis = new RoomVisual()
     try {
       vis.text(message, 0, y, { align: 'left', color })
-    } catch(e) {}
+    } catch (e) {}
     y += 0.8
   }
   debug (message) {

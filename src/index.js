@@ -9,6 +9,7 @@ import { bundle as bin } from './bin/index'
 import { bundle as legacy } from './legacy/index'
 
 import etc from './etc'
+import C from './include/constants'
 
 globals.statsDriver = stats
 globals.init()
@@ -22,13 +23,15 @@ let pkernel = new BaseKernel(processRegistry, extensionRegistry)
 
 extensionRegistry.register('baseKernel', pkernel)
 extensionRegistry.register('sleep', pkernel)
+extensionRegistry.register('interrupt', pkernel)
 extensionRegistry.register('etc', etc)
 
-processRegistry.install(bin)
-processRegistry.install(legacy)
+bin.install(processRegistry, extensionRegistry)
+legacy.install(processRegistry, extensionRegistry)
 
 global.kernel = pkernel
 global.stats = stats
+global.C = C
 
 export function loop () {
   stats.reset()
