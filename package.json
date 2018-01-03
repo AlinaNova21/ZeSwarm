@@ -1,8 +1,8 @@
 {
-  "name": "screeps",
-  "version": "1.0.0",
+  "name": "screepsbot-zeswarm",
+  "version": "1.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "directories": {
     "test": "test"
   },
@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/ags131/screeps#readme",
   "dependencies": {},
+  "screeps_bot": true,
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-screeps": "^1.0.3"
