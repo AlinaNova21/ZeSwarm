@@ -5,6 +5,7 @@ import drainer from './drainer'
 import harv from './harv'
 import stomper from './stomper'
 import up from './up'
+import cart from './cart'
 
 const roles = {
   scout: new scout(),
@@ -14,6 +15,7 @@ const roles = {
   harv: new harv(),
   stomper: new stomper(),
   up: new up(),
+  cart: new cart(),
 }
 export default class Creep {
   run (creep) {

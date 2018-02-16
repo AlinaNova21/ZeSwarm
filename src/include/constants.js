@@ -11,11 +11,11 @@ C.EPosisSpawnStatus = {
 }
 
 // Import global constants
-console.log(JSON.stringify(C.SEGMENTS))
+// console.log(JSON.stringify(C.SEGMENTS))
 
 Object.keys(global)
   .filter(k => k === k.toUpperCase())
   .forEach(k => {
-    console.log(k)
+    // console.log(k)
     C[k] = global[k]
   })

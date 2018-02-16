@@ -35,7 +35,8 @@ class HostileTracker {
       if (room.username === C.USER) color = 'green'
       if (room.hostile) color = 'red'
       if (room.safemode && room.hostile) color = 'orange'
-      let [x, y] = [room.x - minx, room.y - miny]
+      // let [x, y] = [room.x - minx, room.y - miny]
+      let [x, y] = [50 - maxx + room.x - 2, room.y - miny + 1]
       vis.rect(x - 0.5, y - 0.5, 1, 1, {
         fill: color
       })
@@ -103,6 +104,7 @@ class HostileTracker {
       name,
       level,
       username,
+      spawns: (byType[C.STRUCTURE_SPAWN] || []).length,
       towers: (byType[C.STRUCTURE_TOWER] || []).length,
       walls: (byType[C.STRUCTURE_WALL] || []).length,
       ramparts: (byType[C.STRUCTURE_RAMPART] || []).length,

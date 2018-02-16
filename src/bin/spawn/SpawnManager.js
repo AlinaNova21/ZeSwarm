@@ -1,4 +1,8 @@
-import { filter, map, maxBy, sortBy, reduce } from 'lodash-es'
+import filter from 'lodash-es/filter'
+import map from 'lodash-es/map'
+import maxBy from 'lodash-es/maxBy'
+import sortBy from 'lodash-es/sortBy'
+import reduce from 'lodash-es/reduce'
 import C from '/include/constants'
 
 export default class SpawnManager {

@@ -84,7 +84,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.processMemory[pinfo.i] = startContext || {}
     let process = this.createProcess(id)
     this.log.debug(() => `startProcess ${imageName}`)
-    this.scheduler.addProcess(id)
+    this.scheduler.addProcess(pinfo)
     return { pid: id, process }
   }
 
@@ -198,6 +198,8 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.mem = this.mm.load(C.SEGMENTS.KERNEL)
     this.imem = this.mm.load(C.SEGMENTS.INTERRUPT)
     if (this.mem === false || this.imem === false) {
+      this.log.warn(`Kernel Segments not loaded. Activating. Break early. ${C.SEGMENTS.KERNEL} ${C.SEGMENTS.INTERRUPT}`)
+      // console.log(JSON.stringify(C))
       this.mm.activate(C.SEGMENTS.KERNEL)
       this.mm.activate(C.SEGMENTS.INTERRUPT)
       this.mm.endOfTick()

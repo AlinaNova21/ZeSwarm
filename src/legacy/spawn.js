@@ -49,7 +49,7 @@ class Spawn {
       if (h.safemode < 100) {
         if (h.towers) {
           // want.suicide = 12
-        } else {
+        } else if(h.spawns) {
           want.atk = 5
           want.drainer = 2
           console.log(JSON.stringify(h))

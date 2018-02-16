@@ -10,14 +10,15 @@ const SEGMENTS = {
 }
 
 function addSegment (segment) {
+  // if (SEGMENTS[segment]) return
   console.log(`AddSegment ${segment} ${SEGMENTS[segCnt]}`)
-  SEGMENTS[segment] = SEGMENTS[SEGMENTS[segCnt]++]
+  SEGMENTS[segment] = SEGMENTS[segCnt]++
 }
 
 addSegment('CONFIG')
 addSegment('KERNEL')
 addSegment('INTERRUPT')
-
+console.log(JSON.stringify(SEGMENTS))
 const PROC_RUNNING = 1
 const PROC_KILLED = 2
 const PROC_CRASHED = 3

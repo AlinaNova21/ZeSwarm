@@ -1,4 +1,4 @@
-import { each } from 'lodash-es'
+import each from 'lodash-es/each'
 import C from '/include/constants'
 
 class SpawnTest {

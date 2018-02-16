@@ -3,12 +3,12 @@ const RUN_TEST_INT = false
 const RUN_TEST_SLEEPER = false
 const RUN_TEST_BASE = false
 const RUN_TEST_CRON = false
-const RUN_TEST_SPAWN = true
+const RUN_TEST_SPAWN = false
 
 const RUN_CRONS = true
 const RUN_LEGACY = true
 
-const STRESS_TEST_ENABLED = true
+const STRESS_TEST_ENABLED = false
 const STRESS_TEST_PROC = 'ags131/SleeperTest'
 const STRESS_TEST_CNT = 0
 const STRESS_TEST_SERVICES = _.times(STRESS_TEST_CNT, (i) => ({
@@ -28,6 +28,13 @@ export default {
       params: {},
       restart: true,
       enabled: RUN_CRONS
+    },
+    {
+      id: 'swarm',
+      name: 'swarm',
+      params: {},
+      restart: true,
+      enabled: true
     },
     {
       id: 'legacy',

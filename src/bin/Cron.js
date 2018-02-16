@@ -1,4 +1,4 @@
-import { each } from 'lodash-es'
+import each from 'lodash-es/each'
 import BaseProcess from './BaseProcess'
 
 export default class Cron extends BaseProcess {

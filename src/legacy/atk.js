@@ -27,6 +27,8 @@ class Atk {
     let structures = _.groupBy(room.find(C.FIND_STRUCTURES), 'structureType')
     if (structures[C.STRUCTURE_SPAWN]) {
       tgt = creep.pos.findClosestByRange(structures[C.STRUCTURE_SPAWN])
+    } else {
+      tgt = creep.pos.findClosestByRange(room.find(C.FIND_STRUCTURES, { filter(s) { return ![STRUCTURE_WALL,STRUCTURE_RAMPART].includes(s.structureType) }}))
     }
     let hostiles = room.find(C.FIND_HOSTILE_CREEPS, { filter (c) { return c.owner.username !== 'Invader' && c.owner.username !== 'Source keeper' } })
     if (hostiles.length) {

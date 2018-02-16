@@ -12,6 +12,9 @@ class Controller {
     if (level > 1) {
       want[C.STRUCTURE_CONTAINER] = Math.min(level, C.CONTROLLER_STRUCTURES[C.STRUCTURE_CONTAINER][level])
     }
+    if (level >= 4) {
+      want[C.STRUCTURE_CONTAINER] = 0
+    }
     // if (level < 3) {
     //   want[C.STRUCTURE_EXTENSION] = 0
     //   want[C.STRUCTURE_CONTAINER] = 0
@@ -26,6 +29,7 @@ class Controller {
         ...room.find(C.FIND_EXIT),
         ...room.find(C.FIND_SOURCES)
       ].map(this.getRange)
+      console.log(`Want ${amount} of ${type}`)
       let pos = this.findPos(controller.pos, positions, offGrid.includes(type))
       if (pos) {
         room.createConstructionSite(pos, type)
@@ -63,6 +67,7 @@ class Controller {
             if (!v) cm.set(x, y, 255)
           }
         }
+        avoid.forEach(({ pos: { x, y } }) => cm.set(x, y, 255))
         return cm
       }
     })

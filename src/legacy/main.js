@@ -65,18 +65,18 @@ module.exports.loop = function(){
     // vis.text(`${ccnt} alive (${workers.length}W,${ccnt-workers.length}S)`,25,8,{ size: 1 })
     Memory.lastTick = now
     Memory.wn = Memory.wn || 1
-    Memory.ledger = Memory.ledger || []
+    // Memory.ledger = Memory.ledger || []
     // let ea = Game.spawns.Spawn1.room.energyAvailable
     // let sp = Game.spawns.Spawn1.pos
     // vis.text(ea,sp.x,sp.y+2.5,{size: 2})
-    Memory.ledger.map(l=>l.filter(a=>a !== '').join(', ')).forEach((l,i,a)=>{
-        let size = 1.5
-        let sc = size
-        vis.text(l,0,sc+(i*sc),{ align: 'left', size })
-        // vis.text(l,49,sc+(i*sc),{ align: 'right', size })
-        // vis.text(l,0,50-(a.length*sc)+(i*sc),{ align: 'left', size })
-        // vis.text(l,49,50-(a.length*sc)+(i*sc),{ align: 'right', size })
-    })
+    // Memory.ledger.map(l=>l.filter(a=>a !== '').join(', ')).forEach((l,i,a)=>{
+    //     let size = 1.5
+    //     let sc = size
+    //     vis.text(l,0,sc+(i*sc),{ align: 'left', size })
+    //     // vis.text(l,49,sc+(i*sc),{ align: 'right', size })
+    //     // vis.text(l,0,50-(a.length*sc)+(i*sc),{ align: 'left', size })
+    //     // vis.text(l,49,50-(a.length*sc)+(i*sc),{ align: 'right', size })
+    // })
     _.each(Memory.creeps,(c,name)=>{
         if(!Game.creeps[name]) delete Memory.creeps[name]
     })

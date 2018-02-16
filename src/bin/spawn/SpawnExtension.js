@@ -1,5 +1,5 @@
 // import { posisInterface } from "../common"
-import { times } from 'lodash-es'
+import times from 'lodash-es/times'
 import C from '/include/constants'
 
 // interface SpawnManagerMemory {

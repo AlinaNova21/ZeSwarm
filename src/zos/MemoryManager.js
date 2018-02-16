@@ -1,8 +1,13 @@
-import { minBy, map } from 'lodash-es'
+import minBy from 'lodash-es/minBy'
+import map from 'lodash-es/map'
 
 export default class MemoryManager {
   get mem () {
     return this.memget()
+  }
+  get lru () {
+    this.mem.lru = this.mem.lru || {}
+    return this.mem.lru
   }
   constructor (memget) {
     this.memget = memget || (() => {
@@ -33,6 +38,7 @@ export default class MemoryManager {
     }
   }
   activate (id) {
+    if (!id && id !== 0) return
     if (this.mem.active.indexOf(id) === -1) {
       this.mem.active.push(id)
     }
@@ -44,16 +50,19 @@ export default class MemoryManager {
   }
   endOfTick () {
     try {
-      while (this.mem.active > 10) {
-        let min = minBy(map(this.mem.lru, (time, id) => ({ id, time })), 'time')
-        let ind = this.mem.active.indexOf(min.id)
-        delete this.mem.lru[min.id]
+      while (this.mem.active.length > 10) {
+        console.log(`MM: Active too long, pruning ${this.mem.active}`)
+        let min = minBy(map(this.lru, (time, id) => ({ id, time })), 'time')
+        let ind = min ? this.mem.active.indexOf(min.id) : -1
         if (ind !== -1) {
+          delete this.lru[min.id]
           this.mem.active.splice(ind, 1)
         }
       }
+      // console.log()
       RawMemory.setActiveSegments(this.mem.active)
     } catch (e) {
+      console.log(`ERROR: Failed to set active. Reseting Active List ${e.stack}`)
       this.mem.active = [0]
     }
     Object.keys(RawMemory.segments).filter(k => k < 90).forEach(k => delete RawMemory.segments[k])
@@ -102,13 +111,13 @@ export default class MemoryManager {
   }
   load (id) {
     if (!~this.fixed.indexOf(id)) {
-      this.mem.lru[id] = Game.time
+      this.lru[id] = Game.time
     }
     return this.getSegment(id)
   }
   save (id, v) {
     if (!~this.fixed.indexOf(id)) {
-      this.mem.lru[id] = Game.time
+      this.lru[id] = Game.time
     }
     this.markForSaving(id, v)
   }
