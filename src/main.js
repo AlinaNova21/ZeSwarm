@@ -1,3 +1,4 @@
+const C = require('constants')
 if(!Memory.lastTick)
     Memory.lastTick = Date.now()
 var Traveler = require('Traveler');    
@@ -24,6 +25,9 @@ Scouting|USER
 `.split("\n").filter(s=>s)
 let target = {}
 let user = Game.spawns.Spawn1.owner.username
+C.USER = user
+var Scout = require('scout')
+var scout = new Scout()
 module.exports.loop = function(){
     target = { name: '', room: Game.flags.target && Game.flags.target.pos.roomName } 
     let now = Date.now()
@@ -146,7 +150,7 @@ function runScout(c){
         return c.travelTo(new RoomPosition(25,25,target.room),{ preferHighway: true })
     }
     let ct = c.room.controller
-    if(ct) {
+    if(ct && false) {
         if(!ct.sign || ct.sign.username != user || !ct.sign.text || (Date.now() - ct.sign.datetime) > 1*60*60*1000) {
             if(c.pos.isNearTo(ct)){
                 c.signController(ct,`Territory of ${user}. Intruders will be eaten`)
@@ -164,16 +168,16 @@ function runScout(c){
         lastdir = Math.ceil(Math.random()*8)
     }
     let dirs = []
-    for(let i=0;i<10;i++)
-        dirs.push(lastdir)
-    if(Math.random()<0.2){
-        for(let i=0;i<4;i++)
-            dirs.push(lastdir+1,lastdir-1)
-        if(Math.random()<0.10){
-           dirs.push(lastdir+2,lastdir-2)
-        }
-    }
-    let dir = dirs[Math.floor(Math.random()*dirs.length)]
+    // for(let i=0;i<10;i++)
+    //     dirs.push(lastdir)
+    // if(Math.random()<0.2){
+    //     for(let i=0;i<4;i++)
+    //         dirs.push(lastdir+1,lastdir-1)
+    //     if(Math.random()<0.10){
+    //        dirs.push(lastdir+2,lastdir-2)
+    //     }
+    // }
+    let dir = 0 //dirs[Math.floor(Math.random()*dirs.length)]
     let pd = dir
     dir = ((dir+8-1) % 8) + 1
     c.memory.ld = dir
@@ -211,7 +215,7 @@ function runScout(c){
         }
     }
     {
-        let target = c.pos.findClosestByRange(FIND_STRUCTURES,{ filter(s){ return !s.my && s.structureType != 'controller' } })
+        let target = c.pos.findClosestByRange(FIND_STRUCTURES,{ filter(s){ return !s.my && s.structureType != 'controller'  && s.structureType != 'wall' && s.structureType != 'rampart' } })
         if(target && target.pos.getRangeTo(c) <= 30 && c.room.controller && !c.room.controller.safeMode){
             let towers = c.room.find(FIND_STRUCTURES,{ filter(s){ return s.structureType == 'tower'}}) || []
             if(!towers.length){
@@ -238,11 +242,12 @@ function runScout(c){
         }
     }
     let csites = c.room.find(FIND_CONSTRUCTION_SITES)
-    if(csites.length && Math.random()<0.10){
+    if(csites.length){
         c.moveTo(csites[0],{ visualizePathStyle: { opacity: 1 }})
         if(c.memory._move) c.memory.ld = parseInt(c.memory._move.path.slice(4,1))
     }else{
-        c.move(dir)
+        // c.move(dir)
+        scout.run(c)
     }
     if(dir <= 0) console.log(pd,dir,dirs)
     if(c.memory.phrase && c.memory.phrase.length){
@@ -251,7 +256,7 @@ function runScout(c){
     }
     if(Math.random() > 0.9) {
         let txt = sayings[Math.floor(Math.random()*sayings.length)]
-        if(c.room.controller && c.room.controller.owner && c.room.controller.owner.username && c.room.controller.owner.username != 'ags131'){
+        if(c.room.controller && c.room.controller.owner && c.room.controller.owner.username && c.room.controller.owner.username != user){
             let user = c.room.controller.owner.username
             txt = psayings[Math.floor(Math.random()*psayings.length)]
             if(Math.random() > 0.7){
