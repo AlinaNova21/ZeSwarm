@@ -10,6 +10,7 @@ class HostileTracker {
   }
   tick () {
     _.each(Game.rooms, room => this.analyze(room))
+    return
     let { rooms } = this.mem
     let vis = new RoomVisual()
     let minx = 1000

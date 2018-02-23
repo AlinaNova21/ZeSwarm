@@ -19,9 +19,10 @@ class Controller {
     //   want[C.STRUCTURE_EXTENSION] = 0
     //   want[C.STRUCTURE_CONTAINER] = 0
     // }
+    let [ spawn ] = room.structures[STRUCTURE_SPAWN] || []
     for (let type in want) {
       let amount = want[type] - ((have[type] || 0) + (sites[type] || []).length)
-      // console.log(type,want[type],have[type] || 0, (sites[type] || []).length)
+      console.log(type,want[type],have[type] || 0, (sites[type] || []).length)
       if (amount <= 0) continue
       let positions = [
         ...allSites,
@@ -30,7 +31,7 @@ class Controller {
         ...room.find(C.FIND_SOURCES)
       ].map(this.getRange)
       console.log(`Want ${amount} of ${type}`)
-      let pos = this.findPos(controller.pos, positions, offGrid.includes(type))
+      let pos = this.findPos(spawn.pos, positions, offGrid.includes(type))
       if (pos) {
         room.createConstructionSite(pos, type)
         return
@@ -48,6 +49,9 @@ class Controller {
       case 'controller':
       case 'source':
         range = 3
+        break
+      case 'spawn':
+        // range = 3
         break
     }
     return { pos, range }
@@ -67,11 +71,13 @@ class Controller {
             if (!v) cm.set(x, y, 255)
           }
         }
-        avoid.forEach(({ pos: { x, y } }) => cm.set(x, y, 255))
+        avoid.forEach(({ pos: { x, y } }) => cm.set(x, y, 254))
         return cm
       }
     })
     if (result && result.path.length) {
+      let vis = new RoomVisual()
+      vis.poly(result.path.map(({x,y})=>[x,y]), { stroke: 'red' })
       return result.path.slice(-1)[0]
     }
   }

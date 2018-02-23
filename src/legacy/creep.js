@@ -19,7 +19,14 @@ const roles = {
 }
 export default class Creep {
   run (creep) {
-    let role = creep.memory.role || 'scout'
+    let role = creep.memory.role || (function() { 
+      let r = 'scout'
+      let parts = _.groupBy(creep.body, 'type')
+      if(parts[WORK]) {
+        r = 'build'
+      }
+      return r
+    })()
     let rolec = this.tryLoadRole(role)
     if (rolec) {
       let start = Game.cpu.getUsed()
