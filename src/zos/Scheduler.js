@@ -105,6 +105,7 @@ export default class Scheduler {
     this.log.info(`Setup Time: ${dur.toFixed(3)}   Total Queue Length: ${this.cnt}`)
   }
   addProcess (proc) {
+    proc._s = proc._s || { q: 0 }
     this.queues[this.queue].push(proc)
   }
   removeProcess (pid) {
@@ -160,11 +161,11 @@ export default class Scheduler {
       let pid = this.done.pop()
       // let p = this.procs[pid]
       let p = pid
-      if(!p) {
+      if (!p) {
         this.log.warn(`PID ${pid} not found`)
         continue
-      } 
-      let {q, c} = p._s = p._s || { q:0, c:0}
+      }
+      let {q, c} = p._s = p._s || { q: 0, c: 0}
       if (q > 0 && c < (QUEUE_CPU_AMT[q - 1] * 0.75)) {
         if (Math.random() < 0.50) continue
         p._s.q--
