@@ -51,7 +51,7 @@ export default class Logger {
       }
       let style = styles[level] || styles.default
       this._log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix} ${message}</log>`)
-      this.vlog(level, `[${level}] ${this.prefix} ${message}`)
+      // this.vlog(level, `[${level}] ${this.prefix} ${message}`)
     }
   }
   vlog (level, message) {
