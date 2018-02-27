@@ -52,6 +52,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   constructor (processRegistry, extensionRegistry) {
+    this.rand = Game.time % 10
     this.mm = new MemoryManager()
     this.scheduler = new Scheduler(this)
     this.mm.activate(C.SEGMENTS.KERNEL)
@@ -81,7 +82,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       S: Game.time
     }
     this.processTable[id] = pinfo
-    this.processMemory[pinfo.i] = startContext || {}
+    this.processMemory[pinfo.i] = startContext || undefined
     let process = this.createProcess(id)
     this.log.debug(() => `startProcess ${imageName}`)
     this.scheduler.addProcess(pinfo)
@@ -165,7 +166,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let pinfo = this.processTable[id]
     if (!pinfo) return false
     if (pinfo.s !== C.PROC_RUNNING && pinfo.e < Game.time - 100) {
-      delete this.processMemory[this.processTable[id].ns]
+      delete this.processMemory[id]
       delete this.processTable[id]
     }
     if (pinfo.s !== C.PROC_RUNNING) return false
@@ -197,6 +198,16 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let procUsed = 0
     this.mem = this.mm.load(C.SEGMENTS.KERNEL)
     this.imem = this.mm.load(C.SEGMENTS.INTERRUPT)
+    if (Game.time % 10 === this.rand) {
+      let ids = Object.keys(this.processMemory)
+      this.log.info(`Cleaning Process Memory... (${ids.length} items)`)
+      for (let i = 0; i < ids.length; i++) {
+        let id = ids[i]
+        if (!this.processTable[id] || Object.keys(this.processMemory[id]).length === 0) {
+          delete this.processMemory[id]
+        }
+      }
+    }
     if (this.mem === false || this.imem === false) {
       this.log.warn(`Kernel Segments not loaded. Activating. Break early. ${C.SEGMENTS.KERNEL} ${C.SEGMENTS.INTERRUPT}`)
       // console.log(JSON.stringify(C))

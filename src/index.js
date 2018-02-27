@@ -33,10 +33,15 @@ global.kernel = pkernel
 global.stats = stats
 global.C = C
 
+let off = Math.floor(Math.random() * 10)
+
 export function loop () {
   stats.reset()
   globals.tick()
   pkernel.loop()
+  if (Game.time % 10 === off) {
+    globals.cleanup()
+  }
   stats.commit()
 
   pkernel.log.info(`CPU Used: ${Game.cpu.getUsed()} (FINAL)`)
