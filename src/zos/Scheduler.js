@@ -1,34 +1,44 @@
 import Logger from './Logger'
 import C from './constants'
 
-// https://docs.google.com/spreadsheets/d/1qw1KppNsfHE5qolZM5hDeoF5v_lqSmUJUlr6MW0eeoE/edit#gid=0
-const MIN_NORM_CPU_PERC = 0.5   // K3
-const GCL_FACTOR = 0.92     // K4
-const MAX_DROP = 10     // K5
-const MAX_MOVE_RANGE = 50   // K6
-// const BUCKET_LOW = 4000     // K7
-const BUCKET_HIGH = 9500    // K8
-const GCL_CPU_LEVEL = Game.cpu.limit  // K9
-const MAX_NORM_CPU = Math.max(GCL_CPU_LEVEL * GCL_FACTOR, GCL_CPU_LEVEL - MAX_DROP)
-const MIN_NORM_CPU = Math.max(Math.floor(MAX_NORM_CPU * MIN_NORM_CPU_PERC), MAX_NORM_CPU - MAX_MOVE_RANGE)
-const MOVE_RANGE = MAX_NORM_CPU - MIN_NORM_CPU
-
-const OVERHEAD_ADJ = 10
-
 const BURST_CPU_LIMIT = 300 // new-global burst limit
 const BURST_BUCKET_LIMIT = 2000 // Only new-global burst above this
 
-const bucketPerc = () => Math.max(0, Game.cpu.bucket / BUCKET_HIGH)
-const scaledLog10Perc = () => Math.min(1, Math.max(0, Math.log10(((0.9 * bucketPerc()) * 100) + 10) - 1))
-const calcCPU2 = () => Game.cpu.bucket < 500 ? 0 : Math.floor(MIN_NORM_CPU + (scaledLog10Perc() * MOVE_RANGE)) - OVERHEAD_ADJ
+const calcCPULinear = () => Game.cpu.bucket < 500 ? 0 : Game.cpu.limit * ((((Game.cpu.bucket - 1000) * (1.1 - 0.4)) / 9000) + 0.4)
+const calcCPUPID = (mem) => {
+  const Kp = 0.03
+  const Ki = 0.02
+  const Kd = 0
+  const Mi = 500
+  const Se = 0.5
 
-const calcCPU1 = () => Game.cpu.bucket < 500 ? 0 : Game.cpu.limit * ((((Game.cpu.bucket - 1000) * (1.1 - 0.4)) / 9000) + 0.4)
+  let e = mem.e || 0
+  let i = mem.i || 0
+  let le = e
+  e = Se * (Game.cpu.bucket - 9500)
+  i = i + e
+  i = Math.min(Math.max(i, -Mi), Mi)
+
+  let Up = (Kp * e)
+  let Ui = (Ki * i)
+  let Ud = Kd * (e / le) * e
+
+  const output = Up + Ui + Ud
+
+  mem.i = i
+  mem.e = e
+
+  const limit = Math.max(Game.cpu.limit + output - Game.cpu.getUsed(), Game.cpu.limit * 0.2)
+  // console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
+
+  return limit
+}
 
 // These lines are just to make standard happy
-calcCPU1()
-calcCPU2()
+calcCPULinear({})
+calcCPUPID({})
 
-const calcCPU = calcCPU1
+const calcCPU = calcCPUPID
 
 const QUEUE_COUNT = 10
 
@@ -86,7 +96,7 @@ export default class Scheduler {
       this.cnt++
     })
 
-    maxCPU = calcCPU()
+    maxCPU = calcCPU(this.mem)
 
     if (this.startTick && Game.cpu.bucket > BURST_BUCKET_LIMIT) {
       maxCPU = BURST_CPU_LIMIT
