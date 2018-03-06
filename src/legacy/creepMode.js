@@ -31,6 +31,10 @@ module.exports = {
       creep.room.memory.sourceInd = creep.room.memory.sourceInd || 0
       let sources = creep.room.find(C.FIND_SOURCES_ACTIVE)
       let ind = creep.room.memory.sourceInd++ % sources.length
+      if (!sources[ind]) {
+        console.log('Source error', ind, sources, sources.length)
+        return
+      }
       creep.memory.source = sources[ind].id // sources[Math.floor(Math.random() * sources.length)].id
     }
     let tgt = Game.getObjectById(creep.memory.source)
