@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/smoothie/1.34.0/smoothie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js"></script>
+  </head>
+  <body>
+    <canvas id="graph1" width="900" height="200"></canvas>
+    <canvas id="graph2" width="900" height="200"></canvas>
+    <canvas id="graph3" width="900" height="200"></canvas>
+    <form onsubmit="update(); return false">
+      <button type="submit">Apply</button>
+      <div id="editor" style="width: 100%; min-height: 400px;"></div>
+    </form>
+    <script>
+      // let canvas = document.getElementById('graph')
+      // let ctx = canvas.getContext('2d')
+
+      let CPU_LIMIT = 100
+      const USAGE_HIGH = 300
+      const USAGE_LOW = 10
+      let OFFSET_HIGH = 30
+      let OFFSET_LOW = -10
+      const BUCKET_MAX = 10000
+
+      const Game = {
+        cpu: {
+          limit: CPU_LIMIT,
+          get bucket() { return this.__bucket },
+          __bucket: 10000
+        }
+      }
+      let Memory = {}
+
+      let bucketSeries = new TimeSeries();
+      let usedSeries = new TimeSeries();
+      let fakeLimitSeries = new TimeSeries();
+      setInterval(function() {
+        let { used, fakeLimit } = tick()
+        Game.cpu.__bucket += CPU_LIMIT - used
+        Game.cpu.__bucket = Math.max(Math.min(Game.cpu.__bucket, BUCKET_MAX), 0)
+        
+        let t = new Date().getTime()
+        bucketSeries.append(t, Game.cpu.bucket)
+        usedSeries.append(t, used)
+        fakeLimitSeries.append(t, fakeLimit)
+      }, 1000);
+        
+      function createTimeline() {
+        let chart1 = new SmoothieChart();
+        let chart2 = new SmoothieChart();
+        let chart3 = new SmoothieChart();
+        chart1.addTimeSeries(bucketSeries, { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.2)', lineWidth: 4 });
+        chart2.addTimeSeries(usedSeries, { strokeStyle: 'rgba(0, 255, 255, 1)', fillStyle: 'rgba(0, 255, 255, 0.2)', lineWidth: 4 });
+        chart2.addTimeSeries(fakeLimitSeries, { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.1)', lineWidth: 4 });
+        chart3.addTimeSeries(fakeLimitSeries, { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.2)', lineWidth: 4 });
+        chart1.streamTo(document.getElementById("graph1"), 1000);
+        chart2.streamTo(document.getElementById("graph2"), 1000);
+        chart3.streamTo(document.getElementById("graph3"), 1000);
+      }
+      createTimeline()
+
+      let fn = function calcCPU() {
+  const Kp = 0.03
+  const Ki = 0.02
+  const Kd = 0
+  const Mi = 500
+  const Se = 0.5
+  
+  let e = Memory.e || 0
+  let i = Memory.i || 0
+  let le = e
+  e = Se * (Game.cpu.bucket - 9500)
+  i = i + e
+  i = Math.min(Math.max(i, -Mi), Mi)
+  
+  let Up = (Kp * e)
+  let Ui = (Ki * i)
+  let Ud = Kd * (e/le) * e
+  
+  const output = Up + Ui
+  
+  Memory.i = i
+  Memory.e = e
+  
+  const limit = Math.max(Game.cpu.limit + output, Game.cpu.limit * 0.2)
+  console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
+  
+  return limit
+  /**/
+  const calcCPU1 = () => Game.cpu.bucket < 500 ? 0 : Game.cpu.limit * ((((Game.cpu.bucket - 1000) * (1.1 - 0.4)) / 9000) + 0.4)
+  return calcCPU1()
+}
+      
+      let editor = ace.edit("editor");
+      editor.setTheme("ace/theme/monokai");
+      editor.session.setMode("ace/mode/javascript");
+      editor.setValue(localStorage.code || ''+fn.toString().replace(/ {6}/g, ''))
+      
+      function update() {
+        try {
+          let code = `(${editor.getValue()})`
+          fn = eval(code)
+          localStorage.code = code.slice(1,-1)
+        }catch(e){ 
+          console.error(e)
+        }
+      }
+
+      function tick () {
+        let fakeLimit = CPU_LIMIT
+        try{
+          fakeLimit = fn()
+        }catch(e){
+          console.error(e)
+        }
+        fakeLimit = Math.max(fakeLimit, OFFSET_LOW, 10)
+        let used = fakeLimit + (Math.random() * (OFFSET_HIGH - OFFSET_LOW)) + OFFSET_LOW
+        return { used, fakeLimit }
+      }
+      
+    </script>   
+    <br>
+  </body>
+</html>

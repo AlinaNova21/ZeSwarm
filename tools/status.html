@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/smoothie/1.34.0/smoothie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+    <script>let global = this</script>
+    <script src="ScreepsAPI.js"></script>
+    <script src="ws-patch.js"></script>
+  </head>
+  <body>
+    <script defer>
+      // let canvas = document.getElementById('graph')
+      // let ctx = canvas.getContext('2d')
+      TimeSeries.prototype.__append = TimeSeries.prototype.append
+      TimeSeries.prototype.append = function (k, v) {
+        localStorage[this.__name] = JSON.stringify(this.data)
+        return this.__append(k, v)
+      }
+
+      function addChart ({ series = '', delay = 1000, millisPerPixel = 1000 }) {
+        let canvas = document.createElement('canvas')
+        canvas.width = 600
+        document.body.append(canvas)
+        let chart = new SmoothieChart({ millisPerPixel })
+        series.forEach(([name, opts]) => chart.addTimeSeries(name, opts))
+        chart.streamTo(canvas, delay)
+        return chart
+      }
+
+      function persistentSeries (name) {
+        let series = new TimeSeries()
+        series.__name = name
+        series.data = JSON.parse(localStorage[name + 'Series'] || localStorage[name] || '[]').filter(([, b]) => b)
+        return series
+      }
+
+      let bucketSeries = persistentSeries('bucket')
+      let usedSeries = persistentSeries('used')
+      let limitSeries = persistentSeries('limit')
+      let limitAdjSeries = persistentSeries('limitAdj')
+      let pSeries = persistentSeries('p')
+      let iSeries = persistentSeries('i')
+
+      let lt = 0
+      run().catch(e => console.error(e))
+      async function run() {
+        if(!localStorage.token) localStorage.token = prompt('Enter a Screeps API token')
+        let api = window.api = new ScreepsAPI.ScreepsAPI({
+          token: localStorage.token
+        })
+        await api.socket.connect()
+        api.socket.subscribe('console', ({ data }) => {
+          if (data.shard !== 'shard0') return
+          if (!data.messages) return console.log(data)
+          let sline = data.messages.log.find(l => l[0] === 'e') || ''
+          let gline = data.messages.log.find(l => l.match(/====/)) || ''
+          console.log(sline)
+          console.log(gline)
+          let [, cpu, lcpu, bucket] = (gline.match(/CPU: ([-\d.]+) = Last CPU: ([-\d.]+) = Bucket: (\d+)/) || []).map(v => parseFloat(v))
+          let { e, i, Up, Ui, O, B, L } = sline.split(', ')
+            .map(p => p.split(':'))
+            .filter(p => p)
+            .reduce((r, [k, v]) => { r[k] = parseFloat(v); return r }, {})
+          console.log(cpu, lcpu, bucket, L)
+          let t = Date.now()
+          bucketSeries.append(t, bucket)
+          pSeries.append(t, e)
+          iSeries.append(t, i)
+          usedSeries.append(lt || t, lcpu)
+          limitSeries.append(t, L)
+          limitAdjSeries.append(t, L + cpu)
+          lt = t
+        })
+        addChart({ millisPerPixel: 500,
+          delay: 6000,
+          series: [
+            [bucketSeries, { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.2)', lineWidth: 4 }]
+          ]
+        })
+        addChart({ millisPerPixel: 500,
+          delay: 6000,
+          series: [
+            [usedSeries, { strokeStyle: 'rgba(0, 255, 255, 1)', fillStyle: 'rgba(0, 255, 255, 0.2)', lineWidth: 4 }],
+            [limitSeries, { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.1)', lineWidth: 4 }]
+          ]
+        })
+        addChart({ millisPerPixel: 500,
+          delay: 6000,
+          series: [
+            [limitAdjSeries, { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.2)', lineWidth: 4 }]
+          ]
+        })
+        addChart({ millisPerPixel: 500,
+          delay: 6000,
+          series: [
+            [pSeries, { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.2)', lineWidth: 4 }]
+          ]
+        })
+        addChart({ millisPerPixel: 500,
+          delay: 6000,
+          series: [
+            [iSeries, { strokeStyle: 'rgba(255, 0, 0, 1)', fillStyle: 'rgba(255, 0, 0, 0.2)', lineWidth: 4 }]
+          ]
+        })
+      }
+    </script>   
+    <style>
+      canvas {
+        flex: 0 0 600px;
+      }
+
+      body {
+        display: flex;
+        flex-wrap: wrap;
+      }
+</style>
+  </body>
+</html>
