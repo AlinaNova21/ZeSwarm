@@ -80,7 +80,8 @@ export default class MemoryManager {
     return this.mem.pendingSaves[id] || (typeof this.segments[id] === 'undefined' ? false : this.segments[id])
   }
   reloadSegment (id) {
-    this.versions[id] = this.mem.versions[id] || 0
+    this.mem.versions[id] = this.mem.versions[id] || 0
+    this.versions[id] = this.mem.versions[id]
     if (this.mem.pendingSaves[id]) {
       return this.mem.pendingSaves[id]
     }
@@ -101,6 +102,7 @@ export default class MemoryManager {
   }
   saveSegment (id, v) {
     if (typeof v === 'object') v = JSON.stringify(v, null, this.mem.readable[id] ? 2 : null)
+    if (v.length > 100 * 1024 * 1024) return
     RawMemory.segments[id] = v
     delete this.mem.pendingSaves[id]
   }

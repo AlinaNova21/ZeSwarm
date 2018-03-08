@@ -170,10 +170,19 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       delete this.processTable[id]
     }
     if (pinfo.s !== C.PROC_RUNNING) return false
+    let parentInfo = this.processTable[pinfo.p]
+    if (pinfo.p !== 'ROOT' && (!parentInfo || parentInfo.s !== C.PROC_RUNNING)) {
+      this.killProcess(id)
+      pinfo.Eq = 'Missing Parent'
+      this.log.error(() => `[${id}] ${pinfo.n} missing parent, reaping.`)
+      return false
+    }
     if (func === C.INT_FUNC.WAKE) {
       delete pinfo.w
-    } else if (pinfo.w) {
+    } else if (pinfo.w > Game.time) {
       return false
+    } else {
+      delete pinfo.w
     }
     try {
       let proc = this.getProcessById(id)
@@ -236,9 +245,9 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
-    this.scheduler.setup()
 
-    if (_.size(this.processTable) === 0) {
+    let cnt = this.scheduler.setup()
+    if (cnt === 0) {
       this.startProcess('init', {})
     }
 
@@ -314,12 +323,13 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   sleep (ticks) {
-    this.wait(C.INT_TYPE.SLEEP, C.INT_STAGE.START, Game.time + ticks, C.INT_FUNC.WAKE)
+    this.processTable[this.currentId].w = Game.time + ticks
+    // this.wait(C.INT_TYPE.SLEEP, C.INT_STAGE.START, Game.time + ticks, C.INT_FUNC.WAKE)
   }
 
   wait (type, stage, key) {
     this.interruptHandler.add(this.currentId, type, stage, key, C.INT_FUNC.WAKE)
-    this.processTable[this.currentId].wait = true
+    this.processTable[this.currentId].w = true
   }
 
   reboot () {

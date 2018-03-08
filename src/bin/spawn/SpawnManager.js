@@ -16,7 +16,7 @@ export default class SpawnManager {
     return this.context.memory
   }
   get log () {
-    return this.context.memory
+    return this.context.log
   }
   get queue () {
     return this.spawn.queue
@@ -37,7 +37,7 @@ export default class SpawnManager {
           if (!spawns.length) break
           let item = queue[i]
           let cspawns = map(spawns, (spawn, index) => {
-            let dist = Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0])
+            let dist = item.rooms && item.rooms[0] && Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0
             let energy = spawn.room.energyAvailable
             let rank = energy - (dist * 50)
             return { index, dist, energy, rank, spawn }

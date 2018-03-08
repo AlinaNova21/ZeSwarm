@@ -3,10 +3,11 @@ const RUN_TEST_INT = false
 const RUN_TEST_SLEEPER = false
 const RUN_TEST_BASE = false
 const RUN_TEST_CRON = false
-const RUN_TEST_SPAWN = false
+const RUN_TEST_SPAWN = true
 
 const RUN_CRONS = true
 const RUN_LEGACY = true
+const RUN_PROCESS_TREE_DUMP = true
 
 const STRESS_TEST_ENABLED = false
 const STRESS_TEST_PROC = 'ags131/SleeperTest'
@@ -37,11 +38,25 @@ export default {
       enabled: true
     },
     {
+      id: 'spawnManager',
+      name: 'spawn/manager',
+      params: {},
+      restart: true,
+      enabled: true
+    },
+    {
       id: 'legacy',
       name: 'legacy',
       params: {},
       restart: true,
       enabled: RUN_LEGACY
+    },
+    {
+      id: 'processTreeDump',
+      name: 'processTreeDump',
+      params: {},
+      restart: true,
+      enabled: RUN_PROCESS_TREE_DUMP
     },
     {
       id: 'intTest',

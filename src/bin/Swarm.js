@@ -1,4 +1,4 @@
-import C from '../include/constants'
+import C from '/include/constants'
 import each from 'lodash-es/each'
 
 export default class Swarm {

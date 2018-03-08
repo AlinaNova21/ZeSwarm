@@ -20,9 +20,10 @@ class Controller {
     //   want[C.STRUCTURE_CONTAINER] = 0
     // }
     let [ spawn ] = room.structures[STRUCTURE_SPAWN] || []
+    if (!spawn) return console.log(`No Spawns?! ${room.structures[STRUCTURE_SPAWN]}`)
     for (let type in want) {
       let amount = want[type] - ((have[type] || 0) + (sites[type] || []).length)
-      console.log(type,want[type],have[type] || 0, (sites[type] || []).length)
+      console.log(type, want[type], have[type] || 0, (sites[type] || []).length)
       if (amount <= 0) continue
       let positions = [
         ...allSites,
@@ -77,7 +78,7 @@ class Controller {
     })
     if (result && result.path.length) {
       let vis = new RoomVisual()
-      vis.poly(result.path.map(({x,y})=>[x,y]), { stroke: 'red' })
+      vis.poly(result.path.map(({x, y}) => [x, y]), { stroke: 'red' })
       return result.path.slice(-1)[0]
     }
   }

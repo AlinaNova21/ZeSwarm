@@ -1,12 +1,15 @@
 import stats from './lib/stats'
 import globals from './lib/GlobalTracker'
 
+import prototypes from './prototypes'
+import opt from './opt'
+
 import { BaseKernel } from './zos/BaseKernel'
 import { ProcessRegistry } from './zos/ProcessRegistry'
 import { ExtensionRegistry } from './zos/ExtensionRegistry'
 
-import { bundle as bin } from './bin/index'
-import { bundle as legacy } from './legacy/index'
+import { bundle as bin } from './bin'
+import { bundle as legacy } from './legacy'
 
 import etc from './etc'
 import C from './include/constants'

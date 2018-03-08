@@ -15,18 +15,20 @@ const roles = {
   harv: new harv(),
   stomper: new stomper(),
   up: new up(),
-  cart: new cart(),
+  cart: new cart()
 }
 export default class Creep {
   run (creep) {
-    let role = creep.memory.role || (function() { 
-      let r = 'scout'
-      let parts = _.groupBy(creep.body, 'type')
-      if(parts[WORK]) {
-        r = 'build'
-      }
-      return r
-    })()
+    if (creep.name[0] == 'C') return
+    let role = creep.memory.role ||
+     (function () {
+       let r = 'scout'
+       let parts = _.groupBy(creep.body, 'type')
+       if (parts[WORK]) {
+         r = 'build'
+       }
+       return r
+     })()
     let rolec = this.tryLoadRole(role)
     if (rolec) {
       let start = Game.cpu.getUsed()

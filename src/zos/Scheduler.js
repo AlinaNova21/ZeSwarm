@@ -113,6 +113,7 @@ export default class Scheduler {
     let end = Game.cpu.getUsed()
     let dur = end - start
     this.log.info(`Setup Time: ${dur.toFixed(3)}   Total Queue Length: ${this.cnt}`)
+    return this.cnt
   }
   addProcess (proc) {
     proc._s = proc._s || { q: 0 }

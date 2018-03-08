@@ -6,6 +6,11 @@ class SpawnTest {
     this.context = context
     this.spawner = this.context.queryPosisInterface('spawn')
     this.kernel = this.context.queryPosisInterface('baseKernel')
+    this.sleeper = this.context.queryPosisInterface('sleep')
+  }
+
+  get log () {
+    return this.context.log
   }
 
   get creeps () {
@@ -19,22 +24,30 @@ class SpawnTest {
   }
 
   run () {
-    this.sleeper.sleep(3)
+    // this.sleeper.sleep(3)
     this.context.memory.lastRun = Game.time
-    if (this.creeps.length < 5) {
+    if (this.creeps.length < 1) {
       let id = this.spawner.spawnCreep({ rooms: [this.context.memory.room], body: [[C.MOVE]] })
       this.creeps.push(id)
     }
     let rem = []
+    this.log.info(JSON.stringify(this.creeps))
     each(this.creeps, (id, ind) => {
       let s = this.spawner.getStatus(id)
-      if (s.status === C.EPosisSpawnStatus.SPAWNED) {
+      if (s) {
         let c = this.spawner.getCreep(id)
-        if (!c) return rem.push(ind)
-
-        if (c && !this.children[id]) {
-          let { pid, process } = this.kernel.startProcess('ags131/SpawnTestCreep', { id })
-          process.run()
+        if (s.status === C.EPosisSpawnStatus.SPAWNED && !c) {
+          rem.push(ind)
+        }
+        this.log.info(`Creep ${id} spawned ${this.children[id]}`)
+        if (!this.children[id] || !this.kernel.getProcessById(this.children[id])) {
+          // let { pid, process } = this.kernel.startProcess('ags131/SpawnTestCreep', { id })
+          this.log.info(`Spawning process for ${id}`)
+          let { pid, process } = this.kernel.startProcess('stackStateCreep', { spawnTicket: id })
+          process.push('loop', [['say', `ID:${id}`], ['noop']], Infinity)
+          process.push('noop')
+          process.push('say', 'Arrived!')
+          process.push('moveNear', { x: 23, y: 25, roomName: 'E1N19' })
           this.children[id] = pid
         }
       }

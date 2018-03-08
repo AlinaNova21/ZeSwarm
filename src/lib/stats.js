@@ -130,6 +130,9 @@ export class InfluxDB {
         }, terminal.store)
       }
     })
+    if (typeof Game.cpu.getHeapStatistics === 'function') {
+      this.addStat('heap', {}, Game.cpu.getHeapStatistics())
+    }
     let used = Game.cpu.getUsed()
     this.addStat('cpu', {}, {
       bucket: Game.cpu.bucket,

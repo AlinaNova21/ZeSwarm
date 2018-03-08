@@ -11,11 +11,12 @@ const PRIORITY_COUNT = 10
 
 export default class SpawnExtension {
   get memory () {
-    let mem = this.mm.load(C.SEGMENTS.SPAWN)
-    if (mem !== false && !mem.type === 'interrupt') {
-      mem = { type: 'interrupt' }
-      this.mm.save(C.SEGMENTS.INTERRUPT, mem)
-    }
+    let mem = Memory.spawnSys = Memory.spawnSys || {}
+    // this.mm.load(C.SEGMENTS.SPAWN)
+    // if (mem !== false && (!mem.type === 'interrupt' || typeof mem === 'string')) {
+    //   mem = { type: 'interrupt' }
+    //   this.mm.save(C.SEGMENTS.INTERRUPT, mem)
+    // }
     return mem
   }
   constructor (extensionRegistry) {
@@ -34,10 +35,12 @@ export default class SpawnExtension {
     if (!this.memory.queue || this.memory.queue.length !== PRIORITY_COUNT) {
       this.memory.queue = times(PRIORITY_COUNT, () => [])
     }
+    this.memory.queue = this.memory.queue || []
     return this.memory.queue
   }
   get status () {
     if (this.memory === false) return {}
+    this.memory.status = this.memory.status || {}
     return this.memory.status
   }
   UID () {
@@ -76,7 +79,8 @@ export default class SpawnExtension {
   waitForCreep (id) {
     let stat = this.getStatus(id)
     if (stat.status === C.EPosisSpawnStatus.SPAWNING) {
-      this.interrupt.wait(C.INT_TYPE.SLEEP, C.INT_STAGE.START, stat.name || id)
+      // This WILL NOT WORK!
+      this.interrupt.wait(C.INT_TYPE.CREEP, C.INT_STAGE.START, stat.name || id)
     }
   }
 }
