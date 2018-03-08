@@ -1,5 +1,7 @@
 import C from '/include/constants'
 import eachRight from 'lodash-es/eachRight'
+import sum from 'lodash-es/sum'
+import values from 'lodash-es/values'
 
 export default class StackStateCreep {
   constructor (context) {
@@ -30,7 +32,13 @@ export default class StackStateCreep {
     if (status.status === C.EPosisSpawnStatus.ERROR) {
       throw new Error(`Spawn ticket error: ${status.message}`)
     }
-    if (!this.creep) return this.log.info(`Creep not ready ${status.status}`)// Still waiting on creep
+    if (!this.creep) {
+      if (status.status === C.EPosisSpawnStatus.SPAWNED) {
+        this.log.info(`Creep dead`)
+        return this.kernel.killProcess(this.context.id)
+      }
+      return this.log.info(`Creep not ready ${status.status}`)// Still waiting on creep
+    }
     this.runStack()
   }
 
@@ -89,7 +97,9 @@ export default class StackStateCreep {
 
   repeat (count, ...state) {
     this.pop()
-    this.push('repeat', --count, ...state)
+    if (count > 0) {
+      this.push('repeat', --count, ...state)
+    }
     this.push(...state)
     this.runStack()
   }
@@ -107,6 +117,16 @@ export default class StackStateCreep {
   moveNear (target) {
     let tgt = this.resolveTarget(target)
     if (this.creep.pos.isNearTo(tgt)) {
+      this.pop()
+      this.runStack()
+    } else {
+      this.creep.travelTo(tgt)
+    }
+  }
+
+  moveInRange (target, range) {
+    let tgt = this.resolveTarget(target)
+    if (this.creep.pos.inRangeTo(tgt, range)) {
       this.pop()
       this.runStack()
     } else {
@@ -181,6 +201,77 @@ export default class StackStateCreep {
       }
       this.runStack()
     }
+  }
+
+  collector (target) {
+    let tgt = this.resolveTarget(target)
+    if (sum(values(this.creep.carry)) === this.creep.carryCapacity) {
+      this.log.info(`store`)
+      this.push('store', C.RESOURCE_ENERGY)
+      return this.runStack()
+    }
+    if (!this.creep.pos.inRangeTo(tgt, 2)) {
+      this.log.info(`moveInRange`)
+      this.push('moveInRange', target, 2)
+      return this.runStack()
+    }
+    let { x, y } = tgt.pos
+    let raw
+    let [{ resource: res } = {}] = raw = this.creep.room.lookForAtArea(C.LOOK_RESOURCES, y - 1, x - 1, y + 1, x + 1, true)
+    if (res) {
+      this.log.info(`pickup ${res.id}`)
+      this.push('pickup', res.id)
+      return this.runStack()
+    }
+    let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, x - 1, y - 1, x + 1, y + 1, true).filter(s => s.structure.structureType === C.STRUCTURE_CONTAINER)
+    if (cont) {
+      this.log.info(`withdraw ${cont.id}`)
+      this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
+      return this.runStack()
+    }
+  }
+
+  withdraw (target, res, amt) {
+    let tgt = this.resolveTarget(target)
+    if (!this.creep.pos.isNearTo(tgt)) {
+      this.push('moveNear', target)
+      return this.runStack()
+    }
+    this.creep.withdraw(tgt, res, amt)
+    this.pop()
+  }
+
+  transfer (target, res, amt) {
+    let tgt = this.resolveTarget(target)
+    if (!this.creep.pos.isNearTo(tgt)) {
+      this.push('moveNear', target)
+      return this.runStack()
+    }
+    this.creep.transfer(tgt, res, amt)
+    this.pop()
+  }
+
+  pickup (target) {
+    let tgt = this.resolveTarget(target)
+    if (!this.creep.pos.isNearTo(tgt)) {
+      this.push('moveNear', target)
+      return this.runStack()
+    }
+    this.creep.pickup(tgt)
+    this.pop()
+  }
+
+  store (res) {
+    if (this.creep.carry[res] === 0) {
+      this.pop()
+      return this.runStack()
+    }
+    let tgt = this.creep.room.storage
+    if (tgt) {
+      this.push('transfer', tgt.id, res)
+      return this.runStack()
+    }
+    this.pop()
   }
 }
 /*

@@ -120,7 +120,8 @@ module.exports = {
         ...(creep.room.structures[C.STRUCTURE_CONTAINER] || [])
       ]
       targets = targets.filter(t => (t.storeCapacity || t.energyCapacity || 50) - ((t.store && t.store.energy) || t.energy || 0))
-      tgt = creep.pos.findClosestByRange(targets)
+      // tgt = creep.pos.findClosestByRange(targets)
+      tgt = targets[0]
       creep.memory.tgt = tgt && tgt.id
       n |= !!tgt
     }

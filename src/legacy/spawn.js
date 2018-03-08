@@ -38,10 +38,10 @@ class Spawn {
       default:
       case 3:
         want.harv = 4
+        want.cart = 1
         want.build = 4
         want.up = 0
-        want.scout = 8
-        want.cart = 1
+        // want.scout = 8
         break
     }
     if (room.controller.level >= 3 && _.size(this.firstHostile)) {
@@ -49,7 +49,7 @@ class Spawn {
       if (h.safemode < 100) {
         if (h.towers) {
           // want.suicide = 12
-        } else if(h.spawns) {
+        } else if (h.spawns) {
           want.atk = 5
           want.drainer = 2
           console.log(JSON.stringify(h))
@@ -127,7 +127,7 @@ class Spawn {
         scost = bcost || cost
       }
     }
-    console.log(spriority,stype,scost)
+    console.log(spriority, stype, scost)
     if (spriority < 100 && Game.time % this.seedRange !== this.seed) return
     if (sbody && sbody.length) {
       let ret = spawn.createCreep(sbody, stype + uid(), { homeRoom: room.name, role: stype })
@@ -145,104 +145,101 @@ function buildCreepBody (cost, baseCreep, growParts, opts) {
   let minParts = {}
   let stop = false
   let movePrice = BODYPART_COST[MOVE]
-  let moveCount = baseCreep.length * (opts.useRoads?0.5:1)
-  let moveCost = ()=>Math.ceil(moveCount) * movePrice
-  cost -= baseCreep.reduce((l,v)=>l+BODYPART_COST[v],0)
+  let moveCount = baseCreep.length * (opts.useRoads ? 0.5 : 1)
+  let moveCost = () => Math.ceil(moveCount) * movePrice
+  cost -= baseCreep.reduce((l, v) => l + BODYPART_COST[v], 0)
   cost -= moveCost()
-  if(cost <= 0) return []
-  baseCreep.forEach(p=>(counts[p] = counts[p] || 0,counts[p]++))
-  for(let k in opts){
+  if (cost <= 0) return []
+  baseCreep.forEach(p => (counts[p] = counts[p] || 0, counts[p]++))
+  for (let k in opts) {
     let m = k.match(/^m(ax|in)(.+)$/)
-    if(m && m[1] == 'ax') maxParts[m[2].toLowerCase()] = opts[k]
-    if(m && m[1] == 'in') minParts[m[2].toLowerCase()] = opts[k]
+    if (m && m[1] == 'ax') maxParts[m[2].toLowerCase()] = opts[k]
+    if (m && m[1] == 'in') minParts[m[2].toLowerCase()] = opts[k]
   }
-  while(!stop){
+  while (!stop) {
     let sc = cost
-    growParts.forEach(p=>{
+    growParts.forEach(p => {
       let needed = BODYPART_COST[p] + BODYPART_COST[MOVE]
-      if(stop || cost < needed || Math.ceil(body.length + moveCount) >= 50) {
+      if (stop || cost < needed || Math.ceil(body.length + moveCount) >= 50) {
         stop = true
         return
       }
-      if(typeof maxParts[p] != 'undefined' && maxParts[p] <= counts[p]) return
+      if (typeof maxParts[p] !== 'undefined' && maxParts[p] <= counts[p]) return
       body.push(p)
-      if(p == MOVE) moveCount++
-      cost -= BODYPART_COST[p] + (BODYPART_COST[MOVE] * (opts.useRoads?0.5:1))
-      moveCount += (opts.useRoads?0.5:1)
+      if (p == MOVE) moveCount++
+      cost -= BODYPART_COST[p] + (BODYPART_COST[MOVE] * (opts.useRoads ? 0.5 : 1))
+      moveCount += (opts.useRoads ? 0.5 : 1)
       counts[p] = counts[p] || 0
       counts[p]++
     })
-    if(sc == cost) break
+    if (sc == cost) break
   }
   // console.log(opts.minCarry,body.filter(p=>p==CARRY).length,cost,ocost)
-  for(let k in minParts)
-    if(body.filter(p=>p==k).length < minParts[k]) return []
+  for (let k in minParts) { if (body.filter(p => p == k).length < minParts[k]) return [] }
   moveCount = Math.ceil(moveCount)
-  if(opts.maxMove)
-    moveCount = Math.min(opts.maxMove,moveCount)
-  if(opts.minMove)
-    moveCount = Math.max(opts.minMove,moveCount)
-  for(let i=0;i<moveCount;i++){
+  if (opts.maxMove) { moveCount = Math.min(opts.maxMove, moveCount) }
+  if (opts.minMove) { moveCount = Math.max(opts.minMove, moveCount) }
+  for (let i = 0; i < moveCount; i++) {
     body.push(MOVE)
   }
   return body
 }
 
-function sortBody(body,sortForward){
+function sortBody (body, sortForward) {
   if (sortForward) {
     body = _.sortBy(body, function (e) {
       switch (e) {
         case TOUGH:
-          return -1;
+          return -1
         case ATTACK:
-          return 4;
+          return 4
         case RANGED_ATTACK:
-          return 3;
+          return 3
         case WORK:
-          return 5;
+          return 5
         case CARRY:
-          return 6;
+          return 6
         case HEAL:
-          return 9;
+          return 9
         case MOVE:
-          return 10;
+          return 10
         default:
-          return 1;
+          return 1
       }
-    });
+    })
   } else {
     body = _.sortBy(body, function (e) {
       switch (e) {
         case TOUGH:
-          return -1;
+          return -1
         case ATTACK:
-          return 4;
+          return 4
         case RANGED_ATTACK:
-          return 3;
+          return 3
         case WORK:
-          return 5;
+          return 5
         case CARRY:
-          return 6;
+          return 6
         case HEAL:
-          return 9;
+          return 9
         case MOVE:
-          return 0;
+          return 0
         default:
-          return 10;
+          return 10
       }
-    });
+    })
   }
   return body
 }
 
-function uid() {
+function uid () {
   let p1 = Game.time.toString(36)
   let p2 = Math.random().toString(36).slice(-4)
   return p1 + p2
 }
 
 let spawn = new Spawn()
-StructureSpawn.prototype.run = function(){
+StructureSpawn.prototype.run = function () {
   spawn.run(this)
 }
 

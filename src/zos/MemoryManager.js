@@ -102,7 +102,7 @@ export default class MemoryManager {
   }
   saveSegment (id, v) {
     if (typeof v === 'object') v = JSON.stringify(v, null, this.mem.readable[id] ? 2 : null)
-    if (v.length > 100 * 1024 * 1024) return
+    if (v.length > 100 * 1024) return
     RawMemory.segments[id] = v
     delete this.mem.pendingSaves[id]
   }

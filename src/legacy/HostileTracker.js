@@ -9,10 +9,11 @@ class HostileTracker {
     return Memory.hostileTracker
   }
   tick () {
-    let start = Game.cpu.getUsed()
+    // let start = Game.cpu.getUsed()
     _.each(Game.rooms, room => this.analyze(room))
-    let end = Game.cpu.getUsed()
-    console.log('HostileTracker', (end - start).toFixed(3))
+    // let end = Game.cpu.getUsed()
+    // console.log('HostileTracker', (end - start).toFixed(3))
+    if (Game.flags.map) this.oldTick()
   }
   oldTick () {
     let { rooms } = this.mem
@@ -25,7 +26,7 @@ class HostileTracker {
     _.forEach(rooms, room => {
       let [ , ew, x, ns, y ] = room.name.match(/^([EW])(\d+)([NS])(\d+)$/)
       if (ew === 'W') x = -x
-      else x -= 1
+      else x += 1
       if (ns === 'N') y = -(y - 1)
       minx = Math.min(minx, x)
       miny = Math.min(miny, y)

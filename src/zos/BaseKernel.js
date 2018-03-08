@@ -165,7 +165,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   runProc (id, func = 'run', ...params) {
     let pinfo = this.processTable[id]
     if (!pinfo) return false
-    if (pinfo.s !== C.PROC_RUNNING && pinfo.e < Game.time - 100) {
+    if (pinfo.s !== C.PROC_RUNNING && pinfo.e < Game.time - 5) {
       delete this.processMemory[id]
       delete this.processTable[id]
     }
@@ -319,7 +319,10 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let loopEnd = Game.cpu.getUsed()
     let loopDur = loopEnd - loopStart
     let ktime = loopDur - procUsed
-    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, ktime: ${ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[C.SEGMENTS.KERNEL].length}`)
+    if (!RawMemory.segments[C.SEGMENTS.KERNEL]) {
+      this.log.error('ERROR: Segment not saved! Too big?')
+    }
+    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, ktime: ${ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[C.SEGMENTS.KERNEL] && RawMemory.segments[C.SEGMENTS.KERNEL].length}`)
   }
 
   sleep (ticks) {

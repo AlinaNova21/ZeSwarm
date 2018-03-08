@@ -47,7 +47,7 @@ export default class SpawnExtension {
     return ('C' + Game.time.toString(36).slice(-4) + Math.random().toString(36).slice(-2)).toUpperCase()
   }
   // Queues/Spawns the creep and returns an ID
-  spawnCreep ({ rooms, body, priority = 0 }) {
+  spawnCreep ({ rooms, body, priority = 5 }) {
     priority = Math.min(Math.max(priority, 0), 10)
     let uid = this.UID()
     let item = {
