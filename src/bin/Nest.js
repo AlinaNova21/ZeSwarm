@@ -1,3 +1,4 @@
+import each from 'lodash-es/each'
 // import C from '../include/constants'
 
 export default class Nest {
@@ -15,6 +16,11 @@ export default class Nest {
     return this.context.memory
   }
 
+  get children () {
+    this.memory.children = this.memory.children || {}
+    return this.memory.children
+  }
+
   get roomName () {
     return this.memory.room
   }
@@ -28,5 +34,14 @@ export default class Nest {
       this.log.warn(`Invalid nest, terminating. (${this.roomName},${JSON.stringify(this.memory)})`)
       this.kernel.killProcess(this.context.id)
     }
+    let children = [['harvestManager', { room: this.roomName }]]
+
+    each(children, ([child, context = {}]) => {
+      let pid = this.children[child]
+      if (!pid || !this.kernel.getProcessById(pid)) {
+        let { pid, process} = this.kernel.startProcess(child, context)
+        this.children[child] = pid
+      }
+    })
   }
 }

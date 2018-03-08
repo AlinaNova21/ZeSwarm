@@ -87,12 +87,19 @@ export default class StackStateCreep {
     this.runStack()
   }
 
+  repeat (count, ...state) {
+    this.pop()
+    this.push('repeat', --count, ...state)
+    this.push(...state)
+    this.runStack()
+  }
+
   resolveTarget (tgt) {
     if (typeof tgt === 'string') {
       return Game.getObjectById(tgt)
     }
     if (tgt.x && tgt.y) {
-      return new RoomPosition(tgt.x, tgt.y, tgt.roomName)
+      return new RoomPosition(tgt.x, tgt.y, tgt.roomName || tgt.room)
     }
     return tgt
   }
@@ -107,15 +114,72 @@ export default class StackStateCreep {
     }
   }
 
-  harvest (target, type = 'source') {
+  build (type, target, opts = {}) {
+    const tgt = this.resolveTarget(target)
+    if (this.creep.carry.energy) {
+      let [site] = this.creep.pos.lookFor(C.LOOK_CONSTRUCTION_SITE)
+      if (!site) {
+        let [struct] = this.creep.pos.lookFor(C.LOOK_STRUCTURES, {
+          filter: (s) => s.structureType === type
+        })
+        if (struct) { // Structure exists/was completed
+          this.pop()
+          return this.runStack()
+        }
+        return this.creep.room.createConstructionSite(type, tgt)
+      }
+      this.creep.repair(site)
+    } else {
+      if (opts.energyState) {
+        this.push(...opts.energyState)
+        this.runStack()
+      } else {
+        this.creep.say('T:BLD GTHR')
+        this.pop()
+      }
+    }
+  }
+
+  harvest (target) {
+    const tgt = this.resolveTarget(target)
+    this.creep.harvest(tgt)
+    this.pop()
+  }
+
+  harvester (target, type = 'source', cache = {}) {
+    if (!cache.work) {
+      cache.work = this.creep.getActiveBodyparts(WORK).length
+    }
     let tgt = this.resolveTarget(target)
     if (!this.creep.pos.isNearTo(tgt)) {
       this.push('moveNear', target)
       return this.runStack()
     }
-    let wantContainer = this.body.length >= 8
+    let wantContainer = this.creep.body.length >= 8
     if (wantContainer) {
-
+      let [cont] = this.creep.pos.lookFor(C.LOOK_STRUCTURES, {
+        filter: (s) => s.structureType === C.STRUCTURE_CONTAINER
+      })
+      let { x, y, roomName } = this.creep.pos
+      if (!cont) {
+        const fullHits = Math.floor(this.creep.carryCapacity / (cache.work * C.HARVEST_POWER))
+        this.push('build', C.STRUCTURE_CONTAINER, { x, y, roomName }, {
+          energyState: ['repeat', fullHits, 'harvest', tgt.id]
+        })
+        return this.runStack()
+      }
+      if ((cont.hitsMax - cont.hits) >= (cache.work * C.REPAIR_POWER)) {
+        this.push('repair', cont.id)
+        return this.runStack()
+      }
+    }
+    if (type == 'source') {
+      if (tgt.energy) {
+        this.push('repeat', 5, 'harvest', tgt.id)
+      } else {
+        this.push('sleep', Game.time + tgt.ticksToRegeneration)
+      }
+      this.runStack()
     }
   }
 }

@@ -1,6 +1,7 @@
 import C from '/include/constants'
 import isEmpty from 'lodash-es/isEmpty'
 import groupBy from 'lodash-es/groupBy'
+import each from 'lodash-es/each'
 
 const STRUCTURES_TO_CHECK = [
   C.STRUCTURE_SPAWN,
@@ -34,7 +35,7 @@ export default {
       let RCL = this.controller && this.controller.level || 0
       let PRL = RCL
       each(STRUCTURES_TO_CHECK, (structure) => {
-        let have = this.structures[structure].length
+        let have = this.structures[structure] && this.structures[structure].length || 0
         for (let i = 0; i <= PRL; i++) {
           if (have < C.CONTROLLER_STRUCTURES[structure][i]) {
             PRL = (i - 1)
