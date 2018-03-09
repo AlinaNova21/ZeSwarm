@@ -230,7 +230,8 @@ export default class StackStateCreep {
       this.push('pickup', res.id)
       return this.runStack()
     }
-    let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, x - 1, y - 1, x + 1, y + 1, true).filter(s => s.structure.structureType === C.STRUCTURE_CONTAINER)
+    let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true).filter(s => s.structure.structureType === 
+C.STRUCTURE_CONTAINER)
     if (cont) {
       this.log.info(`withdraw ${cont.id}`)
       this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
