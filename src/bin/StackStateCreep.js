@@ -167,6 +167,12 @@ export default class StackStateCreep {
     this.pop()
   }
 
+  repair (target) {
+    const tgt = this.resolveTarget(target)
+    this.creep.repair(tgt)
+    this.pop()
+  }
+
   harvester (target, type = 'source', cache = {}) {
     if (!cache.work) {
       cache.work = this.creep.getActiveBodyparts(WORK)
