@@ -137,20 +137,21 @@ export default class StackStateCreep {
   build (type, target, opts = {}) {
     const tgt = this.resolveTarget(target)
     if (this.creep.carry.energy) {
-      let [site] = this.creep.pos.lookFor(C.LOOK_CONSTRUCTION_SITE)
+      let [site] = tgt.lookFor(C.LOOK_CONSTRUCTION_SITES)
       if (!site) {
-        let [struct] = this.creep.pos.lookFor(C.LOOK_STRUCTURES, {
+        let [struct] = tgt.lookFor(C.LOOK_STRUCTURES, {
           filter: (s) => s.structureType === type
         })
         if (struct) { // Structure exists/was completed
           this.pop()
           return this.runStack()
         }
-        return this.creep.room.createConstructionSite(type, tgt)
+        return tgt.createConstructionSite(type)
       }
-      this.creep.repair(site)
+      this.creep.build(site)
     } else {
       if (opts.energyState) {
+	this.log.info(opts.energyState)
         this.push(...opts.energyState)
         this.runStack()
       } else {
@@ -168,7 +169,7 @@ export default class StackStateCreep {
 
   harvester (target, type = 'source', cache = {}) {
     if (!cache.work) {
-      cache.work = this.creep.getActiveBodyparts(WORK).length
+      cache.work = this.creep.getActiveBodyparts(WORK)
     }
     let tgt = this.resolveTarget(target)
     if (!this.creep.pos.isNearTo(tgt)) {

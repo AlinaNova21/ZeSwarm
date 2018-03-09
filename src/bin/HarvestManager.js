@@ -77,7 +77,9 @@ export default class HarvestManager {
     each(sources, source => {
       each(creeps, ({ id, body, state }) => {
         let t = this.tracking[`${source.id}_${id}`] = this.tracking[`${source.id}_${id}`] || { process: null, creep: null }
-        if (!t.creep) {
+	let stat = t.creep && this.spawner.getStatus(t.creep)
+	let complete = stat.status === C.EPosisSpawnStatus.ERROR || stat.status === C.EPosisSpawnStatus.SPAWNED
+        if (!t.creep || (complete && !this.spawner.getCreep(t.creep))) {
           t.creep = this.spawner.spawnCreep({
             rooms: [this.memory.room],
             body,
