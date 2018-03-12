@@ -1,25 +1,14 @@
 import each from 'lodash-es/each'
 import C from '/include/constants'
+import BaseProcess from './BaseProcess'
 
-export default class HarvestManager {
+export default class HarvestManager extends BaseProcess {
   constructor (context) {
+    super(context)
     this.context = context
     this.spawner = this.context.queryPosisInterface('spawn')
     this.kernel = this.context.queryPosisInterface('baseKernel')
     this.sleeper = this.context.queryPosisInterface('sleep')
-  }
-
-  get log () {
-    return this.context.log
-  }
-
-  get memory () {
-    return this.context.memory
-  }
-
-  get tracking () {
-    this.memory.tracking = this.memory.tracking || {}
-    return this.memory.tracking
   }
 
   get room () {
@@ -43,7 +32,7 @@ export default class HarvestManager {
   }
 
   run () {
-    this.sleeper.sleep(3)
+    this.sleeper.sleep(5)
     if (!this.room) {
       this.log.warn(`No vision in ${this.memory.room}`)
       return
@@ -51,7 +40,7 @@ export default class HarvestManager {
     let sources = this.room.find(FIND_SOURCES)
     let single = this.room.level > 2
     let creeps = [{
-      id: `harv`,
+      cid: `harv`,
       state: 'harvester',
       body: [
         this.expand([1, C.CARRY, 6, C.WORK, 6, C.MOVE]),
@@ -63,7 +52,7 @@ export default class HarvestManager {
       ]
     },
     {
-      id: `coll`,
+      cid: `coll`,
       state: 'collector',
       body: [
         this.expand([6, C.CARRY, 6, C.MOVE]),
@@ -75,26 +64,19 @@ export default class HarvestManager {
       ]
     }]
     each(sources, source => {
-      each(creeps, ({ id, body, state }) => {
-        let t = this.tracking[`${source.id}_${id}`] = this.tracking[`${source.id}_${id}`] || { process: null, creep: null }
-	let stat = t.creep && this.spawner.getStatus(t.creep)
-	let complete = stat.status === C.EPosisSpawnStatus.ERROR || stat.status === C.EPosisSpawnStatus.SPAWNED
-        if (!t.creep || (complete && !this.spawner.getCreep(t.creep))) {
-          t.creep = this.spawner.spawnCreep({
-            rooms: [this.memory.room],
-            body,
-            priority: 1
-          })
-          this.log.info(`Creep doesn't exist, spawning ${t.creep} for ${source.id}`)
-          return
-        }
-        if (!t.process || !this.kernel.getProcessById(t.process)) {
-          this.log.info(`Process doesn't exist, spawning for ${t.creep}`)
-          let { pid, process } = this.kernel.startProcess('stackStateCreep', { spawnTicket: t.creep })
-          process.push(state, source.id)
-          t.process = pid
-        }
+      each(creeps, ({ cid, body, state }) => {
+        let id = `${source.id}_${cid}`
+        let spawnTicket = this.ensureCreep(id, {
+          rooms: [this.memory.room],
+          body,
+          priority: 1
+        })
+        let base = [state, source.id]
+        let proc = this.ensureChild(id, 'stackStateCreep', { spawnTicket, base })
       })
     })
+  }
+  toString () {
+    return this.memory.room
   }
 }

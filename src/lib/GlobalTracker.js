@@ -13,7 +13,8 @@ export default {
     this.memory.meta[this.id] = {
       id: this.id,
       init: Date.now(),
-      firstTick: Game.time
+      firstTick: Game.time,
+      dur: 0
     }
   },
   cleanup () {
@@ -25,6 +26,7 @@ export default {
     let now = Date.now()
     this.meta.lastRun = now
     this.meta.lastTick = Game.time
+    this.meta.dur = Game.time - this.meta.firstTick
     this.memory.lastID = this.id
 
     if (this.statDriver) {

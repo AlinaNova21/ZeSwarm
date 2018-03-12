@@ -43,6 +43,7 @@ export default {
         }
       })
       return PRL
-    }
+    },
+    configurable: true
   }
 }

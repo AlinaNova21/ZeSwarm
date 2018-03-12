@@ -144,6 +144,10 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         this.createProcess(id))
   }
 
+  getChildren (id) {
+    return map(filter(this.processTable, (p) => p.p === id), (p) => this.getProcessById(p.i))
+  }
+
   // passing undefined as parentId means 'make me a root process'
   // i.e. one that will not be killed if another process is killed
   setParent (id, parentId = 'ROOT') {

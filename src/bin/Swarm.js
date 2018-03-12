@@ -52,4 +52,9 @@ export default class Swarm {
   wake () {
     this.log.info('I Have awoken!')
   }
+
+  toString () {
+    let rooms = Object.keys(this.nests)
+    return `Rooms: ${rooms.length}`
+  }
 }

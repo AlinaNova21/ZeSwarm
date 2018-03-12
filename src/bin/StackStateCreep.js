@@ -2,9 +2,11 @@ import C from '/include/constants'
 import eachRight from 'lodash-es/eachRight'
 import sum from 'lodash-es/sum'
 import values from 'lodash-es/values'
+import states from '/lib/StackStates/index'
 
-export default class StackStateCreep {
+export default class StackStateCreep extends states {
   constructor (context) {
+    super()
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
     this.spawn = context.queryPosisInterface('spawn')
@@ -28,11 +30,13 @@ export default class StackStateCreep {
   }
 
   run () {
+    let start = Game.cpu.getUsed()
+    let creep = this.creep
     let status = this.spawn.getStatus(this.memory.spawnTicket)
     if (status.status === C.EPosisSpawnStatus.ERROR) {
       throw new Error(`Spawn ticket error: ${status.message}`)
     }
-    if (!this.creep) {
+    if (!creep) {
       if (status.status === C.EPosisSpawnStatus.SPAWNED) {
         this.log.info(`Creep dead`)
         return this.kernel.killProcess(this.context.id)
@@ -40,16 +44,9 @@ export default class StackStateCreep {
       return this.log.info(`Creep not ready ${status.status}`)// Still waiting on creep
     }
     this.runStack()
-  }
-
-  runStack () {
-    let [[name, ...args]] = this.stack.slice(-1) || []
-    this.log.info(`runStack: ${name}`)
-    if (this[name]) {
-      this[name](...args)
-    } else {
-      this.log.error(`Invalid state ${name}`)
-      this.kernel.killProcess(this.context.id)
+    let end = Game.cpu.getUsed()
+    if (creep) {
+      creep.room.visual.text(Math.round((end - start) * 100) / 100, creep.pos.x + 1, creep.pos.y, { size: 0.6 })
     }
   }
 
@@ -57,84 +54,10 @@ export default class StackStateCreep {
     return `${this.memory.spawnTicket} ${this.stack.slice(-1)[0]}`
   }
 
-  push (...arg) {
-    this.stack.push(arg)
-  }
-
-  pop () {
-    this.stack.pop()
-  }
-
-  idle (say = 'Idling') {
-    this.say(say)
-  }
-
-  sleep (until = 0) {
-    if (Game.time >= until) {
-      this.pop()
-      this.runStack()
+  buildAt (type, target, opts = {}) {
+    if (!opts.work) {
+      opts.work = this.creep.getActiveBodyparts(WORK)
     }
-  }
-
-  noop () {
-    this.pop()
-  }
-
-  say (say, publ = false) {
-    this.creep.say(say, publ)
-    this.pop()
-    this.runStack()
-  }
-
-  loop (states, count = 1) {
-    this.pop()
-    if (--count > 0) {
-      this.push('loop', states, count)
-    }
-    eachRight(states, state => this.push(...state))
-    this.runStack()
-  }
-
-  repeat (count, ...state) {
-    this.pop()
-    if (count > 0) {
-      this.push('repeat', --count, ...state)
-    }
-    this.push(...state)
-    this.runStack()
-  }
-
-  resolveTarget (tgt) {
-    if (typeof tgt === 'string') {
-      return Game.getObjectById(tgt)
-    }
-    if (tgt.x && tgt.y) {
-      return new RoomPosition(tgt.x, tgt.y, tgt.roomName || tgt.room)
-    }
-    return tgt
-  }
-
-  moveNear (target) {
-    let tgt = this.resolveTarget(target)
-    if (this.creep.pos.isNearTo(tgt)) {
-      this.pop()
-      this.runStack()
-    } else {
-      this.creep.travelTo(tgt)
-    }
-  }
-
-  moveInRange (target, range) {
-    let tgt = this.resolveTarget(target)
-    if (this.creep.pos.inRangeTo(tgt, range)) {
-      this.pop()
-      this.runStack()
-    } else {
-      this.creep.travelTo(tgt)
-    }
-  }
-
-  build (type, target, opts = {}) {
     const tgt = this.resolveTarget(target)
     if (this.creep.carry.energy) {
       let [site] = tgt.lookFor(C.LOOK_CONSTRUCTION_SITES)
@@ -148,10 +71,11 @@ export default class StackStateCreep {
         }
         return tgt.createConstructionSite(type)
       }
-      this.creep.build(site)
+      let hitsMax = Math.ceil(sum(values(this.creep.carry)) / (opts.work * C.BUILD_POWER))
+      this.push('repeat', hitsMax, 'build', site.id)
+      this.runStack()
     } else {
       if (opts.energyState) {
-	this.log.info(opts.energyState)
         this.push(...opts.energyState)
         this.runStack()
       } else {
@@ -161,122 +85,15 @@ export default class StackStateCreep {
     }
   }
 
-  harvest (target) {
-    const tgt = this.resolveTarget(target)
-    this.creep.harvest(tgt)
-    this.pop()
-  }
-
-  repair (target) {
-    const tgt = this.resolveTarget(target)
-    this.creep.repair(tgt)
-    this.pop()
-  }
-
-  harvester (target, type = 'source', cache = {}) {
-    if (!cache.work) {
-      cache.work = this.creep.getActiveBodyparts(WORK)
-    }
-    let tgt = this.resolveTarget(target)
-    if (!this.creep.pos.isNearTo(tgt)) {
-      this.push('moveNear', target)
-      return this.runStack()
-    }
-    let wantContainer = this.creep.body.length >= 8
-    if (wantContainer) {
-      let [cont] = this.creep.pos.lookFor(C.LOOK_STRUCTURES, {
-        filter: (s) => s.structureType === C.STRUCTURE_CONTAINER
-      })
-      let { x, y, roomName } = this.creep.pos
-      if (!cont) {
-        const fullHits = Math.floor(this.creep.carryCapacity / (cache.work * C.HARVEST_POWER))
-        this.push('build', C.STRUCTURE_CONTAINER, { x, y, roomName }, {
-          energyState: ['repeat', fullHits, 'harvest', tgt.id]
-        })
-        return this.runStack()
-      }
-      if ((cont.hitsMax - cont.hits) >= (cache.work * C.REPAIR_POWER)) {
-        this.push('repair', cont.id)
-        return this.runStack()
-      }
-    }
-    if (type == 'source') {
-      if (tgt.energy) {
-        this.push('repeat', 5, 'harvest', tgt.id)
-      } else {
-        this.push('sleep', Game.time + tgt.ticksToRegeneration)
-      }
-      this.runStack()
-    }
-  }
-
-  collector (target) {
-    let tgt = this.resolveTarget(target)
-    if (sum(values(this.creep.carry)) === this.creep.carryCapacity) {
-      this.log.info(`store`)
-      this.push('store', C.RESOURCE_ENERGY)
-      return this.runStack()
-    }
-    if (!this.creep.pos.inRangeTo(tgt, 2)) {
-      this.log.info(`moveInRange`)
-      this.push('moveInRange', target, 2)
-      return this.runStack()
-    }
-    let { x, y } = tgt.pos
-    let raw
-    let [{ resource: res } = {}] = raw = this.creep.room.lookForAtArea(C.LOOK_RESOURCES, y - 1, x - 1, y + 1, x + 1, true)
-    if (res) {
-      this.log.info(`pickup ${res.id}`)
-      this.push('pickup', res.id)
-      return this.runStack()
-    }
-    let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true).filter(s => s.structure.structureType === 
-C.STRUCTURE_CONTAINER)
-    if (cont) {
-      this.log.info(`withdraw ${cont.id}`)
-      this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
-      return this.runStack()
-    }
-  }
-
-  withdraw (target, res, amt) {
-    let tgt = this.resolveTarget(target)
-    if (!this.creep.pos.isNearTo(tgt)) {
-      this.push('moveNear', target)
-      return this.runStack()
-    }
-    this.creep.withdraw(tgt, res, amt)
-    this.pop()
-  }
-
-  transfer (target, res, amt) {
-    let tgt = this.resolveTarget(target)
-    if (!this.creep.pos.isNearTo(tgt)) {
-      this.push('moveNear', target)
-      return this.runStack()
-    }
-    this.creep.transfer(tgt, res, amt)
-    this.pop()
-  }
-
-  pickup (target) {
-    let tgt = this.resolveTarget(target)
-    if (!this.creep.pos.isNearTo(tgt)) {
-      this.push('moveNear', target)
-      return this.runStack()
-    }
-    this.creep.pickup(tgt)
-    this.pop()
-  }
-
   store (res) {
     if (this.creep.carry[res] === 0) {
       this.pop()
       return this.runStack()
     }
-    let tgt = this.creep.room.storage
+    let tgt = this.creep.room.storage || this.creep.room.find(C.STRUCTURE_SPAWN)[0]
     if (tgt) {
       this.push('transfer', tgt.id, res)
+      this.push('moveNear', tgt.id)
       return this.runStack()
     }
     this.pop()

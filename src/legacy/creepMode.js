@@ -67,8 +67,10 @@ module.exports = {
       }
     }
     creep.memory.tgt = (tgt && tgt.id) || false
-    if (!tgt) tgt = creep.room.controller
-    if (creep.pos.inRangeTo(tgt, 3)) {
+    if (!tgt && (creep.room.level < 4 || creep.room.storage.store.energy > 15000 || creep.room.controller.ticksToDowngrade < 15000)) {
+      tgt = creep.room.controller
+    }
+    if (tgt && creep.pos.inRangeTo(tgt, 3)) {
       if (tgt.structureType === C.STRUCTURE_CONTROLLER) {
         creep.upgradeController(tgt)
       } else {

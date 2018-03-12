@@ -70,7 +70,6 @@ export class InfluxDB {
     this.addStat('memory', {}, {
       parse: el,
       size: RawMemory.get().length
-      // sameId: global.G && parseInt(RawMemory.segments[99]) === G.id ? 10 : 0 // TODO: Add this in a non-hacky way
     })
     this.endReset = Game.cpu.getUsed()
     console.log(`[1] [Stats] Entry: ${this.cpuReset.toFixed(3)} - Exit: ${(this.endReset - this.cpuReset).toFixed(3)} - Mem: ${this.memoryParseTime.toFixed(3)} (${(RawMemory.get().length / 1024).toFixed(2)}kb)`)
