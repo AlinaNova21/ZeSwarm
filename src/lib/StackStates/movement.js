@@ -3,7 +3,7 @@ import C from '/include/constants'
 export default {
   travelTo (target, opts = {}) {
     const tgt = this.resolveTarget(target)
-    if (this.creep.pos.isEqual(tgt.pos || tgt)) {
+    if (this.creep.pos.isEqualTo(tgt.pos || tgt)) {
       this.pop()
       this.runStack()
     } else {

@@ -14,8 +14,8 @@ export default {
       let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
         .filter(s => s.structure.structureType === C.STRUCTURE_CONTAINER)
       if (cont) {
-        if (!this.pos.isEqual(cont.pos)) {
-          this.push('travelTo', { x, y, roomName })
+        if (!this.creep.pos.isEqualTo(cont.pos)) {
+          this.push('travelTo', cont.id)
           return this.runStack()
         }
       } else {
@@ -25,7 +25,8 @@ export default {
         })
         return this.runStack()
       }
-      if ((cont.hitsMax - cont.hits) >= (cache.work * C.REPAIR_POWER)) {
+      if (this.creep.carry.energy >= cache.work &&
+      (cont.hitsMax - cont.hits) >= (cache.work * C.REPAIR_POWER)) {
         this.push('repair', cont.id)
         return this.runStack()
       }

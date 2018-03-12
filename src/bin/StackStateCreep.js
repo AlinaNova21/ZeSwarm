@@ -69,6 +69,7 @@ export default class StackStateCreep extends states {
           this.pop()
           return this.runStack()
         }
+        this.creep.say('CSITE')
         return tgt.createConstructionSite(type)
       }
       let hitsMax = Math.ceil(sum(values(this.creep.carry)) / (opts.work * C.BUILD_POWER))

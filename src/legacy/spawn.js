@@ -38,7 +38,7 @@ class Spawn {
       default:
       case 3:
         // want.harv = 4
-        want.cart = 1
+        // want.cart = 1
         want.build = 2
         want.up = 0
         // want.scout = 8

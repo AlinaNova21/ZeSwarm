@@ -3,7 +3,7 @@ import eachRight from 'lodash-es/eachRight'
 export default {
   runStack () {
     let [[name, ...args]] = this.stack.slice(-1) || []
-    this.log.info(`runStack: ${name}`)
+    this.log.debug(() => `runStack: ${name}`)
     let func = this[name]
     if (func) {
       func.apply(this, args)

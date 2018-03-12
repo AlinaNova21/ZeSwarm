@@ -221,6 +221,16 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         }
       }
     }
+    if (Game.time % 10 === (this.rand + 5) % 10) {
+      let ids = Object.keys(this.processTable)
+      this.log.info(`Cleaning Process Table... (${ids.length} items)`)
+      for (let i = 0; i < ids.length; i++) {
+        let id = ids[i]
+        if (this.processTable[id].s !== C.PROC_RUNNING) {
+          delete this.processTable[id]
+        }
+      }
+    }
     if (this.mem === false || this.imem === false) {
       this.log.warn(`Kernel Segments not loaded. Activating. Break early. ${C.SEGMENTS.KERNEL} ${C.SEGMENTS.INTERRUPT}`)
       // console.log(JSON.stringify(C))
@@ -286,11 +296,11 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       this.log.debug(() => `${pinfo.i} scheduler setCPU ${(te - ts).toFixed(3)}`)
       ts = Game.cpu.getUsed()
       global.stats.addStat('process', {
-        name: pinfo.n
+        name: pinfo.context.imageName
       }, {
-        cpu: dur,
-        id: pinfo.i,
-        parent: pinfo.p
+        cpu: dur
+        // id: pinfo.i,
+        // parent: pinfo.p
       })
       te = Game.cpu.getUsed()
       this.log.debug(() => `${pinfo.i} influx addStat ${(te - ts).toFixed(3)}`)
