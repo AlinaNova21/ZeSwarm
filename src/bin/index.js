@@ -7,6 +7,7 @@ import Swarm from './Swarm'
 import ProcessTreeDump from './ProcessTreeDump'
 import StackStateCreep from './StackStateCreep'
 import HarvestManager from './HarvestManager'
+import Intel from './Intel'
 
 import { bundle as POSISTest } from './POSISTest'
 import { bundle as ags131 } from './ags131'
@@ -22,6 +23,7 @@ export const bundle = {
     processRegistry.register('processTreeDump', ProcessTreeDump)
     processRegistry.register('stackStateCreep', StackStateCreep)
     processRegistry.register('harvestManager', HarvestManager)
+    processRegistry.register('intel', Intel)
 
     POSISTest.install(processRegistry, extensionRegistry)
     ags131.install(processRegistry, extensionRegistry)

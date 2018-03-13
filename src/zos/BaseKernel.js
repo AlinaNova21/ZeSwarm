@@ -216,7 +216,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       this.log.info(`Cleaning Process Memory... (${ids.length} items)`)
       for (let i = 0; i < ids.length; i++) {
         let id = ids[i]
-        if (!this.processTable[id] || Object.keys(this.processMemory[id]).length === 0) {
+        if (!this.processTable[id] || Object.keys(this.processMemory[id] || {}).length === 0) {
           delete this.processMemory[id]
         }
       }

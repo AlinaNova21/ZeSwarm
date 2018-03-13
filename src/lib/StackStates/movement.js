@@ -2,6 +2,9 @@ import C from '/include/constants'
 
 export default {
   travelTo (target, opts = {}) {
+    if (typeof opts.roomCallback === 'string') {
+      opts.roomCallback = eval(opts.roomCallback)
+    }
     const tgt = this.resolveTarget(target)
     if (this.creep.pos.isEqualTo(tgt.pos || tgt)) {
       this.pop()
@@ -27,5 +30,12 @@ export default {
     } else {
       this.creep.travelTo(tgt)
     }
+  },
+  flee (targets) {
+    let { path } = PathFinder.search(this.creep.pos, targets, { flee: true })
+    if (path) {
+      this.creep.moveByPath(path)
+    }
+    this.pop()
   }
 }

@@ -17,7 +17,18 @@ const STRUCTURES_TO_CHECK = [
   // C.STRUCTURE_EXTRACTOR,
 ]
 
-export default {
+const multipleList = [
+  STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_ROAD, STRUCTURE_WALL,
+  STRUCTURE_RAMPART, STRUCTURE_KEEPER_LAIR, STRUCTURE_PORTAL, STRUCTURE_LINK,
+  STRUCTURE_TOWER, STRUCTURE_LAB, STRUCTURE_CONTAINER
+]
+
+const singleList = [
+  STRUCTURE_OBSERVER, STRUCTURE_POWER_BANK, STRUCTURE_POWER_SPAWN, STRUCTURE_EXTRACTOR,
+  STRUCTURE_NUKER        // STRUCTURE_TERMINAL,   STRUCTURE_CONTROLLER,   STRUCTURE_STORAGE,
+]
+
+let obj = {
   structures: {
     get: function () {
       if (!this._structures || isEmpty(this._structures)) {
@@ -47,3 +58,25 @@ export default {
     configurable: true
   }
 }
+
+multipleList.forEach(function (type) {
+  obj[type + 's'] = {
+    get: function () {
+      return this.structures[type] || []
+    },
+    enumerable: false,
+    configurable: true
+  }
+})
+
+singleList.forEach(function (type) {
+  obj[type] = {
+    get: function () {
+      return (this.structures[type] || [])[0]
+    },
+    enumerable: false,
+    configurable: true
+  }
+})
+
+export default obj

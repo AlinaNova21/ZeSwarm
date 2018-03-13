@@ -48,6 +48,7 @@ export class InfluxDB {
     this.startTick = Game.time
     this.shard = (Game.shard && Game.shard.name) || 'shard0'
     this.user = _.find(Game.spawns, v => v).owner.username
+  }
   reset () {
     if (Game.time === this.startTick) return // Don't reset on new tick
     this.stats = []

@@ -5,6 +5,7 @@ import harvester from './harvester'
 import claimer from './claimer'
 import collector from './collector'
 import feeder from './feeder'
+import scout from './scout'
 
 let parts = [
   core,
@@ -13,7 +14,8 @@ let parts = [
   harvester,
   claimer,
   collector,
-  feeder
+  feeder,
+  scout
 ]
 
 export default class states {}

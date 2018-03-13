@@ -41,6 +41,11 @@ export default {
     this.creep.upgradeController(tgt)
     this.pop()
   },
+  signController (target, msg) {
+    const tgt = this.resolveTarget(target)
+    this.creep.signController(tgt, msg)
+    this.pop()
+  },
   move (dir) {
     this.creep.move(dir)
     this.pop()

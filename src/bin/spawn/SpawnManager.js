@@ -10,6 +10,7 @@ export default class SpawnManager {
     this.context = context
     this.sleeper = this.context.queryPosisInterface('sleep')
     this.spawn = this.context.queryPosisInterface('spawn')
+    this.kernel = this.context.queryPosisInterface('kernel')
   }
   get id () { return this.context.id }
   get memory () {
@@ -36,29 +37,37 @@ export default class SpawnManager {
         for (let i = 0; i < queue.length; i++) {
           if (!spawns.length) break
           let item = queue[i]
-          let cspawns = map(spawns, (spawn, index) => {
-            let dist = item.rooms && item.rooms[0] && Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0
-            let energy = spawn.room.energyAvailable
-            let rank = energy - (dist * 50)
-            return { index, dist, energy, rank, spawn }
-          })
-          cspawns = sortBy(cspawns, (s) => s.rank)
-          let bodies = map(item.body, (body) => {
-            let cost = reduce(body, (l, v) => l + C.BODYPART_COST[v], 0)
-            return { cost, body }
-          })
-          let { index, energy, spawn } = cspawns.pop()
-          let { body } = maxBy(filter(bodies, (b) => b.cost <= energy), 'cost') || { body: false }
-          if (!body) continue
-          spawns.splice(index, 1)
           let status = this.status[item.statusId]
-          let ret = spawn.createCreep(body, item.statusId)
-          this.context.log.info(`Spawning ${item.statusId}`)
-          if (typeof ret === 'string') {
-            status.status = C.EPosisSpawnStatus.SPAWNING
-          } else {
+          try {
+            if (item.pid && !this.kernel.getProcessById(item.pid)) {
+              throw new Error('Spawning Process Dead')
+            }
+            let cspawns = map(spawns, (spawn, index) => {
+              let dist = item.rooms && item.rooms[0] && Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0
+              let energy = spawn.room.energyAvailable
+              let rank = energy - (dist * 50)
+              return { index, dist, energy, rank, spawn }
+            })
+            cspawns = sortBy(cspawns, (s) => s.rank)
+            let bodies = map(item.body, (body) => {
+              let cost = reduce(body, (l, v) => l + C.BODYPART_COST[v], 0)
+              return { cost, body }
+            })
+            let { index, energy, spawn } = cspawns.pop()
+            let { body } = maxBy(filter(bodies, (b) => b.cost <= energy), 'cost') || { body: false }
+            if (!body) continue
+            spawns.splice(index, 1)
+            let ret = spawn.createCreep(body, item.statusId)
+            this.context.log.info(`Spawning ${item.statusId}`)
+            if (typeof ret === 'string') {
+              status.status = C.EPosisSpawnStatus.SPAWNING
+            } else {
+              status.status = C.EPosisSpawnStatus.ERROR
+              status.message = this.spawnErrMsg(ret)
+            }
+          } catch (e) {
             status.status = C.EPosisSpawnStatus.ERROR
-            status.message = this.spawnErrMsg(ret)
+            status.message = e.message || e
           }
           drop.push(i)
         }

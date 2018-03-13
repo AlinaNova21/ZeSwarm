@@ -24,6 +24,7 @@ export default class SpawnExtension {
       C.addSegment('SPAWN')
     }
     this.extensionRegistry = extensionRegistry
+    this.kernel = extensionRegistry.getExtension('kernel')
     this.mm = extensionRegistry.getExtension('memoryManager')
     this.interrupt = extensionRegistry.getExtension('interrupt')
     if (this.memory === false) {
@@ -48,13 +49,14 @@ export default class SpawnExtension {
   }
   // Queues/Spawns the creep and returns an ID
   spawnCreep ({ rooms, body, priority = 5 }) {
-    priority = Math.min(Math.max(priority, 0), 10)
+    priority = Math.min(Math.max(priority, 0), 9)
     let uid = this.UID()
     let item = {
       statusId: uid,
       rooms,
       body,
-      priority
+      priority,
+      pid: this.kernel.currentId
     }
     this.queue[priority].push(item)
     this.status[uid] = {

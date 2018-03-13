@@ -19,6 +19,13 @@ export default {
         this.push('moveNear', tgt)
         return this.runStack()
       }
+      if (!tgt) {
+        tgt = room.storage || room.structures[STRUCTURE_CONTAINER]
+        if (tgt && pos.isNearTo(tgt)) {
+          this.push('flee', [{ pos: tgt.pos, range: 2 }])
+          return this.runStack()
+        }
+      }
     } else {
       let tgt
       if (room.storage) {
