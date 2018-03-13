@@ -46,7 +46,8 @@ export class InfluxDB {
     global.influxdb = this
     this.reset()
     this.startTick = Game.time
-  }
+    this.shard = (Game.shard && Game.shard.name) || 'shard0'
+    this.user = _.find(Game.spawns, v => v).owner.username
   reset () {
     if (Game.time === this.startTick) return // Don't reset on new tick
     this.stats = []
@@ -142,9 +143,6 @@ export class InfluxDB {
     })
   }
   commit () {
-    let usermap = this.opts.usermap
-    this.shard = (Game.shard && Game.shard.name) || 'shard0'
-    this.user = usermap[module.user] || _.find(Game.spawns, v => v).owner.username
     let start = Game.cpu.getUsed()
     if (this.opts.baseStats) this.addBaseStats()
     let stats = `text/${this.opts.driver.toLowerCase()}\n`
