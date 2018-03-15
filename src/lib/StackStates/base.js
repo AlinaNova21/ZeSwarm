@@ -6,6 +6,10 @@ export default {
     this.pop()
     this.runStack()
   },
+  suicide () {
+    this.creep.suicide()
+    this.pop()
+  },
   attack (target) {
     const tgt = this.resolveTarget(target)
     this.creep.attack(tgt)

@@ -42,6 +42,7 @@ export default class MemoryManager {
     if (this.mem.active.indexOf(id) === -1) {
       this.mem.active.push(id)
     }
+    console.log(`MM: ${this.mem.active}`)
   }
   deactivate (id) {
     let ind = this.mem.active.indexOf(id)

@@ -57,11 +57,21 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.scheduler = new Scheduler(this)
     this.mm.activate(C.SEGMENTS.KERNEL)
     this.mem = this.mm.load(C.SEGMENTS.KERNEL)
+    if (this.mem === '') this.mem = {}
+    if (this.imem === '') this.imem = {}
+    
     this.memget = () => this.mem
     this.processRegistry = processRegistry
     this.extensionRegistry = extensionRegistry
     extensionRegistry.register('memoryManager', this.mm)
-    this.interruptHandler = new InterruptHandler(() => this.mm.load(C.SEGMENTS.INTERRUPT))
+    this.interruptHandler = new InterruptHandler(() => {
+      let mem = this.mm.load(C.SEGMENTS.INTERRUPT)
+      if (mem === '') {
+        mem = {}
+        this.mm.save(C.SEGMENTS.INTERRUPT, mem)
+      }
+      return mem
+    })
     this.processInstanceCache = {}
     this.currentId = 'ROOT'
     this.log = new Logger('[Kernel]')
@@ -211,6 +221,8 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     let procUsed = 0
     this.mem = this.mm.load(C.SEGMENTS.KERNEL)
     this.imem = this.mm.load(C.SEGMENTS.INTERRUPT)
+    if (this.mem === '') this.mem = {}
+    if (this.imem === '') this.imem = {}
     if (Game.time % 10 === this.rand) {
       let ids = Object.keys(this.processMemory)
       this.log.info(`Cleaning Process Memory... (${ids.length} items)`)

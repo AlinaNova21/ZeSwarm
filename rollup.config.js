@@ -4,7 +4,12 @@ import resolve from 'rollup-plugin-node-resolve'
 import rootImport from 'rollup-plugin-root-import';
 
 export default {
-  entry: 'src/index.js',
+  input: 'src/index.js',
+  output: {
+    file: 'dist/main.js', 
+    format: 'cjs',
+    exports: 'named'
+  },
   plugins: [
     rootImport({
       root: `${__dirname}/src`,
@@ -15,8 +20,5 @@ export default {
     resolve({
       module: true
     })
-  ],
-  targets: [
-    { dest: 'dist/main.js', format: 'cjs' }
   ]
 }

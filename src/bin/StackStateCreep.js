@@ -21,7 +21,13 @@ export default class StackStateCreep extends states {
   }
 
   get stack () {
-    this.memory.stack = this.memory.stack || [this.memory.base || ['idle', 'No State']]
+    this.memory.stack = this.memory.stack || []
+    if (!this.memory.stack instanceof Array) {
+      this.memory.stack = []
+    }
+    if (!this.memory.stack.length) {
+      this.memory.stack = [this.memory.base || ['idle', 'No State']]
+    }
     return this.memory.stack
   }
 
@@ -43,7 +49,12 @@ export default class StackStateCreep extends states {
       }
       return this.log.info(`Creep not ready ${status.status}`)// Still waiting on creep
     }
-    this.runStack()
+    try {
+      this.runStack()
+    } catch (e) {
+      this.log.error(`Stack: ${this.stack.map(v=>JSON.stringify(v)).join('->')}`)
+      throw e
+    }
     let end = Game.cpu.getUsed()
     if (creep) {
       creep.room.visual.text(Math.round((end - start) * 100) / 100, creep.pos.x + 1, creep.pos.y, { size: 0.6 })

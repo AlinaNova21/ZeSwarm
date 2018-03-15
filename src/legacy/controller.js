@@ -2,6 +2,7 @@ const C = require('./constants')
 
 class Controller {
   run (controller) {
+    if (_.size(Game.constructionSites) === 100) return
     let { level, room } = controller
     let offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
     let wanted = [C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_SPAWN]

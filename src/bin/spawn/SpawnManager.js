@@ -10,7 +10,7 @@ export default class SpawnManager {
     this.context = context
     this.sleeper = this.context.queryPosisInterface('sleep')
     this.spawn = this.context.queryPosisInterface('spawn')
-    this.kernel = this.context.queryPosisInterface('kernel')
+    this.kernel = this.context.queryPosisInterface('baseKernel')
   }
   get id () { return this.context.id }
   get memory () {
@@ -30,7 +30,7 @@ export default class SpawnManager {
     this.context.log.info(`Sleeping for 5 ticks (${Game.time})`)
     this.sleeper.sleep(5)
     if (this.queue.length) {
-      let spawns = filter(Game.spawns, (spawn) => !spawn.spawning)
+      let spawns = filter(Game.spawns, (spawn) => !spawn.spawning && spawn.isActive())
       for (let qi = 0; qi < this.queue.length; qi++) {
         let queue = this.queue[qi]
         let drop = []

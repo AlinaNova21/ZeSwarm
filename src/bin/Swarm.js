@@ -2,6 +2,7 @@ import BaseProcess from './BaseProcess'
 import C from '/include/constants'
 import map from 'lodash-es/map'
 import each from 'lodash-es/each'
+import invoke from 'lodash-es/invoke'
 import filter from 'lodash-es/filter'
 
 export default class Swarm extends BaseProcess {
@@ -48,6 +49,28 @@ export default class Swarm extends BaseProcess {
         spawnTicket: cid,
         base: ['scout']
       })
+    }
+    if (Game.flags.claim) {
+      let { pos: { x, y, roomName } } = Game.flags.claim
+      let room = Game.rooms[roomName]
+      if (room && room.controller.my) {
+        invoke(room.find(FIND_HOSTILE_STRUCTURES), 'destroy')
+        invoke(room.find(FIND_HOSTILE_CONSTRUCTION_SITES), 'destroy')
+        let ret = Game.flags.claim.pos.createConstructionSite(C.STRUCTURE_SPAWN)
+        if (ret === C.OK) {
+          Game.flags.claim.remove()
+        }
+      } else {
+        let cid = this.ensureCreep(`claimer_${roomName}`, {
+          rooms: [roomName],
+          body: [[MOVE, CLAIM]],
+          priority: 10
+        })
+        this.ensureChild(`claimer_${roomName}_${cid}`, 'stackStateCreep', {
+          spawnTicket: cid,
+          base: ['claimer', { x, y, roomName }]
+        })
+      }
     }
     this.ensureChild('intel', 'intel')
     this.kernel.sleep(5)

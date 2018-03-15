@@ -1,13 +1,14 @@
 export default {
-  claimer (room) {
-    if (this.creep.pos.roomName !== room) {
-      this.push('moveToRoom', room)
+  claimer (target) {
+    let tgt = this.resolveTarget(target)
+    if (this.creep.pos.roomName !== tgt.roomName) {
+      this.push('moveToRoom', tgt)
       return this.runStack()
     }
     let controller = this.creep.room.controller
     if (controller) {
       this.push('suicide')
-      this.push('say', 'Claimed', true)
+      this.push('say', 'GOT IT!', true)
       this.push('claimController', controller.id)
       this.push('say', 'MINE!', true)
       this.push('moveNear', controller.id)
@@ -16,12 +17,12 @@ export default {
       this.say('WTF?!')
     }
   },
-  moveToRoom (room) {
-    if (this.creep.pos.roomName === room) {
+  moveToRoom (target) {
+    let tgt = this.resolveTarget(target)
+    if (this.creep.pos.roomName === tgt.roomName) {
       this.pop()
       this.runStack()
     } else {
-      const tgt = new RoomPosition(25, 25, room)
       this.creep.travelTo(tgt)
     }
   }

@@ -52,7 +52,6 @@ class Spawn {
         } else if (h.spawns) {
           want.atk = 5
           want.drainer = 2
-          console.log(JSON.stringify(h))
         }
       }
     }
@@ -65,7 +64,6 @@ class Spawn {
       if (t === 'scout') return 9
       return 10
     })
-    console.log(JSON.stringify(want))
     let sbody = []
     let spriority = -100
     let stype = ''
@@ -127,11 +125,9 @@ class Spawn {
         scost = bcost || cost
       }
     }
-    console.log(spriority, stype, scost)
     if (spriority < 100 && Game.time % this.seedRange !== this.seed) return
     if (sbody && sbody.length) {
       let ret = spawn.createCreep(sbody, stype + uid(), { homeRoom: room.name, role: stype })
-      console.log(ret, sbody, room.energyAvailable, scost, room.energyCapacityAvailable)
     }
   }
 }

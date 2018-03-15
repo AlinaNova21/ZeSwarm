@@ -25,14 +25,14 @@ export default {
     let exit = pos.findClosestByRange(dir)
     let msg = controller && controller.my && SIGN_MY_MSG || SIGN_MSG
     if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
-      this.say('Signing')
-      this.push('signController', controller.id)
+      this.creep.say('Signing')
+      this.push('signController', controller.id, msg)
       this.push('moveNear', controller.pos)
       return this.runStack()
     }
     let roomCallback = `r => r === '${room.name}' ? undefined : false`
     this.push('move', dir)
-    this.push('moveNear', exit.pos || exit, { roomCallback })
+    this.push('moveNear', exit, { roomCallback })
     this.runStack()
   }
 }

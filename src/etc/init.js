@@ -7,7 +7,7 @@ const RUN_TEST_SPAWN = false
 
 const RUN_CRONS = true
 const RUN_LEGACY = true
-const RUN_PROCESS_TREE_DUMP = true
+const RUN_PROCESS_TREE_DUMP = false
 
 const STRESS_TEST_ENABLED = false
 const STRESS_TEST_PROC = 'ags131/SleeperTest'

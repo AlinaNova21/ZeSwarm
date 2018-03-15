@@ -15,8 +15,7 @@ export default {
       return this.runStack()
     }
     let { x, y } = tgt.pos
-    let raw
-    let [{ resource: res } = {}] = raw = this.creep.room.lookForAtArea(C.LOOK_RESOURCES, y - 1, x - 1, y + 1, x + 1, true)
+    let [{ resource: res } = {}] = this.creep.room.lookForAtArea(C.LOOK_RESOURCES, y - 1, x - 1, y + 1, x + 1, true)
     if (res) {
       this.log.info(`pickup ${res.id}`)
       this.push('pickup', res.id)

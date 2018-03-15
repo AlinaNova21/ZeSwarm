@@ -45,7 +45,7 @@ export default class InterruptHandler {
   }
   clear (pid) {
     // Not efficient, but shouldn't be called often
-    let hkeys = Object.keys(this.hooks).filter(h => h.match(pid))
+    let hkeys = Object.keys(this.hooks).filter(h => h.endsWith(pid))
     hkeys.forEach(hkey => delete this.hooks[hkey])
   }
   run (stage = INT_STAGE.START) {

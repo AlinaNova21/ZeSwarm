@@ -6,20 +6,23 @@ export default {
       opts.roomCallback = eval(opts.roomCallback)
     }
     const tgt = this.resolveTarget(target)
-    if (this.creep.pos.isEqualTo(tgt.pos || tgt)) {
+    if (this.creep.pos.isEqualTo(tgt)) {
       this.pop()
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
     }
   },
-  moveNear (target) {
+  moveNear (target, opts = {}) {
+    if (typeof opts.roomCallback === 'string') {
+      opts.roomCallback = eval(opts.roomCallback)
+    }
     let tgt = this.resolveTarget(target)
     if (this.creep.pos.isNearTo(tgt)) {
       this.pop()
       this.runStack()
     } else {
-      this.creep.travelTo(tgt)
+      this.creep.travelTo(tgt, opts)
     }
   },
   moveInRange (target, range) {

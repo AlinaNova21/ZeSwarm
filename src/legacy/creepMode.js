@@ -74,6 +74,9 @@ module.exports = {
       if (tgt.structureType === C.STRUCTURE_CONTROLLER) {
         creep.upgradeController(tgt)
       } else {
+        if(creep.room.find(C.FIND_MY_CONSTRUCTION_SITES).length && !(tgt instanceof ConstructionSite)){
+          creep.memory.tgt = null
+        }
         creep.repair(tgt)
         let r = creep.build(tgt)
         if (r === C.ERR_RCL_NOT_ENOUGH) creep.memory.mode = 'upgrade'

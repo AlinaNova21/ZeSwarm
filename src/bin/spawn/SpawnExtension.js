@@ -24,7 +24,7 @@ export default class SpawnExtension {
       C.addSegment('SPAWN')
     }
     this.extensionRegistry = extensionRegistry
-    this.kernel = extensionRegistry.getExtension('kernel')
+    this.kernel = extensionRegistry.getExtension('baseKernel')
     this.mm = extensionRegistry.getExtension('memoryManager')
     this.interrupt = extensionRegistry.getExtension('interrupt')
     if (this.memory === false) {

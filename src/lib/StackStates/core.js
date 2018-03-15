@@ -50,7 +50,7 @@ export default {
     if (typeof tgt === 'string') {
       return Game.getObjectById(tgt)
     }
-    if (tgt.x && tgt.y) {
+    if (tgt.roomName && !(tgt instanceof RoomPosition)) {
       return new RoomPosition(tgt.x, tgt.y, tgt.roomName || tgt.room)
     }
     return tgt
