@@ -3,7 +3,7 @@ import C from '/include/constants'
 export default {
   builder (target, cache = {}) {
     if (!cache.work) {
-      cache.work = this.creep.getActiveBodyparts(WORK)
+      cache.work = this.creep.getActiveBodyparts(C.WORK)
     }
     target = { x: 25, y: 25, roomName: target }
     let tgt = this.resolveTarget(target)
@@ -18,12 +18,12 @@ export default {
       let site = pos.findClosestByRange(sites)
       let hitsMax = Math.ceil(this.creep.carry.energy / (cache.work * C.BUILD_POWER))
       this.push('repeat', hitsMax, 'build', site.id)
-      this.push('moveInRange', site, 3)
+      this.push('moveInRange', site.id, 3)
       this.runStack()
     } else {
       let tgt = room.storage || room.containers.find(c => c.store.energy)
       if (tgt) {
-        this.push('withdraw', tgt.id)
+        this.push('withdraw', tgt.id, C.RESOURCE_ENERGY)
         this.push('moveNear', tgt.id)
         return this.runStack()
       }

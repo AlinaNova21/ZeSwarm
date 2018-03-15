@@ -40,11 +40,6 @@ export default {
     this.creep.attackController(tgt)
     this.pop()
   },
-  upgradeController (target) {
-    const tgt = this.resolveTarget(target)
-    this.creep.upgradeController(tgt)
-    this.pop()
-  },
   signController (target, msg) {
     const tgt = this.resolveTarget(target)
     this.creep.signController(tgt, msg)

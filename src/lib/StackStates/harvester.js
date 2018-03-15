@@ -1,7 +1,9 @@
+import C from '/include/constants'
+
 export default {
   harvester (target, type = 'source', cache = {}) {
     if (!cache.work) {
-      cache.work = this.creep.getActiveBodyparts(WORK)
+      cache.work = this.creep.getActiveBodyparts(C.WORK)
     }
     let tgt = this.resolveTarget(target)
     if (!this.creep.pos.isNearTo(tgt)) {
@@ -11,9 +13,17 @@ export default {
     let wantContainer = this.creep.body.length >= 8
     if (wantContainer) {
       let { x, y, roomName } = this.creep.pos
-      let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
-        .filter(s => s.structure.structureType === C.STRUCTURE_CONTAINER)
+      let cont
+      if (cache.cont) {
+        cont = Game.getObjectById(cache.cont)
+      } else {
+        let conts = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
+          .filter(s => s.structure.structureType === C.STRUCTURE_CONTAINER)
+          .map(s => s.structure)
+        cont = this.creep.pos.findClosestByRange(conts)
+      }
       if (cont) {
+        cache.cont = cont.id
         if (!this.creep.pos.isEqualTo(cont.pos)) {
           this.push('travelTo', cont.id)
           return this.runStack()

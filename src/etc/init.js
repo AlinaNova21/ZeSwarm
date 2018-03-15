@@ -1,3 +1,5 @@
+import times from 'lodash-es/times'
+
 const RUN_TEST_ALL = false
 const RUN_TEST_INT = false
 const RUN_TEST_SLEEPER = false
@@ -7,12 +9,12 @@ const RUN_TEST_SPAWN = false
 
 const RUN_CRONS = true
 const RUN_LEGACY = true
-const RUN_PROCESS_TREE_DUMP = false
+const RUN_PROCESS_TREE_DUMP = true
 
 const STRESS_TEST_ENABLED = false
 const STRESS_TEST_PROC = 'ags131/SleeperTest'
 const STRESS_TEST_CNT = 0
-const STRESS_TEST_SERVICES = _.times(STRESS_TEST_CNT, (i) => ({
+const STRESS_TEST_SERVICES = times(STRESS_TEST_CNT, (i) => ({
   id: `stress_${i}`,
   name: STRESS_TEST_PROC,
   params: {},

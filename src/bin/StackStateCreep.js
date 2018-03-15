@@ -22,7 +22,7 @@ export default class StackStateCreep extends states {
 
   get stack () {
     this.memory.stack = this.memory.stack || []
-    if (!this.memory.stack instanceof Array) {
+    if (!(this.memory.stack instanceof Array)) {
       this.memory.stack = []
     }
     if (!this.memory.stack.length) {
@@ -51,8 +51,12 @@ export default class StackStateCreep extends states {
     }
     try {
       this.runStack()
+      this.debug = true
+      if (this.debug) {
+        this.say(this.stack.slice(-1)[0])
+      }
     } catch (e) {
-      this.log.error(`Stack: ${this.stack.map(v=>JSON.stringify(v)).join('->')}`)
+      this.log.error(`Stack: ${this.stack.map(v => JSON.stringify(v)).join('->')}`)
       throw e
     }
     let end = Game.cpu.getUsed()
@@ -67,7 +71,7 @@ export default class StackStateCreep extends states {
 
   buildAt (type, target, opts = {}) {
     if (!opts.work) {
-      opts.work = this.creep.getActiveBodyparts(WORK)
+      opts.work = this.creep.getActiveBodyparts(C.WORK)
     }
     const tgt = this.resolveTarget(target)
     if (this.creep.carry.energy) {

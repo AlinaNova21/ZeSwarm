@@ -1,5 +1,6 @@
 import filter from 'lodash-es/filter'
 import map from 'lodash-es/map'
+import each from 'lodash-es/each'
 import maxBy from 'lodash-es/maxBy'
 import sortBy from 'lodash-es/sortBy'
 import reduce from 'lodash-es/reduce'
@@ -29,6 +30,7 @@ export default class SpawnManager {
   run () {
     this.context.log.info(`Sleeping for 5 ticks (${Game.time})`)
     this.sleeper.sleep(5)
+    this.cleanup()
     if (this.queue.length) {
       let spawns = filter(Game.spawns, (spawn) => !spawn.spawning && spawn.isActive())
       for (let qi = 0; qi < this.queue.length; qi++) {
@@ -43,7 +45,7 @@ export default class SpawnManager {
               throw new Error('Spawning Process Dead')
             }
             let cspawns = map(spawns, (spawn, index) => {
-              let dist = item.rooms && item.rooms[0] && Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0
+              let dist = item.rooms && item.rooms[0] && (Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0)
               let energy = spawn.room.energyAvailable
               let rank = energy - (dist * 50)
               return { index, dist, energy, rank, spawn }
@@ -76,6 +78,16 @@ export default class SpawnManager {
         }
       }
     }
+  }
+  cleanup () {
+    let keys = Object.keys(this.status)
+    each(keys, k => {
+      if (!this.status[k]) return
+      let { name, status } = this.status[k]
+      if (status !== C.EPosisSpawnStatus.QUEUED && !Game.creeps[name || k]) {
+        delete this.status[k]
+      }
+    })
   }
   spawnErrMsg (err) {
     let errors = {
