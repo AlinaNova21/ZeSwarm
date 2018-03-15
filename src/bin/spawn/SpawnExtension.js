@@ -50,6 +50,16 @@ export default class SpawnExtension {
   // Queues/Spawns the creep and returns an ID
   spawnCreep ({ rooms, body, priority = 5 }) {
     priority = Math.min(Math.max(priority, 0), 9)
+    let bodies = body.map(b => b.join())
+    let orphans = this.getOrphans(rooms)
+    for (let i in bodies) {
+      let body = bodies[i]
+      const [orphan] = orphans[body] || []
+      if (orphan) {
+        this.getStatus(orphan)
+        return orphan
+      }
+    }
     let uid = this.UID()
     let item = {
       statusId: uid,
@@ -64,9 +74,25 @@ export default class SpawnExtension {
     }
     return uid
   }
+  getOrphans (rooms) {
+    const thresh = Game.time - 10
+    let ret = {}
+    for (let id in this.status) {
+      let { name, status, lastAccess } = this.status[id]
+      let creep = Game.creeps[name || id]
+      if (creep && lastAccess < thresh) {
+        if (rooms && !rooms.includes(creep.pos.roomName)) continue
+        let body = creep.body.map(b => b.type).join()
+        ret[body] = ret[body] || []
+        ret[body].push(id)
+      }
+    }
+    return ret
+  }
   // Used to see if its been dropped from queue
   getStatus (id) {
     let stat = this.status[id] || { status: C.EPosisSpawnStatus.ERROR, message: "ID Doesn't Exist" }
+    stat.lastAccess = Game.time
     if (stat.status === C.EPosisSpawnStatus.SPAWNING && Game.creeps[id] && !Game.creeps[id].spawning) {
       stat.status = C.EPosisSpawnStatus.SPAWNED
     }

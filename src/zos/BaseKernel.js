@@ -4,6 +4,8 @@ import InterruptHandler from './InterruptHandler'
 import MemoryManager from './MemoryManager'
 import Scheduler from './Scheduler'
 
+import ErrorMapper from './ErrorMapper'
+
 import C from './constants'
 
 // export interface ProcessInfo {
@@ -59,7 +61,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.mem = this.mm.load(C.SEGMENTS.KERNEL)
     if (this.mem === '') this.mem = {}
     if (this.imem === '') this.imem = {}
-    
+
     this.memget = () => this.mem
     this.processRegistry = processRegistry
     this.extensionRegistry = extensionRegistry
@@ -210,8 +212,16 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     } catch (e) {
       this.killProcess(id)
       this.currentId = 'ROOT'
-      pinfo.Eq = e.stack || e.toString()
-      this.log.error(() => `[${id}] ${pinfo.n} crashed\n${e.stack}`)
+      let err = e
+      try {
+        err = ErrorMapper.map(err)
+      } catch (e) {
+        // Couldn't remap
+        this.log.warn(() => `Unable to remap error`)
+        err = e.stack || e
+      }
+      pinfo.Eq = err.toString()
+      this.log.error(() => `[${id}] ${pinfo.n} crashed\n${err}`)
       return false
     }
   }

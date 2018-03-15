@@ -55,7 +55,7 @@ export default class Nest extends BaseProcess {
       ],
       priority: 2
     })
-    let proc = this.ensureChild(`feeder_${cid}`, 'stackStateCreep', {
+    this.ensureChild(`feeder_${cid}`, 'stackStateCreep', {
       spawnTicket: cid,
       base: ['feeder', this.roomName]
     })
@@ -73,10 +73,27 @@ export default class Nest extends BaseProcess {
         ],
         priority: 2
       })
-      let proc = this.ensureChild(`builder_${cid}`, 'stackStateCreep', {
+      this.ensureChild(`builder_${cid}`, 'stackStateCreep', {
         spawnTicket: cid,
         base: ['builder', this.roomName]
       })
+    }
+    let hostiles = this.room.find(C.FIND_HOSTILE_CREEPS)
+    if (hostiles.length) {
+      if (hostiles[0].owner.username === 'Invader') {
+        let cid = this.ensureCreep('protector_1', {
+          rooms: [this.roomName],
+          body: [
+            this.expand([2, C.ATTACK, 2, C.MOVE]),
+            this.expand([1, C.ATTACK, 1, C.MOVE])
+          ],
+          priority: 0
+        })
+        this.ensureChild(`protector_${cid}`, 'stackStateCreep', {
+          spawnTicket: cid,
+          base: ['protector', this.roomName]
+        })
+      }
     }
 
     this.cleanChildren()

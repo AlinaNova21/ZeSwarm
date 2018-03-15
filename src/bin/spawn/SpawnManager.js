@@ -44,28 +44,41 @@ export default class SpawnManager {
             if (item.pid && !this.kernel.getProcessById(item.pid)) {
               throw new Error('Spawning Process Dead')
             }
-            let cspawns = map(spawns, (spawn, index) => {
-              let dist = item.rooms && item.rooms[0] && (Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0)
-              let energy = spawn.room.energyAvailable
-              let rank = energy - (dist * 50)
-              return { index, dist, energy, rank, spawn }
-            })
-            cspawns = sortBy(cspawns, (s) => s.rank)
-            let bodies = map(item.body, (body) => {
-              let cost = reduce(body, (l, v) => l + C.BODYPART_COST[v], 0)
-              return { cost, body }
-            })
-            let { index, energy, spawn } = cspawns.pop()
-            let { body } = maxBy(filter(bodies, (b) => b.cost <= energy), 'cost') || { body: false }
-            if (!body) continue
-            spawns.splice(index, 1)
-            let ret = spawn.createCreep(body, item.statusId)
-            this.context.log.info(`Spawning ${item.statusId}`)
-            if (typeof ret === 'string') {
-              status.status = C.EPosisSpawnStatus.SPAWNING
-            } else {
-              status.status = C.EPosisSpawnStatus.ERROR
-              status.message = this.spawnErrMsg(ret)
+            let bodies = item.body.map(b => b.join())
+            let orphans = this.spawn.getOrphans(item.rooms)
+            for (let i in bodies) {
+              let body = bodies[i]
+              const [orphan] = orphans[body] || []
+              if (orphan) {
+                delete this.status[orphan]
+                status.name = orphan
+                status.status = C.EPosisSpawnStatus.SPAWNED
+              }
+            }
+            if (status.status !== C.EPosisSpawnStatus.SPAWNED) {
+              let cspawns = map(spawns, (spawn, index) => {
+                let dist = item.rooms && item.rooms[0] && (Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0)
+                let energy = spawn.room.energyAvailable
+                let rank = energy - (dist * 50)
+                return { index, dist, energy, rank, spawn }
+              })
+              cspawns = sortBy(cspawns, (s) => s.rank)
+              let bodies = map(item.body, (body) => {
+                let cost = reduce(body, (l, v) => l + C.BODYPART_COST[v], 0)
+                return { cost, body }
+              })
+              let { index, energy, spawn } = cspawns.pop()
+              let { body } = maxBy(filter(bodies, (b) => b.cost <= energy), 'cost') || { body: false }
+              if (!body) continue
+              spawns.splice(index, 1)
+              let ret = spawn.createCreep(body, item.statusId)
+              this.context.log.info(`Spawning ${item.statusId}`)
+              if (typeof ret === 'string') {
+                status.status = C.EPosisSpawnStatus.SPAWNING
+              } else {
+                status.status = C.EPosisSpawnStatus.ERROR
+                status.message = this.spawnErrMsg(ret)
+              }
             }
           } catch (e) {
             status.status = C.EPosisSpawnStatus.ERROR
@@ -76,6 +89,7 @@ export default class SpawnManager {
         while (drop.length) {
           queue.splice(drop.pop(), 1)
         }
+        if (queue.length) break
       }
     }
   }

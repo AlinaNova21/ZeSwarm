@@ -51,7 +51,7 @@ export default class StackStateCreep extends states {
     }
     try {
       this.runStack()
-      this.debug = true
+      // this.debug = true
       if (this.debug) {
         this.say(this.stack.slice(-1)[0])
       }
@@ -106,13 +106,12 @@ export default class StackStateCreep extends states {
       this.pop()
       return this.runStack()
     }
-    let tgt = this.creep.room.storage || this.creep.room.find(C.STRUCTURE_SPAWN)[0]
+    let tgt = this.creep.room.storage || this.creep.room.spawns.find(s => s.energy < s.energyCapacity)
     if (tgt) {
       this.push('transfer', tgt.id, res)
       this.push('moveNear', tgt.id)
       return this.runStack()
     }
-    this.pop()
   }
 }
 /*

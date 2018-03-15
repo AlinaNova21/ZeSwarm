@@ -47,7 +47,8 @@ export default class Swarm extends BaseProcess {
       })
       this.ensureChild(`creep_${i}_${cid}`, 'stackStateCreep', {
         spawnTicket: cid,
-        base: ['scout']
+        base: ['scout'],
+        priority: 9
       })
     }
     if (Game.flags.claim) {
@@ -73,6 +74,7 @@ export default class Swarm extends BaseProcess {
       }
     }
     this.ensureChild('intel', 'intel')
+    this.ensureChild('errTest', 'errTest')
     this.kernel.sleep(5)
   }
 

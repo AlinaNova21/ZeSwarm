@@ -24,7 +24,9 @@
   "homepage": "https://github.com/ags131/screeps#readme",
   "dependencies": {
     "lodash-es": "^4.17.4",
-    "rollup-plugin-root-import": "^0.2.2"
+    "rollup-plugin-root-import": "^0.2.2",
+    "source-map": "0.6.1",
+    "stack-trace": "^0.0.10"
   },
   "devDependencies": {
     "gulp": "^3.9.1",

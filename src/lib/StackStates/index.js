@@ -1,12 +1,13 @@
-import core from './core'
-import base from './base'
-import movement from './movement'
-import harvester from './harvester'
-import claimer from './claimer'
-import collector from './collector'
-import feeder from './feeder'
-import builder from './builder'
 import scout from './scout'
+import protector from './protector'
+import builder from './builder'
+import feeder from './feeder'
+import collector from './collector'
+import claimer from './claimer'
+import harvester from './harvester'
+import movement from './movement'
+import base from './base'
+import core from './core'
 
 let parts = [
   core,
@@ -16,6 +17,7 @@ let parts = [
   claimer,
   collector,
   feeder,
+  protector,
   builder,
   scout
 ]

@@ -1,14 +1,16 @@
 // rollup.config.js
 import commonjs from 'rollup-plugin-commonjs'
+import screeps from 'rollup-plugin-screeps'
 import resolve from 'rollup-plugin-node-resolve'
-import rootImport from 'rollup-plugin-root-import';
+import rootImport from 'rollup-plugin-root-import'
 
 export default {
   input: 'src/index.js',
   output: {
-    file: 'dist/main.js', 
+    file: 'dist/main.js',
     format: 'cjs',
-    exports: 'named'
+    exports: 'named',
+    sourcemap: true
   },
   plugins: [
     rootImport({
@@ -19,6 +21,9 @@ export default {
     commonjs(),
     resolve({
       module: true
+    }),
+    screeps({
+      dryRun: true
     })
   ]
 }

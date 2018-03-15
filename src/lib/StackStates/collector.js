@@ -5,6 +5,11 @@ import values from 'lodash-es/values'
 export default {
   collector (target) {
     let tgt = this.resolveTarget(target)
+    if (!this.creep.carryCapacity) {
+      this.creep.say('No CARRY', true)
+      this.push('suicide')
+      return this.runStack()
+    }
     if (sum(values(this.creep.carry)) === this.creep.carryCapacity) {
       this.push('store', C.RESOURCE_ENERGY)
       return this.runStack()

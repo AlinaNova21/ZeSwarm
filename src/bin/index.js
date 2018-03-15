@@ -1,5 +1,6 @@
 import Init from './Init'
 import IntTest from './IntTest'
+import ErrTest from './ErrTest'
 import Cron from './Cron'
 
 import Nest from './Nest'
@@ -17,6 +18,7 @@ export const bundle = {
   install (processRegistry, extensionRegistry) {
     processRegistry.register('init', Init)
     processRegistry.register('intTest', IntTest)
+    processRegistry.register('errTest', ErrTest)
     processRegistry.register('cron', Cron)
     processRegistry.register('swarm', Swarm)
     processRegistry.register('nest', Nest)
