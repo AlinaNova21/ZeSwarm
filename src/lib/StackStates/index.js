@@ -5,6 +5,7 @@ import harvester from './harvester'
 import claimer from './claimer'
 import collector from './collector'
 import feeder from './feeder'
+import builder from './builder'
 import scout from './scout'
 
 let parts = [
@@ -15,6 +16,7 @@ let parts = [
   claimer,
   collector,
   feeder,
+  builder,
   scout
 ]
 

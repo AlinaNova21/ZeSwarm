@@ -5,6 +5,7 @@ export default {
     if (!cache.work) {
       cache.work = this.creep.getActiveBodyparts(WORK)
     }
+    target = { x: 25, y: 25, roomName: target }
     let tgt = this.resolveTarget(target)
     if (this.creep.pos.roomName !== tgt.roomName) {
       this.push('moveToRoom', tgt)

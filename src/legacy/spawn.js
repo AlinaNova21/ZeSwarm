@@ -31,15 +31,15 @@ class Spawn {
       case 2:
         want.harv = 2
         // want.scout = 1
-        want.build = 2
+        // want.build = 2
         want.up = 5
-        want.scout = 4
+        // want.scout = 4
         break
       default:
       case 3:
         // want.harv = 4
         // want.cart = 1
-        want.build = 2
+        // want.build = 2
         want.up = 0
         // want.scout = 8
         break
