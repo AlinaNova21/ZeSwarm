@@ -41,7 +41,9 @@ let off = Math.floor(Math.random() * 10)
 export function loop () {
   stats.reset()
   globals.tick()
+  extensionRegistry.pretick()  
   pkernel.loop()
+  extensionRegistry.posttick()
   if (Game.time % 10 === off) {
     globals.cleanup()
   }
