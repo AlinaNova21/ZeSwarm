@@ -7,6 +7,7 @@ export class ExtensionRegistry {
   constructor () {
     this.registry = {} // [interfaceId: string]: IPosisExtension } = {}
     this.register('agsExtensionRegistry', this)
+    this.register('ags131/ExtensionRegistry', this)
     this.pre = []
     this.post = []
   }
