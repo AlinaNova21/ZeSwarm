@@ -72,7 +72,7 @@ export default class HarvestManager extends BaseProcess {
           priority: 1
         })
         let base = [state, source.id]
-        let proc = this.ensureChild(id, 'stackStateCreep', { spawnTicket, base })
+        let proc = this.ensureChild(id, 'ZeSwarm/stackStateCreep', { spawnTicket, base })
       })
     })
   }

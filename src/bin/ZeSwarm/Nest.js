@@ -55,7 +55,7 @@ export default class Nest extends BaseProcess {
       ],
       priority: 2
     })
-    this.ensureChild(`feeder_${cid}`, 'stackStateCreep', {
+    this.ensureChild(`feeder_${cid}`, 'ZeSwarm/stackStateCreep', {
       spawnTicket: cid,
       base: ['feeder', this.roomName]
     })
@@ -73,7 +73,7 @@ export default class Nest extends BaseProcess {
         ],
         priority: 2
       })
-      this.ensureChild(`builder_${cid}`, 'stackStateCreep', {
+      this.ensureChild(`builder_${cid}`, 'ZeSwarm/stackStateCreep', {
         spawnTicket: cid,
         base: ['builder', this.roomName]
       })
@@ -89,7 +89,7 @@ export default class Nest extends BaseProcess {
           ],
           priority: 0
         })
-        this.ensureChild(`protector_${cid}`, 'stackStateCreep', {
+        this.ensureChild(`protector_${cid}`, 'ZeSwarm/stackStateCreep', {
           spawnTicket: cid,
           base: ['protector', this.roomName]
         })

@@ -35,7 +35,7 @@ export default class Swarm extends BaseProcess {
       }
       if (!proc) {
         this.log.info(`Nest not managed, beginning management of ${room}`)
-        let { pid } = this.kernel.startProcess('nest', { room })
+        let { pid } = this.kernel.startProcess('ZeSwarm/nest', { room })
         nest.pid = pid
       }
     })
@@ -45,7 +45,7 @@ export default class Swarm extends BaseProcess {
         body: [[TOUGH, MOVE]],
         priority: 10
       })
-      this.ensureChild(`creep_${i}_${cid}`, 'stackStateCreep', {
+      this.ensureChild(`creep_${i}_${cid}`, 'ZeSwarm/stackStateCreep', {
         spawnTicket: cid,
         base: ['scout'],
         priority: 9
@@ -67,14 +67,13 @@ export default class Swarm extends BaseProcess {
           body: [[MOVE, CLAIM]],
           priority: 10
         })
-        this.ensureChild(`claimer_${roomName}_${cid}`, 'stackStateCreep', {
+        this.ensureChild(`claimer_${roomName}_${cid}`, 'ZeSwarm/stackStateCreep', {
           spawnTicket: cid,
           base: ['claimer', { x, y, roomName }]
         })
       }
     }
-    this.ensureChild('intel', 'intel')
-    this.ensureChild('errTest', 'errTest')
+    this.ensureChild('intel', 'ZeSwarm/intel')
     this.kernel.sleep(5)
   }
 

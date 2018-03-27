@@ -34,7 +34,7 @@ export default {
     },
     {
       id: 'swarm',
-      name: 'swarm',
+      name: 'ZeSwarm/swarm',
       params: {},
       restart: true,
       enabled: true
