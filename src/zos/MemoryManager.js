@@ -134,4 +134,24 @@ export default class MemoryManager {
       }
     })
   }
+  posttick(){
+    this.endOfTick()
+  }
 }
+/*
+interface SegmentExtension {
+  // Returns undefined if segment isn't loaded,
+  // else parsed JSON if contents is JSON, else string
+  load(id: Number): SegmentValue | undefined;
+  // marks segment for saving, implementations 
+  // may save immediately or wait until end of tick
+  // subsequent load calls within the same tick should
+  // return this value
+  save(id: Number, value: SegmentValue): void;
+  // Should add ID to active list
+  activate(id: Number): void;
+}
+
+interface SegmentValue {}
+
+*/

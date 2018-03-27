@@ -258,7 +258,6 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       // console.log(JSON.stringify(C))
       this.mm.activate(C.SEGMENTS.KERNEL)
       this.mm.activate(C.SEGMENTS.INTERRUPT)
-      this.mm.endOfTick()
       return
     }
     if (!this.mem.type === 'kernel') {
@@ -351,7 +350,6 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     })
     this.mm.save(C.SEGMENTS.KERNEL, this.memory)
     this.mm.save(C.SEGMENTS.INTERRUPT, this.mm.load(C.SEGMENTS.INTERRUPT))
-    this.mm.endOfTick()
     let loopEnd = Game.cpu.getUsed()
     let loopDur = loopEnd - loopStart
     let ktime = loopDur - procUsed
@@ -373,6 +371,6 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
 
   reboot () {
     this.mm.save(C.SEGMENTS.KERNEL, {})
-    this.mm.endOfTick()
+    this.mm.posttick()
   }
 }
