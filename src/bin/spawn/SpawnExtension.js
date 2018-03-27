@@ -48,7 +48,7 @@ export default class SpawnExtension {
     return ('C' + Game.time.toString(36).slice(-4) + Math.random().toString(36).slice(-2)).toUpperCase()
   }
   // Queues/Spawns the creep and returns an ID
-  spawnCreep ({ rooms, body, priority = 5 }) {
+  spawnCreep ({ rooms, body, priority = 5, maxRange = 10 }) {
     priority = Math.min(Math.max(priority, 0), 9)
     let bodies = body.map(b => b.join())
     let orphans = this.getOrphans(rooms)
@@ -66,6 +66,7 @@ export default class SpawnExtension {
       rooms,
       body,
       priority,
+      maxRange,
       pid: this.kernel.currentId
     }
     this.queue[priority].push(item)
