@@ -60,6 +60,9 @@ export default class SpawnManager {
                 let dist = item.rooms && item.rooms[0] && (Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0)
                 let energy = spawn.room.energyAvailable
                 let rank = energy - (dist * 50)
+                if (item.maxRange && item.maxRange < dist) {
+                  rank -= 1e8
+                }
                 return { index, dist, energy, rank, spawn }
               })
               cspawns = sortBy(cspawns, (s) => s.rank)
