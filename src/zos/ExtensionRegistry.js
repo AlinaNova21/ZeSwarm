@@ -24,16 +24,6 @@ export class ExtensionRegistry {
     }
     return true
   }
-  unregister (interfaceId) {
-    if (this.registry[interfaceId]) {
-      logger.debug(`Unregistered ${interfaceId}`)
-      delete this.registry[interfaceId]
-      return true
-    } else {
-      logger.error(`Interface Id not registered: ${interfaceId}`)
-      return false
-    }
-  }
   getExtension (interfaceId) {
     if (!this.registry[interfaceId]) return
     return this.registry[interfaceId]
