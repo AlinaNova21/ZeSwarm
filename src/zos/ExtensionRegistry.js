@@ -17,11 +17,14 @@ export class ExtensionRegistry {
     }
     logger.debug(`Registered ${interfaceId}`)
     this.registry[interfaceId] = extension
+    if (typeof extension.register === 'function') {
+      extension.register()
+    }
     if (typeof extension.pretick === 'function') {
       this.pre.push(() => extension.pretick())
     }
     if (typeof extension.posttick === 'function') {
-      this.post.push(() => extension.posttick())
+      this.post.unshift(() => extension.posttick())
     }
     return true
   }

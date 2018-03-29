@@ -55,22 +55,22 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
 
   constructor (processRegistry, extensionRegistry) {
     this.rand = Game.time % 10
-    this.mm = new MemoryManager()
+    this.segments = extensionRegistry.getExtension('segments')
     this.scheduler = new Scheduler(this)
-    this.mm.activate(C.SEGMENTS.KERNEL)
-    this.mem = this.mm.load(C.SEGMENTS.KERNEL)
+    this.segments.activate(C.SEGMENTS.KERNEL)
+    this.mem = this.segments.load(C.SEGMENTS.KERNEL)
     if (this.mem === '') this.mem = {}
     if (this.imem === '') this.imem = {}
 
     this.memget = () => this.mem
     this.processRegistry = processRegistry
     this.extensionRegistry = extensionRegistry
-    extensionRegistry.register('memoryManager', this.mm)
+
     this.interruptHandler = new InterruptHandler(() => {
-      let mem = this.mm.load(C.SEGMENTS.INTERRUPT)
+      let mem = this.segments.load(C.SEGMENTS.INTERRUPT)
       if (mem === '') {
         mem = {}
-        this.mm.save(C.SEGMENTS.INTERRUPT, mem)
+        this.segments.save(C.SEGMENTS.INTERRUPT, mem)
       }
       return mem
     })
@@ -229,8 +229,8 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   loop () {
     let loopStart = Game.cpu.getUsed()
     let procUsed = 0
-    this.mem = this.mm.load(C.SEGMENTS.KERNEL)
-    this.imem = this.mm.load(C.SEGMENTS.INTERRUPT)
+    this.mem = this.segments.load(C.SEGMENTS.KERNEL)
+    this.imem = this.segments.load(C.SEGMENTS.INTERRUPT)
     if (this.mem === '') this.mem = {}
     if (this.imem === '') this.imem = {}
     if (Game.time % 10 === this.rand) {
@@ -256,17 +256,17 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     if (this.mem === false || this.imem === false) {
       this.log.warn(`Kernel Segments not loaded. Activating. Break early. ${C.SEGMENTS.KERNEL} ${C.SEGMENTS.INTERRUPT}`)
       // console.log(JSON.stringify(C))
-      this.mm.activate(C.SEGMENTS.KERNEL)
-      this.mm.activate(C.SEGMENTS.INTERRUPT)
+      this.segments.activate(C.SEGMENTS.KERNEL)
+      this.segments.activate(C.SEGMENTS.INTERRUPT)
       return
     }
     if (!this.mem.type === 'kernel') {
       this.mem = { type: 'kernel' }
-      this.mm.save(C.SEGMENTS.KERNEL, this.mem)
+      this.segments.save(C.SEGMENTS.KERNEL, this.mem)
     }
     if (!this.imem.type === 'interrupt') {
       this.imem = { type: 'interrupt' }
-      this.mm.save(C.SEGMENTS.INTERRUPT, this.imem)
+      this.segments.save(C.SEGMENTS.INTERRUPT, this.imem)
     }
     this.memory.processTable = this.memory.processTable || {}
     let interrupts = this.interruptHandler.run(C.INT_STAGE.START)
@@ -348,8 +348,8 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         this.interruptHandler.remove(hook.pid, hook.type, hook.stage, hook.key)
       }
     })
-    this.mm.save(C.SEGMENTS.KERNEL, this.memory)
-    this.mm.save(C.SEGMENTS.INTERRUPT, this.mm.load(C.SEGMENTS.INTERRUPT))
+    this.segments.save(C.SEGMENTS.KERNEL, this.memory)
+    this.segments.save(C.SEGMENTS.INTERRUPT, this.segments.load(C.SEGMENTS.INTERRUPT))
     let loopEnd = Game.cpu.getUsed()
     let loopDur = loopEnd - loopStart
     let ktime = loopDur - procUsed
@@ -370,7 +370,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   reboot () {
-    this.mm.save(C.SEGMENTS.KERNEL, {})
-    this.mm.posttick()
+    this.segments.save(C.SEGMENTS.KERNEL, {})
+    this.segments.posttick()
   }
 }

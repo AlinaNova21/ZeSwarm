@@ -1,9 +1,11 @@
 import stats from './lib/stats'
 import globals from './lib/GlobalTracker'
+import MemHack from './lib/MemHack'
 
 import prototypes from './prototypes'
 import opt from './opt'
 
+import MemoryManager from './zos/MemoryManager'
 import { BaseKernel } from './zos/BaseKernel'
 import { ProcessRegistry } from './zos/ProcessRegistry'
 import { ExtensionRegistry } from './zos/ExtensionRegistry'
@@ -15,39 +17,44 @@ import etc from './etc'
 import C from './include/constants'
 
 globals.statsDriver = stats
-globals.init()
 
-// import { SpawnExtension } from './bin/SpawnManager'
+const processRegistry = new ProcessRegistry()
+const extensionRegistry = new ExtensionRegistry()
 
-let extensionRegistry = new ExtensionRegistry()
-let processRegistry = new ProcessRegistry()
+extensionRegistry.register('zos/memHack', MemHack)
+extensionRegistry.register('zos/stats', stats)
+extensionRegistry.register('zos/globals', globals)
 
-let pkernel = new BaseKernel(processRegistry, extensionRegistry)
+const memoryManager = new MemoryManager()
+extensionRegistry.register('segments', memoryManager)
+extensionRegistry.register('memoryManager', new Proxy(memoryManager, {
+  get (target, name) {
+    if(['register', 'pretick', 'posttick'].includes(name)) {
+      return
+    }
+    let err = new Error()
+    console.log(`DEPRECATED: memoryManager ${err.trace}`)
+    return target[name]
+  }
+}))
 
-extensionRegistry.register('baseKernel', pkernel)
-extensionRegistry.register('sleep', pkernel)
-extensionRegistry.register('interrupt', pkernel)
 extensionRegistry.register('etc', etc)
+
+const kernel = new BaseKernel(processRegistry, extensionRegistry)
+extensionRegistry.register('baseKernel', kernel)
+extensionRegistry.register('sleep', kernel)
+extensionRegistry.register('interrupt', kernel)
 
 bin.install(processRegistry, extensionRegistry)
 legacy.install(processRegistry, extensionRegistry)
 
-global.kernel = pkernel
+global.kernel = kernel
 global.stats = stats
 global.C = C
 
-let off = Math.floor(Math.random() * 10)
-
 export function loop () {
-  stats.reset()
-  globals.tick()
   extensionRegistry.pretick()  
-  pkernel.loop()
+  kernel.loop()
   extensionRegistry.posttick()
-  if (Game.time % 10 === off) {
-    globals.cleanup()
-  }
-  stats.commit()
-
-  pkernel.log.info(`CPU Used: ${Game.cpu.getUsed()} (FINAL)`)
+  kernel.log.info(`CPU Used: ${Game.cpu.getUsed()} (FINAL)`)
 }

@@ -1,4 +1,5 @@
 export default {
+  offset: Math.floor(Math.random() * 10),
   get memory () {
     Memory.__globals = Memory.__globals || {}
     return Memory.__globals
@@ -6,6 +7,17 @@ export default {
   get meta () {
     return (this.memory.meta && this.memory.meta[this.id]) || {}
   },
+  register () {
+    this.init()
+  }
+  pretick () {
+    this.tick()
+  }
+  posttick () {
+    if (Game.time % 10 === this.offset) {
+      this.cleanup()
+    }
+  }
   init () {
     this.memory.nextID = this.memory.nextID || 1
     this.id = (this.memory.nextID++)
