@@ -53,7 +53,12 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     return Memory.zos.processMemory
   }
 
+  get uptime () {
+    return (Game.time - this.time) + 1
+  }
+
   constructor (processRegistry, extensionRegistry) {
+    this.time = Game.time
     this.rand = Game.time % 10
     this.segments = extensionRegistry.getExtension('segments')
     this.scheduler = new Scheduler(this)
@@ -225,10 +230,9 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       return false
     }
   }
-
-  loop () {
-    let loopStart = Game.cpu.getUsed()
-    let procUsed = 0
+  pretick() {
+    this.ktime = 0
+    const start = Game.cpu.getUsed()
     this.mem = this.segments.load(C.SEGMENTS.KERNEL)
     this.imem = this.segments.load(C.SEGMENTS.INTERRUPT)
     if (this.mem === '') this.mem = {}
@@ -253,9 +257,15 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         }
       }
     }
+    const end = Game.cpu.getUsed()
+    this.ktime += end - start
+
+  }
+  loop () {
+    let loopStart = Game.cpu.getUsed()
+    let procUsed = 0
     if (this.mem === false || this.imem === false) {
       this.log.warn(`Kernel Segments not loaded. Activating. Break early. ${C.SEGMENTS.KERNEL} ${C.SEGMENTS.INTERRUPT}`)
-      // console.log(JSON.stringify(C))
       this.segments.activate(C.SEGMENTS.KERNEL)
       this.segments.activate(C.SEGMENTS.INTERRUPT)
       return
@@ -352,11 +362,11 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.segments.save(C.SEGMENTS.INTERRUPT, this.segments.load(C.SEGMENTS.INTERRUPT))
     let loopEnd = Game.cpu.getUsed()
     let loopDur = loopEnd - loopStart
-    let ktime = loopDur - procUsed
+    this.ktime += loopDur - procUsed
     if (!RawMemory.segments[C.SEGMENTS.KERNEL]) {
       this.log.error('ERROR: Segment not saved! Too big?')
     }
-    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, ktime: ${ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[C.SEGMENTS.KERNEL] && RawMemory.segments[C.SEGMENTS.KERNEL].length}`)
+    this.log.info(`CPU Used: ${Game.cpu.getUsed().toFixed(3)}, uptime: ${this.uptime}, ktime: ${this.ktime.toFixed(3)}, ptime: ${procUsed.toFixed(3)}, kmem: ${RawMemory.segments[C.SEGMENTS.KERNEL] && RawMemory.segments[C.SEGMENTS.KERNEL].length}, imem: ${RawMemory.segments[C.SEGMENTS.INTERRUPT] && RawMemory.segments[C.SEGMENTS.INTERRUPT].length}`)
   }
 
   sleep (ticks) {

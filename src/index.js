@@ -5,6 +5,7 @@ import MemHack from './lib/MemHack'
 import prototypes from './prototypes'
 import opt from './opt'
 
+import ErrorMapper from './zos/ErrorMapper'
 import MemoryManager from './zos/MemoryManager'
 import { BaseKernel } from './zos/BaseKernel'
 import { ProcessRegistry } from './zos/ProcessRegistry'
@@ -32,8 +33,9 @@ extensionRegistry.register('memoryManager', new Proxy(memoryManager, {
     if(['register', 'pretick', 'posttick'].includes(name)) {
       return
     }
-    let err = new Error()
-    console.log(`DEPRECATED: memoryManager ${err.stack}`)
+    const err = new Error()
+    const msg = ErrorMapper.map(err)
+    console.log(`DEPRECATED: memoryManager ${msg}`)
     return target[name]
   }
 }))
@@ -42,8 +44,15 @@ extensionRegistry.register('etc', etc)
 
 const kernel = new BaseKernel(processRegistry, extensionRegistry)
 extensionRegistry.register('baseKernel', kernel)
-extensionRegistry.register('sleep', kernel)
-extensionRegistry.register('interrupt', kernel)
+extensionRegistry.register('sleep', {
+  sleep (time) { return kernel.sleep(time) }
+})
+extensionRegistry.register('interrupt', {
+  setInterrupt (type, stage, key) { return this.kernel.setInterrupt(type, stage, key) },
+  clearInterrupt (type, stage, key) { return this.kernel.clearInterrupt(type, stage, key) },
+  clearAllInterrupts () { return this.kernel.clearAllInterrupts() },
+  wait (type, stage, key) { return this.kernel.wait(type, stage, key) }
+})
 
 bin.install(processRegistry, extensionRegistry)
 legacy.install(processRegistry, extensionRegistry)
