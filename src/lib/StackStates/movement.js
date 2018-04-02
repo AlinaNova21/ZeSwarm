@@ -3,7 +3,7 @@ import C from '/include/constants'
 export default {
   travelTo (target, opts = {}) {
     if (typeof opts.roomCallback === 'string') {
-      opts.roomCallback = eval(opts.roomCallback)
+      opts.roomCallback = new Function(opts.roomCallback)
     }
     const tgt = this.resolveTarget(target)
     if (this.creep.pos.isEqualTo(tgt)) {
@@ -15,7 +15,7 @@ export default {
   },
   moveNear (target, opts = {}) {
     if (typeof opts.roomCallback === 'string') {
-      opts.roomCallback = eval(opts.roomCallback)
+      opts.roomCallback = new Function(opts.roomCallback)
     }
     let tgt = this.resolveTarget(target)
     if (this.creep.pos.isNearTo(tgt)) {
