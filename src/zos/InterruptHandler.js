@@ -10,6 +10,7 @@ export const INT_TYPE = (function (Enum) {
   Enum[Enum['CREEP'] = 3] = 'CREEP'
   Enum[Enum['TICK'] = 4] = 'TICK'
   Enum[Enum['SLEEP'] = 5] = 'SLEEP'
+  Enum[Enum['NEW_CODE'] = 6] = 'NEW_CODE'
   return Enum
 })({})
 
@@ -56,7 +57,7 @@ export default class InterruptHandler {
         return
       }
       trackers[tracker.type] = {
-        keys: tracker.getEvents(),
+        keys: tracker.getEvents(this.memory),
         cond: tracker.cond || ((hook, key) => hook.key === key)
       }
     })
@@ -111,6 +112,17 @@ export const trackers = [
     },
     cond (hook, key) {
       return Game.time >= parseInt(hook.key)
+    }
+  },
+  {
+    type: INT_TYPE.NEW_CODE,
+    stages: [INT_STAGE.START],
+    getEvents (mem) {
+      if (mem.codeTimestamp !== module.timestamp) {
+        mem.codeTimestamp = module.timestamp
+        return [module.timestamp]
+      }
+      return []
     }
   }
 ]
