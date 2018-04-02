@@ -42,15 +42,15 @@ export default class TowerDefense extends BaseProcess {
         const tgt = tower.pos.findClosestByRange(hostiles)
         tower.attack(tgt)
         vis.line(tower.pos, tgt.pos, {
-          width: 0.2,
+          width: 0.1,
           color: '#FF0000'
         })
         vis.line(tgt.pos.x - 0.4, tgt.pos.y, tgt.pos.x + 0.4, tgt.pos.y, {
-          width: 0.2,
+          width: 0.1,
           color: '#FF0000',
         })
         vis.line(tgt.pos.x, tgt.pos.y - 0.4, tgt.pos.x, tgt.pos.y + 0.4, {
-          width: 0.2,
+          width: 0.1,
           color: '#FF0000',
         })
         vis.circle(tgt.pos, {
