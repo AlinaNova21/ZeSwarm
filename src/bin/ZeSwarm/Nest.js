@@ -38,7 +38,10 @@ export default class Nest extends BaseProcess {
       this.kernel.killProcess(this.context.id)
     }
     this.sleep.sleep(5)
-    const children = [['ZeSwarm/harvestManager', { room: this.roomName }]]
+    const children = [
+      ['ZeSwarm/harvestManager', { room: this.roomName }],
+      ['ZeSwarm/towerDefense', { room: this.roomName }]
+    ]
     each(children, ([child, context = {}]) => {
       this.ensureChild(child, child, context)
     })

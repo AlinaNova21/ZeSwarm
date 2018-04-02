@@ -2,6 +2,7 @@ import Nest from './Nest'
 import Swarm from './Swarm'
 import StackStateCreep from './StackStateCreep'
 import HarvestManager from './HarvestManager'
+import TowerDefense from './TowerDefense'
 import Intel from './Intel'
 import Cron from './Cron'
 
@@ -11,6 +12,7 @@ export const bundle = {
     processRegistry.register('ZeSwarm/nest', Nest)
     processRegistry.register('ZeSwarm/stackStateCreep', StackStateCreep)
     processRegistry.register('ZeSwarm/harvestManager', HarvestManager)
+    processRegistry.register('ZeSwarm/towerDefense', TowerDefense)
     processRegistry.register('ZeSwarm/intel', Intel)
     processRegistry.register('ZeSwarm/cron', Cron)
   }
