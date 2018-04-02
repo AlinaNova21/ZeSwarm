@@ -9,15 +9,15 @@ export default {
   },
   register () {
     this.init()
-  }
+  },
   pretick () {
     this.tick()
-  }
+  },
   posttick () {
     if (Game.time % 10 === this.offset) {
       this.cleanup()
     }
-  }
+  },
   init () {
     this.memory.nextID = this.memory.nextID || 1
     this.id = (this.memory.nextID++)

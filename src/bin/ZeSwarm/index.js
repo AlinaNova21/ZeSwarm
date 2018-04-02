@@ -3,6 +3,7 @@ import Swarm from './Swarm'
 import StackStateCreep from './StackStateCreep'
 import HarvestManager from './HarvestManager'
 import Intel from './Intel'
+import Cron from './Cron'
 
 export const bundle = {
   install (processRegistry, extensionRegistry) {
@@ -11,5 +12,6 @@ export const bundle = {
     processRegistry.register('ZeSwarm/stackStateCreep', StackStateCreep)
     processRegistry.register('ZeSwarm/harvestManager', HarvestManager)
     processRegistry.register('ZeSwarm/intel', Intel)
+    processRegistry.register('ZeSwarm/cron', Cron)
   }
 }

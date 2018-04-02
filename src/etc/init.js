@@ -27,7 +27,7 @@ export default {
     ...STRESS_TEST_SERVICES,
     {
       id: 'cron',
-      name: 'cron',
+      name: 'ZeSwarm/cron',
       params: {},
       restart: true,
       enabled: RUN_CRONS

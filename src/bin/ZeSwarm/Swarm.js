@@ -47,8 +47,7 @@ export default class Swarm extends BaseProcess {
       })
       this.ensureChild(`creep_${i}_${cid}`, 'ZeSwarm/stackStateCreep', {
         spawnTicket: cid,
-        base: ['scout'],
-        priority: 9
+        base: ['scout']
       })
     }
     if (Game.flags.claim) {

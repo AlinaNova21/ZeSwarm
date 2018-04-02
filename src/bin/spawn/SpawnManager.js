@@ -61,7 +61,10 @@ export default class SpawnManager {
                 let energy = spawn.room.energyAvailable
                 let rank = energy - (dist * 100)
                 if (item.maxRange && item.maxRange < dist) {
-                  rank -= 1e8
+                  rank -= 10000
+                }
+                if (spawn.room.storage && spawn.room.storage.store.energy < 10000) {
+                  rank -= 10000
                 }
                 return { index, dist, energy, rank, spawn }
               })

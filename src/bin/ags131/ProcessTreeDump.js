@@ -1,4 +1,4 @@
-import C from '../include/constants'
+import C from '/include/constants'
 import filter from 'lodash-es/filter'
 
 export default class ProcessTreeDump {

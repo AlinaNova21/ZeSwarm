@@ -1,4 +1,4 @@
-import C from '../include/constants'
+import C from '/include/constants'
 
 export default class IntTest {
   constructor (context) {

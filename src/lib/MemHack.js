@@ -2,14 +2,14 @@ export default {
   newGlobal: true,
   register () {
     this.doHack()
-  }
+  },
   pretick () {
     if (this.newGlobal) {
       this.newGlobal = false
       return // Skip hack on newGlobals since its already ran
     }
     this.doHack()
-  }
+  },
   doHack () {
     let start = Game.cpu.getUsed()
     if (this.lastTime && this.memory && Game.time === (this.lastTime + 1)) {
