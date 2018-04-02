@@ -10,7 +10,7 @@ export default class Swarm extends BaseProcess {
     super(context)
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
-    this.mm = context.queryPosisInterface('memoryManager')
+    this.mm = context.queryPosisInterface('segments')
   }
 
   get nests () {

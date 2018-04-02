@@ -4,7 +4,7 @@ export default class IntTest {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
-    this.mm = context.queryPosisInterface('memoryManager')
+    this.mm = context.queryPosisInterface('segments')
   }
 
   get log () {
