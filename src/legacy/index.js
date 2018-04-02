@@ -1,11 +1,9 @@
 import main from './main'
 
-import tower from './tower'
 import controller from './controller'
 
 let protoCache = {
   controller: new controller(),
-  tower: new tower()
 }
 
 RoomObject.prototype.run = function(){
