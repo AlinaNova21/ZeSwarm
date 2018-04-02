@@ -1,13 +1,11 @@
 import main from './main'
 
 import creep from './creep'
-import spawn from './spawn'
 import tower from './tower'
 import controller from './controller'
 
 let protoCache = {
   creep: new creep(),
-  spawn: new spawn(),
   controller: new controller(),
   tower: new tower()
 }
