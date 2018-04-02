@@ -1,5 +1,6 @@
 import scout from './scout'
 import protector from './protector'
+import upgrader from './upgrader'
 import builder from './builder'
 import feeder from './feeder'
 import collector from './collector'
@@ -18,6 +19,7 @@ let parts = [
   collector,
   feeder,
   protector,
+  upgrader,
   builder,
   scout
 ]

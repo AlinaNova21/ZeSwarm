@@ -41,6 +41,13 @@ export class InfluxDB {
     Memory[this.opts.key] = Memory[this.opts.key] || { index: 0, last: 0 }
     return Memory[this.opts.key]
   }
+  register () {}
+  pretick () {
+    this.reset()
+  }
+  posttick () {
+    this.commit()
+  }
   constructor (opts = {}) {
     this.opts = Object.assign(CONFIG, opts)
     global.influxdb = this

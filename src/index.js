@@ -33,7 +33,7 @@ extensionRegistry.register('memoryManager', new Proxy(memoryManager, {
       return
     }
     let err = new Error()
-    console.log(`DEPRECATED: memoryManager ${err.trace}`)
+    console.log(`DEPRECATED: memoryManager ${err.stack}`)
     return target[name]
   }
 }))

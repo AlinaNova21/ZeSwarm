@@ -38,30 +38,34 @@ export default class Nest extends BaseProcess {
       this.kernel.killProcess(this.context.id)
     }
     this.sleep.sleep(5)
-    let children = [['harvestManager', { room: this.roomName }]]
+    const children = [['ZeSwarm/harvestManager', { room: this.roomName }]]
     each(children, ([child, context = {}]) => {
       this.ensureChild(child, child, context)
     })
 
-    let cid = this.ensureCreep('feeder_1', {
-      rooms: [this.roomName],
-      body: [
-        this.expand([6, C.CARRY, 6, C.MOVE]),
-        this.expand([5, C.CARRY, 5, C.MOVE]),
-        this.expand([4, C.CARRY, 4, C.MOVE]),
-        this.expand([3, C.CARRY, 3, C.MOVE]),
-        this.expand([2, C.CARRY, 2, C.MOVE]),
-        this.expand([1, C.CARRY, 1, C.MOVE])
-      ],
-      priority: 2
-    })
-    this.ensureChild(`feeder_${cid}`, 'ZeSwarm/stackStateCreep', {
-      spawnTicket: cid,
-      base: ['feeder', this.roomName]
-    })
+    const feeders = 2
+    for (let i = 0; i < feeders; i++) {
+      const cid = this.ensureCreep(`feeder_${i}`, {
+        rooms: [this.roomName],
+        body: [
+          this.expand([6, C.CARRY, 6, C.MOVE]),
+          this.expand([5, C.CARRY, 5, C.MOVE]),
+          this.expand([4, C.CARRY, 4, C.MOVE]),
+          this.expand([3, C.CARRY, 3, C.MOVE]),
+          this.expand([2, C.CARRY, 2, C.MOVE]),
+          this.expand([1, C.CARRY, 1, C.MOVE])
+        ],
+        priority: 2
+      })
+
+      this.ensureChild(`feeder_${cid}`, 'ZeSwarm/stackStateCreep', {
+        spawnTicket: cid,
+        base: ['feeder', this.roomName]
+      })
+    }
 
     if (this.room.find(C.FIND_MY_CONSTRUCTION_SITES).length) {
-      let cid = this.ensureCreep('builder_1', {
+      const cid = this.ensureCreep('builder_1', {
         rooms: [this.roomName],
         body: [
           this.expand([6, C.CARRY, 6, C.WORK, 6, C.MOVE]),
@@ -78,10 +82,39 @@ export default class Nest extends BaseProcess {
         base: ['builder', this.roomName]
       })
     }
-    let hostiles = this.room.find(C.FIND_HOSTILE_CREEPS)
+    if (this.room.controller && this.room.controller.level && this.room.controller.level < 8) {
+      let want = 0
+      const stored = this.room.storage && this.room.storage.store.energy || false
+      if (stored === false) {
+        want = 1
+      } else {
+        if (stored > 10000) {
+          want = Math.min(3, stored / 10000)
+        }
+      }
+      for(let i = 0; i < want; i++) {
+        const cid = this.ensureCreep(`upgrader_${i}`, {
+          rooms: [this.roomName],
+          body: [
+            this.expand([6, C.CARRY, 6, C.WORK, 6, C.MOVE]),
+            this.expand([5, C.CARRY, 5, C.WORK, 5, C.MOVE]),
+            this.expand([4, C.CARRY, 4, C.WORK, 4, C.MOVE]),
+            this.expand([3, C.CARRY, 3, C.WORK, 3, C.MOVE]),
+            this.expand([2, C.CARRY, 2, C.WORK, 2, C.MOVE]),
+            this.expand([1, C.CARRY, 1, C.WORK, 1, C.MOVE])
+          ],
+          priority: 7
+        })
+        this.ensureChild(`upgrader_${cid}`, 'ZeSwarm/stackStateCreep', {
+          spawnTicket: cid,
+          base: ['upgrader', this.roomName]
+        })   
+      }
+    }
+    const hostiles = this.room.find(C.FIND_HOSTILE_CREEPS)
     if (hostiles.length) {
       if (hostiles[0].owner.username === 'Invader') {
-        let cid = this.ensureCreep('protector_1', {
+        const cid = this.ensureCreep('protector_1', {
           rooms: [this.roomName],
           body: [
             this.expand([2, C.ATTACK, 2, C.MOVE]),
@@ -104,14 +137,14 @@ export default class Nest extends BaseProcess {
 
   expand (body) {
     this.bodyCache = this.bodyCache || {}
-    let cacheKey = body.join('')
+    const cacheKey = body.join('')
     if (this.bodyCache[cacheKey]) {
       return this.bodyCache[cacheKey]
     }
     let cnt = 1
-    let ret = this.bodyCache[cacheKey] = []
+    const ret = this.bodyCache[cacheKey] = []
     for (let i in body) {
-      let t = body[i]
+      const t = body[i]
       if (typeof t === 'number') {
         cnt = t
       } else {

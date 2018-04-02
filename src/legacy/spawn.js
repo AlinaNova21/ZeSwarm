@@ -50,8 +50,8 @@ class Spawn {
         if (h.towers) {
           // want.suicide = 12
         } else if (h.spawns) {
-          want.atk = 5
-          want.drainer = 2
+          //want.atk = 5
+          //want.drainer = 2
         }
       }
     }

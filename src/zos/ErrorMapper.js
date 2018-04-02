@@ -18,7 +18,7 @@ export default class ErrorMapper {
     let ret = trace.map(cs => {
       let name = cs.getFunctionName()
       let source = cs.getFileName()
-      let line = cs.getLineNumber()
+      let line = cs.getLineNumber() || 1
       let column = cs.getColumnNumber()
       let pos = this.consumer.originalPositionFor({ line, column })
       line = pos.line || line

@@ -22,7 +22,13 @@ export default class ProcessTreeDump {
     let children = filter(pt, ({ p }) => p === parent)
     return children.map(p => {
       if (p.s !== C.PROC_RUNNING) return
-      let ret = `\n${prefix}- ${p.i} ${p.n} ${this.kernel.getProcessById(p.i)}`
+      let desc 
+      try {
+        desc = this.kernel.getProcessById(p.i).toString()
+      } catch (e) {
+        desc = e.message || e.toString()
+      }
+      let ret = `\n${prefix}- ${p.i} ${p.n} ${desc}`
       ret += this.getTree(pt, p.i, `  ${prefix}`)
       return ret
     }).join('')

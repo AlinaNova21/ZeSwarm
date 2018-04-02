@@ -55,14 +55,14 @@ export default {
     },
     {
       id: 'processTreeDump',
-      name: 'processTreeDump',
+      name: 'ags131/processTreeDump',
       params: {},
       restart: true,
       enabled: RUN_PROCESS_TREE_DUMP
     },
     {
       id: 'intTest',
-      name: 'intTest',
+      name: 'ags131/intTest',
       params: {},
       restart: true,
       enabled: RUN_TEST_ALL || RUN_TEST_INT

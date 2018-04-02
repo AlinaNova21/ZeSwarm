@@ -6,10 +6,10 @@ logger.level = Logger.LogLevel.DEBUG
 export class ExtensionRegistry {
   constructor () {
     this.registry = {} // [interfaceId: string]: IPosisExtension } = {}
-    this.register('agsExtensionRegistry', this)
-    this.register('ags131/ExtensionRegistry', this)
     this.pre = []
     this.post = []
+    this.register('agsExtensionRegistry', this)
+    this.register('ags131/ExtensionRegistry', this)
   }
   register (interfaceId, extension) {
     if (this.registry[interfaceId]) {
@@ -17,6 +17,7 @@ export class ExtensionRegistry {
     }
     logger.debug(`Registered ${interfaceId}`)
     this.registry[interfaceId] = extension
+    if (extension instanceof ExtensionRegistry) return
     if (typeof extension.register === 'function') {
       extension.register()
     }
