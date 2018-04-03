@@ -19,7 +19,7 @@ export default class Init {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
-    each(init.services, ({ id, name, params, restart, enabled }) => {
+    each(config.services, ({ id, name, params, restart, enabled }) => {
       this.addService(id, name, params, restart, enabled)
     })
     // each(Game.rooms,room=>{

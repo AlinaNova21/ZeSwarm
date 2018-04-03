@@ -22,7 +22,7 @@ const STRESS_TEST_SERVICES = times(STRESS_TEST_CNT, (i) => ({
   enabled: STRESS_TEST_ENABLED
 }))
 
-export default {
+const config = {
   services: [
     ...STRESS_TEST_SERVICES,
     {
@@ -97,3 +97,4 @@ export default {
     }
   ]
 }
+export default config

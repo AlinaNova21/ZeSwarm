@@ -27,11 +27,9 @@ extensionRegistry.register('zos/globals', globals)
 
 const memoryManager = new MemoryManager()
 extensionRegistry.register('segments', {
-  pretick() { return memoryManager.pretick() },
   posttick() { return memoryManager.posttick() },
-  register() { return memoryManager.register() },
   load(id) { return memoryManager.load(id) },
-  save(id, value) { return memoryManager.save(id) },
+  save(id, value) { return memoryManager.save(id, value) },
   activate(id) { return memoryManager.activate(id) }
 })
 
@@ -43,8 +41,6 @@ function extChange(func, oldExt, newExt) {
 }
 extensionRegistry.register('baseKernel', {
   pretick() { return kernel.pretick() },
-  posttick() { return kernel.posttick() },
-  register() { return kernel.register() },
   startProcess(imageName, startContext) {    return kernel.startProcess(imageName, startContext)  },
   killProcess(pid) { return kernel.killProcess(pid)  },
   getProcessById(pid) { return kernel.getProcessById(pid) },
@@ -55,29 +51,29 @@ extensionRegistry.register('baseKernel', {
   },
   setInterrupt (type, stage, key) { 
     extChange('setInterrupt','baseKernel','interrupt')
-    return this.kernel.setInterrupt(type, stage, key) 
+    return kernel.setInterrupt(type, stage, key) 
   },
   clearInterrupt (type, stage, key) { 
     extChange('clearInterrupt','baseKernel','interrupt')
-    return this.kernel.clearInterrupt(type, stage, key) 
+    return kernel.clearInterrupt(type, stage, key) 
   },
   clearAllInterrupts () { 
     extChange('clearAllInterrupts','baseKernel','interrupt')
-    return this.kernel.clearAllInterrupts() 
+    return kernel.clearAllInterrupts() 
   },
   wait (type, stage, key) { 
     extChange('wait','baseKernel','interrupt')
-    return this.kernel.wait(type, stage, key)
+    return kernel.wait(type, stage, key)
   }
 })
 extensionRegistry.register('sleep', {
   sleep (time) { return kernel.sleep(time) }
 })
 extensionRegistry.register('interrupt', {
-  setInterrupt (type, stage, key) { return this.kernel.setInterrupt(type, stage, key) },
-  clearInterrupt (type, stage, key) { return this.kernel.clearInterrupt(type, stage, key) },
-  clearAllInterrupts () { return this.kernel.clearAllInterrupts() },
-  wait (type, stage, key) { return this.kernel.wait(type, stage, key) }
+  setInterrupt (type, stage, key) { return kernel.setInterrupt(type, stage, key) },
+  clearInterrupt (type, stage, key) { return kernel.clearInterrupt(type, stage, key) },
+  clearAllInterrupts () { return kernel.clearAllInterrupts() },
+  wait (type, stage, key) { return kernel.wait(type, stage, key) }
 })
 
 bin.install(processRegistry, extensionRegistry)
