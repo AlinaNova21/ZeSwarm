@@ -1,5 +1,6 @@
 import each from 'lodash-es/each'
 import BaseProcess from './BaseProcess'
+import config from '/etc/cron'
 
 export default class Cron extends BaseProcess {
   constructor (context) {
@@ -8,8 +9,7 @@ export default class Cron extends BaseProcess {
     let extensionRegistry = this.context.queryPosisInterface('agsExtensionRegistry')
     extensionRegistry.register('cron', this)
 
-    this.etc = context.queryPosisInterface('etc')
-    each(this.etc.cron.crons, ([interval, name, params], ind) => {
+    each(config.crons, ([interval, name, params], ind) => {
       this.addCron(`etc_${ind}`, interval, name, params)
     })
   }

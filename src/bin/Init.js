@@ -1,5 +1,5 @@
 import each from 'lodash-es/each'
-
+import config from '/etc/init'
 // interface IInitMemory {
 //   posisTestId?: PosisPID,
 //   sleepTestId?: PosisPID,
@@ -19,8 +19,7 @@ export default class Init {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
-    this.etc = context.queryPosisInterface('etc')
-    each(this.etc.init.services, ({ id, name, params, restart, enabled }) => {
+    each(init.services, ({ id, name, params, restart, enabled }) => {
       this.addService(id, name, params, restart, enabled)
     })
     // each(Game.rooms,room=>{

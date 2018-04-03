@@ -1,4 +1,4 @@
-import etc from '../etc'
+import config from '/etc/stats'
 
 /* USAGE:
 Configure CONFIG below
@@ -190,5 +190,5 @@ export class InfluxDB {
   }
 }
 
-const driver = new InfluxDB(etc.stats)
+const driver = new InfluxDB(config)
 export default driver
