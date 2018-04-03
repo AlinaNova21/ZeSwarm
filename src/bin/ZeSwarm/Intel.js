@@ -1,10 +1,11 @@
 import C from '/include/constants'
 
-export default class IntTest {
+export default class Intel {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
-    this.mm = context.queryPosisInterface('segments')
+    this.int = context.queryPosisInterface('interrupt')
+    this.segments = context.queryPosisInterface('segments')
   }
 
   get log () {
@@ -12,17 +13,17 @@ export default class IntTest {
   }
 
   run () {
-    this.kernel.setInterrupt(C.INT_TYPE.VISION, C.INT_STAGE.START)
-    if (this.mm.load(C.SEGMENTS.INTEL) === false) {
-      this.mm.activate(C.SEGMENTS.INTEL)
-      this.kernel.clearAllInterrupts()
-      this.kernel.wait(C.INT_TYPE.SEGMENT, C.INT_STAGE.START, C.SEGMENTS.INTEL)
+    this.int.setInterrupt(C.INT_TYPE.VISION, C.INT_STAGE.START)
+    if (this.segments.load(C.SEGMENTS.INTEL) === false) {
+      this.segments.activate(C.SEGMENTS.INTEL)
+      this.int.clearAllInterrupts()
+      this.int.wait(C.INT_TYPE.SEGMENT, C.INT_STAGE.START, C.SEGMENTS.INTEL)
     }
   }
 
   interrupt ({ hook: { type, stage }, key }) {
     let room = Game.rooms[key]
-    let mem = this.mm.load(C.SEGMENTS.INTEL)
+    let mem = this.segments.load(C.SEGMENTS.INTEL)
     let hr = mem.rooms = mem.rooms || {}
     let {
       name,
@@ -58,6 +59,6 @@ export default class IntTest {
       mineral: mineralType,
       ts: Game.time
     }
-    this.mm.save(C.SEGMENTS.INTEL, mem)
+    this.segments.save(C.SEGMENTS.INTEL, mem)
   }
 }
