@@ -78,15 +78,15 @@ export default class SpawnExtension {
   getOrphans (rooms) {
     const thresh = Game.time - 10
     let ret = {}
-    for (let id in this.status) {
-      let { name, status, lastAccess } = this.status[id]
-      let creep = Game.creeps[name || id]
-      if (creep && lastAccess < thresh) {
+    for (let id in Game.creeps) {
+      const creep = Game.creeps[id]
+      const { name, status, lastAccess = 0 } = this.status[id] || {}
+      if (lastAccess < thresh) {
         if (rooms && !rooms.includes(creep.pos.roomName)) continue
-        let body = creep.body.map(b => b.type).join()
+        const body = creep.body.map(b => b.type).join()
         ret[body] = ret[body] || []
         ret[body].push(id)
-      }
+      }  
     }
     return ret
   }
