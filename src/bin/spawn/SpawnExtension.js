@@ -56,6 +56,11 @@ export default class SpawnExtension {
       let body = bodies[i]
       const [orphan] = orphans[body] || []
       if (orphan) {
+        this.status[orphan] = {
+          name: orphan,
+          status: C.EPosisSpawnStatus.SPAWNED
+        }
+        console.log(`Orphan returned ${orphan}`)
         this.getStatus(orphan)
         return orphan
       }
@@ -67,7 +72,8 @@ export default class SpawnExtension {
       body,
       priority,
       maxRange,
-      pid: this.kernel.currentId
+      pid: this.kernel.currentId,
+      lastAccess: Game.time
     }
     this.queue[priority].push(item)
     this.status[uid] = {
@@ -92,7 +98,7 @@ export default class SpawnExtension {
   }
   // Used to see if its been dropped from queue
   getStatus (id) {
-    let stat = this.status[id] || { status: C.EPosisSpawnStatus.ERROR, message: "ID Doesn't Exist" }
+    let stat = this.status[id] || { status: C.EPosisSpawnStatus.ERROR, message: `ID ${id} Doesn't Exist` }
     stat.lastAccess = Game.time
     if (stat.status === C.EPosisSpawnStatus.SPAWNING && Game.creeps[id] && !Game.creeps[id].spawning) {
       stat.status = C.EPosisSpawnStatus.SPAWNED
