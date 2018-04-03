@@ -14,7 +14,6 @@ import { ExtensionRegistry } from './zos/ExtensionRegistry'
 import { bundle as bin } from './bin'
 import { bundle as legacy } from './legacy'
 
-import etc from './etc'
 import C from './include/constants'
 
 globals.statsDriver = stats
@@ -27,21 +26,14 @@ extensionRegistry.register('zos/stats', stats)
 extensionRegistry.register('zos/globals', globals)
 
 const memoryManager = new MemoryManager()
-extensionRegistry.register('segments', memoryManager)
-extensionRegistry.register('memoryManager', new Proxy(memoryManager, {
-  get (target, name) {
-    if(['register', 'pretick', 'posttick'].includes(name)) {
-      return
-    }
-    const err = new Error()
-    const msg = ErrorMapper.map(err)
-    console.log(`DEPRECATED: memoryManager ${msg}`)
-    return target[name]
-  }
-}))
-
-extensionRegistry.register('etc', etc)
-
+extensionRegistry.register('segments', {
+  pretick() { return memoryManager.pretick() },
+  posttick() { return memoryManager.posttick() },
+  register() { return memoryManager.register() },
+  load(id) { return memoryManager.load(id) },
+  save(id, value) { return memoryManager.save(id) },
+  activate(id) { return memoryManager.activate(id) }
+})
 
 const kernel = new BaseKernel(processRegistry, extensionRegistry)
 function extChange(func, oldExt, newExt) {
@@ -50,6 +42,9 @@ function extChange(func, oldExt, newExt) {
   kernel.log.warn(msg)
 }
 extensionRegistry.register('baseKernel', {
+  pretick() { return kernel.pretick() },
+  posttick() { return kernel.posttick() },
+  register() { return kernel.register() },
   startProcess(imageName, startContext) {    return kernel.startProcess(imageName, startContext)  },
   killProcess(pid) { return kernel.killProcess(pid)  },
   getProcessById(pid) { return kernel.getProcessById(pid) },
