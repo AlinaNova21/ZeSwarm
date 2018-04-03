@@ -73,7 +73,7 @@ export default class Swarm extends BaseProcess {
       }
     }
     this.ensureChild('intel', 'ZeSwarm/intel')
-    this.kernel.sleep(5)
+    this.sleep.sleep(5)
   }
 
   interrupt ({ hook: { type, stage }, key }) {
