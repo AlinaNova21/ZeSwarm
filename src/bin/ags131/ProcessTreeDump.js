@@ -4,7 +4,7 @@ import filter from 'lodash-es/filter'
 export default class ProcessTreeDump {
   constructor (context) {
     this.context = context
-    this.kernel = context.queryPosisInterface('baseKernel')
+    this.kernel = context.queryPosisInterface('zos/kernel')
   }
 
   get log () {
