@@ -88,6 +88,10 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     return ('P' + Game.time.toString(36).slice(-6) + Math.random().toString(36).slice(-3)).toUpperCase()
   }
 
+  allowSuper (imageName) {
+    return !!imageName.match(/^ags131\//)
+  }
+
   startProcess (imageName, startContext) { // : { pid: PosisPID; process: IPosisProcess; } | undefined {
     let id = this.UID()
 
@@ -96,7 +100,8 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
       p: this.currentId,
       n: imageName,
       s: C.PROC_RUNNING,
-      S: Game.time
+      S: Game.time,
+      x: this.allowSuper(imageName)
     }
     this.processTable[id] = pinfo
     this.processMemory[pinfo.i] = startContext || undefined
@@ -106,11 +111,23 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     return { pid: id, process }
   }
 
+  queryPosisInterface (ext) {
+    return this.extensionRegistry.getExtension(ext)
+  }
+
+  queryPosisInterfaceSuper (ext) {
+    if (ext === 'zos/kernel') {
+      return this
+    }
+    return this.extensionRegistry.getExtension(ext)
+  }
+
   createProcess (id) {
     this.log.debug(() => `createProcess ${id}`)
     let pinfo = this.processTable[id]
     if (!pinfo || pinfo.s !== C.PROC_RUNNING) throw new Error(`Process ${pinfo.i} ${pinfo.n} not running`)
-    let self = this
+    const self = this
+    const qpi = pinfo.x ? this.queryPosisInterfaceSuper : this.queryPosisInterface
     let context = {
       id: pinfo.i,
       get parentId () {
@@ -122,7 +139,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         self.processMemory[pinfo.i] = self.processMemory[pinfo.i] || {}
         return self.processMemory[pinfo.i]
       },
-      queryPosisInterface: self.extensionRegistry.getExtension.bind(self.extensionRegistry)
+      queryPosisInterface: qpi.bind(self)
     }
     Object.freeze(context)
     let process = this.processRegistry.getNewProcess(pinfo.n, context)
