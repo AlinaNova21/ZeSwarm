@@ -87,5 +87,12 @@ export function loop () {
   extensionRegistry.pretick()  
   kernel.loop()
   extensionRegistry.posttick()
-  kernel.log.info(`CPU Used: ${Game.cpu.getUsed()} (FINAL)`)
+  kernel.log.warn(`CPU Used: ${Game.cpu.getUsed().toFixed(4)} (FINAL)`)
+  try {
+    let { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
+    const MB = (v) => ((v / 1024) / 1024).toFixed(3)
+    kernel.log.warn(`HEAP: Used: ${MB(used_heap_size)}MB Available: ${MB(total_available_size)}MB Limit: ${MB(heap_size_limit)}MB`)
+  } catch (e) {
+    kernel.log.warn('HEAP: Unavailable')
+  }
 }
