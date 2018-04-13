@@ -68,11 +68,11 @@ export default {
     }
   },
   store (res) {
-    if (this.creep.carry[res] === 0) {
+    if (!this.creep.carry[res]) {
       this.pop()
       return this.runStack()
     }
-    let tgt = this.creep.room.storage || this.creep.room.spawns.find(s => s.energy < s.energyCapacity)
+    let tgt = this.creep.room.storage || (res === C.RESOURCE_ENERGY && this.creep.room.spawns.find(s => s.energy < s.energyCapacity))
     if (tgt) {
       this.push('transfer', tgt.id, res)
       this.push('moveNear', tgt.id)

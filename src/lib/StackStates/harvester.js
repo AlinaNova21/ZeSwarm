@@ -1,7 +1,7 @@
 import C from '/include/constants'
 
 export default {
-  harvester (target, type = 'source', cache = {}) {
+  harvester (target, cache = {}) {
     if (!cache.work) {
       cache.work = this.creep.getActiveBodyparts(C.WORK)
     }
@@ -41,9 +41,28 @@ export default {
         return this.runStack()
       }
     }
-    if (type == 'source') {
+    if (tgt instanceof Source) {
       if (tgt.energy) {
         this.push('repeat', 5, 'harvest', tgt.id)
+        this.push('moveNear', tgt.id)
+      } else {
+        this.push('sleep', Game.time + tgt.ticksToRegeneration)
+      }
+      this.runStack()
+    }
+    if (tgt instanceof Mineral) {
+      let [extractor] = tgt.pos.lookFor(C.LOOK_STRUCTURES)
+      if (!extractor) {
+        this.push('sleep', 5)
+        this.say('No Extr')
+      }
+      if (extractor.cooldown) {
+        this.push('sleep', Game.time + extractor.cooldown)
+        return this.runStack()
+      }
+      if (tgt.mineralAmount) {
+        this.push('sleep', C.EXTRACTOR_COOLDOWN)
+        this.push('harvest', tgt.id)
         this.push('moveNear', tgt.id)
       } else {
         this.push('sleep', Game.time + tgt.ticksToRegeneration)

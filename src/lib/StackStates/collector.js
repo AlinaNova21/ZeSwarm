@@ -21,18 +21,18 @@ export default {
     }
     let { x, y } = tgt.pos
     // let [{ resource: res } = {}] = this.creep.room.lookForAtArea(C.LOOK_RESOURCES, y - 1, x - 1, y + 1, x + 1, true)
-    let resources = this.creep.room.lookForAtArea(C.LOOK_RESOURCES, y - 1, x - 1, y + 1, x + 1, true)
+    let resources = this.creep.room.lookNear(C.LOOK_RESOURCES, tgt.pos)
       .filter(r => r.resourceType === resourceType)
     if (resources.length) {
-      this.push('pickup', resources[0].resource.id)
-      this.push('moveNear', resources[0].resource.id)
+      this.push('pickup', resources[0].id)
+      this.push('moveNear', resources[0].id)
       return this.runStack()
     }
-    let [{ structure: cont } = {}] = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
-      .filter(({ structure: s }) => s.structureType === C.STRUCTURE_CONTAINER && s.store[resourceType])
+    let [cont] = this.creep.room.lookNear(C.LOOK_STRUCTURES, tgt.pos)
+      .filter((s) => s.structureType === C.STRUCTURE_CONTAINER && s.store[resourceType])
     if (cont) {
       if(cont.store[resourceType] < this.creep.carryCapacity) {
-        this.push('sleep', 5)
+        this.push('sleep', Game.time + 5)
       }
       this.push('withdraw', cont.id, resourceType)
       this.push('moveNear', cont.id)

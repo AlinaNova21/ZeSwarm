@@ -37,7 +37,8 @@ export default class HarvestManager extends BaseProcess {
       this.log.warn(`No vision in ${this.memory.room}`)
       return
     }
-    let sources = this.room.find(FIND_SOURCES)
+    let sources = this.room.find(C.FIND_SOURCES)
+    let minerals = this.room.find(C.FIND_MINERALS)
     let single = this.room.level > 2
     let creeps = [{
       cid: `harv`,
@@ -75,6 +76,43 @@ export default class HarvestManager extends BaseProcess {
         let proc = this.ensureChild(id, 'ZeSwarm/stackStateCreep', { spawnTicket, base })
       })
     })
+    if (CONTROLLER_STRUCTURES[C.STRUCTURE_EXTRACTOR][this.room.level]) {      
+      each(minerals, mineral => {
+        let [extractor] = mineral.pos.lookFor(C.LOOK_STRUCTURES)
+        if (!extractor) {
+          let [csite] = mineral.pos.lookFor(C.LOOK_CONSTRUCTION_SITES)
+          if (!csite) {
+            csite = mineral.pos.createConstructionSite(C.STRUCTURE_EXTRACTOR)
+          }
+          return
+        }
+        {
+          let spawnTicket = this.ensureCreep(`${mineral.id}_harv`, {
+            rooms: [this.memory.room],
+            body: [
+              this.expand([40, C.WORK, 1, C.MOVE]),
+              this.expand([30, C.WORK, 1, C.MOVE]),
+              this.expand([25, C.WORK, 1, C.MOVE]),
+              this.expand([20, C.WORK, 1, C.MOVE]),
+              this.expand([15, C.WORK, 1, C.MOVE]),
+              this.expand([10, C.WORK, 1, C.MOVE]),
+            ],
+            priority: 8
+          })
+          this.ensureChild(spawnTicket, 'ZeSwarm/stackStateCreep', { spawnTicket, base: ['harvester', mineral.id] })
+        }
+        {
+          let spawnTicket = this.ensureCreep(`${mineral.id}_coll_1`, {
+            rooms: [this.memory.room],
+            body: [
+              this.expand([8, C.CARRY, 8, C.MOVE]),
+            ],
+            priority: 8
+          })
+          this.ensureChild(spawnTicket, 'ZeSwarm/stackStateCreep', { spawnTicket, base: ['collector', mineral.id, mineral.mineralType] })
+        }
+      })
+    }
   }
   toString () {
     return this.memory.room
