@@ -39,8 +39,9 @@ function extChange(func, oldExt, newExt) {
   const msg = ErrorMapper.map(err)
   kernel.log.warn(msg)
 }
+extensionRegistry.register('zos/kernel', kernel)
 extensionRegistry.register('baseKernel', {
-  pretick() { return kernel.pretick() },
+  // pretick() { return kernel.pretick() },
   startProcess(imageName, startContext) {    return kernel.startProcess(imageName, startContext)  },
   killProcess(pid) { return kernel.killProcess(pid)  },
   getProcessById(pid) { return kernel.getProcessById(pid) },
