@@ -28,7 +28,7 @@ export default {
       }
     } else {
       let tgt
-      if (room.storage) {
+      if (room.storage && room.storage.store.energy > 50) {
         tgt = room.storage.id
       } else {
         let conts = (room.structures[STRUCTURE_CONTAINER] || []).filter(c => c.store.energy)

@@ -29,6 +29,22 @@ const singleList = [
 ]
 
 let obj = {
+  lookNear: {
+    value: function (type, pos) {
+      let { x, y } = pos.pos || pos
+      let res = []
+      for(let yo = -1; yo <= 1; yo++) {
+        if(y + yo > 49 || y + yo < 0) continue
+        for(let xo = -1; xo <= 1; xo++) {
+          if(x + xo > 49 || x + xo < 0) continue
+          res.push(...this.lookForAt(type, x + xo, y + yo))
+        }
+      }
+      return res
+    },
+    enumerable: false,
+    configurable: true
+  },
   structures: {
     get: function () {
       if (!this._structures || isEmpty(this._structures)) {

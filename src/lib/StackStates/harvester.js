@@ -17,9 +17,9 @@ export default {
       if (cache.cont) {
         cont = Game.getObjectById(cache.cont)
       } else {
-        let conts = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
-          .filter(s => s.structure.structureType === C.STRUCTURE_CONTAINER)
-          .map(s => s.structure)
+        // let conts = this.creep.room.lookForAtArea(C.LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
+        let conts = this.creep.room.lookNear(C.LOOK_STRUCTURES, tgt.pos)
+          .filter(s => s.structureType === C.STRUCTURE_CONTAINER)
         cont = this.creep.pos.findClosestByRange(conts)
       }
       if (cont) {

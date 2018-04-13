@@ -35,8 +35,26 @@ export default {
     }
   },
   flee (targets) {
-    let { path } = PathFinder.search(this.creep.pos, targets, { flee: true })
-    if (path) {
+    let { path } = PathFinder.search(this.creep.pos, targets, { 
+      flee: true,
+      roomCallback (room) {
+        let cm = new PathFinder.CostMatrix()
+        for(let i = 0; i < 2500; i++) {
+          cm._bits[i] = 0
+        }
+        let r = Game.rooms[room]
+        if (r) {
+          r.structures.all.forEach(({ structureType, pos: { x, y } }) => {
+            if (OBSTACLE_OBJECT_TYPES.includes(structureType)) {
+              cm.set(x,y,254)
+            }
+          })
+        }
+        return cm
+      }
+    })
+    console.log(path,JSON.stringify(targets))
+    if (path && path.length) {
       this.creep.moveByPath(path)
     }
     this.pop()

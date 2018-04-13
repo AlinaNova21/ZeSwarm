@@ -68,49 +68,4 @@ export default class StackStateCreep extends states {
   toString () {
     return `${this.memory.spawnTicket} ${this.stack.slice(-1)[0]}`
   }
-
-  buildAt (type, target, opts = {}) {
-    if (!opts.work) {
-      opts.work = this.creep.getActiveBodyparts(C.WORK)
-    }
-    const tgt = this.resolveTarget(target)
-    if (this.creep.carry.energy) {
-      let [site] = tgt.lookFor(C.LOOK_CONSTRUCTION_SITES)
-      if (!site) {
-        let [struct] = tgt.lookFor(C.LOOK_STRUCTURES, {
-          filter: (s) => s.structureType === type
-        })
-        if (struct) { // Structure exists/was completed
-          this.pop()
-          return this.runStack()
-        }
-        this.creep.say('CSITE')
-        return tgt.createConstructionSite(type)
-      }
-      let hitsMax = Math.ceil(sum(values(this.creep.carry)) / (opts.work * C.BUILD_POWER))
-      this.push('repeat', hitsMax, 'build', site.id)
-      this.runStack()
-    } else {
-      if (opts.energyState) {
-        this.push(...opts.energyState)
-        this.runStack()
-      } else {
-        this.creep.say('T:BLD GTHR')
-        this.pop()
-      }
-    }
-  }
-
-  store (res) {
-    if (this.creep.carry[res] === 0) {
-      this.pop()
-      return this.runStack()
-    }
-    let tgt = this.creep.room.storage || this.creep.room.spawns.find(s => s.energy < s.energyCapacity)
-    if (tgt) {
-      this.push('transfer', tgt.id, res)
-      this.push('moveNear', tgt.id)
-      return this.runStack()
-    }
-  }
 }
