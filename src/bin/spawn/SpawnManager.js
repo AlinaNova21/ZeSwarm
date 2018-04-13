@@ -50,7 +50,7 @@ export default class SpawnManager {
               let body = bodies[i]
               const [orphan] = orphans[body] || []
               if (orphan) {
-                this.status[orphan] = undefined
+                delete this.status[orphan]
                 status.name = orphan
                 status.status = C.EPosisSpawnStatus.SPAWNED
                 this.log.info(`Assigning orphan ${orphan} to ${item.statusId}`)
@@ -79,7 +79,7 @@ export default class SpawnManager {
               let { body } = maxBy(filter(bodies, (b) => b.cost <= energy), 'cost') || { body: false }
               if (!body) continue
               spawns.splice(index, 1)
-              let ret = spawn.createCreep(body, item.statusId)
+              let ret = spawn.spawnCreep(body, item.statusId, { memory: { _p: this.kernel.currentId } })
               this.context.log.info(`Spawning ${item.statusId}`)
               if (typeof ret === 'string') {
                 status.status = C.EPosisSpawnStatus.SPAWNING

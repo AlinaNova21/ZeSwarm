@@ -25,7 +25,7 @@ export default class SpawnExtension {
       C.addSegment('SPAWN')
     }
     this.extensionRegistry = extensionRegistry
-    this.kernel = extensionRegistry.getExtension('baseKernel')
+    this.kernel = extensionRegistry.getExtension('zos/kernel')
     this.mm = extensionRegistry.getExtension('segments')
     this.interrupt = extensionRegistry.getExtension('interrupt')
     if (this.memory === false) {
@@ -59,7 +59,8 @@ export default class SpawnExtension {
       if (orphan) {
         this.status[orphan] = {
           name: orphan,
-          status: C.EPosisSpawnStatus.SPAWNED
+          status: C.EPosisSpawnStatus.SPAWNING,
+          lastAccess: Game.time
         }
         console.log(`Orphan returned ${orphan}`)
         this.getCreep(orphan)
@@ -83,11 +84,12 @@ export default class SpawnExtension {
     return uid
   }
   getOrphans (rooms) {
-    const thresh = Game.time - 10
     let ret = {}
-    let map = {}
+    // let stats = {}
+    // each(this.status, (stat, id) => stats[stat.name || id] = stat)
     for (let id in Game.creeps) {
       const creep = Game.creeps[id]
+      // const { lastAccess = 0, status } = stats[id]
       if (!creep.memory._p || !this.kernel.getProcessById(creep.memory._p)) {
         if (rooms && !rooms.includes(creep.pos.roomName)) continue
         const body = creep.body.map(b => b.type).join()
@@ -108,12 +110,14 @@ export default class SpawnExtension {
   }
   getCreep (id) {
     let stat = this.getStatus(id)
-    if (stat.status === C.EPosisSpawnStatus.SPAWNED) {
+    if (stat.status !== C.EPosisSpawnStatus.QUEUED) {
       const creep = Game.creeps[stat.name || id]
       if (creep) {
         creep.memory._p = this.kernel.currentId
       }
-      return creep
+      if (stat.status === C.EPosisSpawnStatus.SPAWNED) {
+        return creep
+      }
     }
   }
   waitForCreep (id) {
