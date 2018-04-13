@@ -54,6 +54,7 @@ export default class SpawnManager {
                 status.name = orphan
                 status.status = C.EPosisSpawnStatus.SPAWNED
                 this.log.info(`Assigning orphan ${orphan} to ${item.statusId}`)
+                this.spawn.getCreep(item.statusId)
               }
             }
             if (status.status !== C.EPosisSpawnStatus.SPAWNED) {

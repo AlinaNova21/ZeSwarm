@@ -1,5 +1,6 @@
 // import { posisInterface } from "../common"
 import times from 'lodash-es/times'
+import each from 'lodash-es/each'
 import C from '/include/constants'
 
 // interface SpawnManagerMemory {
@@ -61,7 +62,7 @@ export default class SpawnExtension {
           status: C.EPosisSpawnStatus.SPAWNED
         }
         console.log(`Orphan returned ${orphan}`)
-        this.getStatus(orphan)
+        this.getCreep(orphan)
         return orphan
       }
     }
@@ -72,22 +73,22 @@ export default class SpawnExtension {
       body,
       priority,
       maxRange,
-      pid: this.kernel.currentId,
-      lastAccess: Game.time
+      pid: this.kernel.currentId
     }
     this.queue[priority].push(item)
     this.status[uid] = {
-      status: C.EPosisSpawnStatus.QUEUED
+      status: C.EPosisSpawnStatus.QUEUED,
+      lastAccess: Game.time
     }
     return uid
   }
   getOrphans (rooms) {
     const thresh = Game.time - 10
     let ret = {}
+    let map = {}
     for (let id in Game.creeps) {
       const creep = Game.creeps[id]
-      const { name, status, lastAccess = 0 } = this.status[id] || {}
-      if (lastAccess < thresh) {
+      if (!creep.memory._p || !this.kernel.getProcessById(creep.memory._p)) {
         if (rooms && !rooms.includes(creep.pos.roomName)) continue
         const body = creep.body.map(b => b.type).join()
         ret[body] = ret[body] || []
@@ -108,7 +109,11 @@ export default class SpawnExtension {
   getCreep (id) {
     let stat = this.getStatus(id)
     if (stat.status === C.EPosisSpawnStatus.SPAWNED) {
-      return Game.creeps[stat.name || id]
+      const creep = Game.creeps[stat.name || id]
+      if (creep) {
+        creep.memory._p = this.kernel.currentId
+      }
+      return creep
     }
   }
   waitForCreep (id) {
