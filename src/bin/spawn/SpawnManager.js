@@ -50,7 +50,7 @@ export default class SpawnManager {
               let body = bodies[i]
               const [orphan] = orphans[body] || []
               if (orphan) {
-                delete this.status[orphan]
+                this.status[orphan] = undefined
                 status.name = orphan
                 status.status = C.EPosisSpawnStatus.SPAWNED
                 this.log.info(`Assigning orphan ${orphan} to ${item.statusId}`)
