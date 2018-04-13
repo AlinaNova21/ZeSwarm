@@ -274,6 +274,11 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
         }
       }
     }
+    _.each(Memory.creeps, (c, name) => {
+      if (!Game.creeps[name]) {
+        delete Memory.creeps[name]
+      }
+    })
     const end = Game.cpu.getUsed()
     this.ktime += end - start
 

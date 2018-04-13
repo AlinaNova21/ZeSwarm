@@ -76,9 +76,7 @@ module.exports.loop = function () {
     //     // vis.text(l,0,50-(a.length*sc)+(i*sc),{ align: 'left', size })
     //     // vis.text(l,49,50-(a.length*sc)+(i*sc),{ align: 'right', size })
     // })
-  _.each(Memory.creeps, (c, name) => {
-    if (!Game.creeps[name]) delete Memory.creeps[name]
-  })
+
   _.invoke(Game.structures, 'run')
   _.invoke(Game.creeps, 'run')
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 0.5, { size: 1 })
