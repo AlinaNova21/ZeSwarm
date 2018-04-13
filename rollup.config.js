@@ -4,6 +4,10 @@ import screeps from 'rollup-plugin-screeps'
 import resolve from 'rollup-plugin-node-resolve'
 import rootImport from 'rollup-plugin-root-import'
 
+let auth = false
+try {
+  auth = require('./auth.js')
+} catch (e) {}
 export default {
   input: 'src/index.js',
   output: {
@@ -23,7 +27,8 @@ export default {
       module: true
     }),
     screeps({
-      dryRun: true
+      dryRun: !auth,
+      config: auth
     })
   ]
 }

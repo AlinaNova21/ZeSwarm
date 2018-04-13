@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c",
     "postinstall": "typings install",
-    "deploy": "rollup -c && gulp"
+    "deploy": "rollup -c"
   },
   "repository": {
     "type": "git",
