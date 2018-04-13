@@ -90,6 +90,7 @@ export default class HarvestManager extends BaseProcess {
           let spawnTicket = this.ensureCreep(`${mineral.id}_harv`, {
             rooms: [this.memory.room],
             body: [
+              this.expand([49, C.WORK, 1, C.MOVE]),
               this.expand([40, C.WORK, 1, C.MOVE]),
               this.expand([30, C.WORK, 1, C.MOVE]),
               this.expand([25, C.WORK, 1, C.MOVE]),
@@ -97,7 +98,8 @@ export default class HarvestManager extends BaseProcess {
               this.expand([15, C.WORK, 1, C.MOVE]),
               this.expand([10, C.WORK, 1, C.MOVE]),
             ],
-            priority: 8
+            priority: 8,
+            maxRange: 1
           })
           this.ensureChild(spawnTicket, 'ZeSwarm/stackStateCreep', { spawnTicket, base: ['harvester', mineral.id] })
         }
@@ -107,7 +109,8 @@ export default class HarvestManager extends BaseProcess {
             body: [
               this.expand([8, C.CARRY, 8, C.MOVE]),
             ],
-            priority: 8
+            priority: 8,
+            maxRange: 1
           })
           this.ensureChild(spawnTicket, 'ZeSwarm/stackStateCreep', { spawnTicket, base: ['collector', mineral.id, mineral.mineralType] })
         }
