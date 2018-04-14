@@ -37,11 +37,11 @@ export default class StackStateCreep extends states {
 
   run () {
     let start = Game.cpu.getUsed()
-    let creep = this.creep
     let status = this.spawn.getStatus(this.memory.spawnTicket)
     if (status.status === C.EPosisSpawnStatus.ERROR) {
       throw new Error(`Spawn ticket error: ${status.message}`)
     }
+    let creep = this.creep
     if (!creep) {
       if (status.status === C.EPosisSpawnStatus.SPAWNED) {
         this.log.info(`Creep dead`)

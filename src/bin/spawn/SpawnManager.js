@@ -11,7 +11,7 @@ export default class SpawnManager {
     this.context = context
     this.sleeper = this.context.queryPosisInterface('sleep')
     this.spawn = this.context.queryPosisInterface('spawn')
-    this.kernel = this.context.queryPosisInterface('baseKernel')
+    this.kernel = this.context.queryPosisInterface('zos/kernel')
   }
   get id () { return this.context.id }
   get memory () {
