@@ -66,6 +66,6 @@ export default class StackStateCreep extends states {
   }
 
   toString () {
-    return `${this.memory.spawnTicket} ${this.stack.slice(-1)[0]}`
+    return `${this.memory.spawnTicket} ${this.stack.slice(-1)[0]} ${this.status || ''}`
   }
 }

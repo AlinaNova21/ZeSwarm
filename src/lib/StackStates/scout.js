@@ -7,8 +7,9 @@ export default {
   scout (state = {}) {
     let { room, pos } = this.creep
     let { controller } = room
+    this.status = pos.toString()
     let hostile = controller && controller.level > 0 && !controller.my
-    if (hostile) return this.log.info(`${room.name} is hostile!`)
+    if (hostile) return this.log.warn(`${room.name} is hostile!`)
 
     let lastdir = 0
     if (pos.y === 0) lastdir = C.TOP
