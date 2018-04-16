@@ -25,7 +25,7 @@ export default class Intel {
     }
     if (Game.flags.map) {
       this.log.warn('Map rendering is enabled')
-      // this.drawMap()
+      this.drawMap()
       this.drawMapImage()
     }
   }
@@ -134,7 +134,7 @@ export default class Intel {
       }
       if (room.ts) {
         let val = Math.min(100, ((Game.time - room.ts) / 2000) * 100)
-        let color = this.getColorBasedOnPercentage(val) // hsv2rgb(val, 0.5, 1)
+        let color = getColorBasedOnPercentage(val) // hsv2rgb(val, 0.5, 1)
         vis.circle(x, y, { radius: 0.2, fill: color, color })
       }
       const exits = Game.map.describeExits(room.name)
@@ -222,7 +222,7 @@ function hsv2rgb (h, s, v) {
   }).join('');
 }
 
-function renderRooms(rooms, exitMap) {
+function renderRooms(rooms, exitMap, badges) {
   const C = angular.element($('section.game')).injector().get('Constants')
   const each = _.forEach;
   let minx = 1000;
@@ -245,10 +245,14 @@ function renderRooms(rooms, exitMap) {
     room.y = y;
   });
   const canvas = document.createElement('canvas');
-  const scale = Math.floor(1000 / (maxx - minx));
-  const h = scale/2
-  canvas.width = (maxx - minx) * scale;
-  canvas.height = (maxy - miny) * scale;
+  const roomsx = maxx - minx + 1
+  const roomsy = maxy - miny + 1
+  const scalex = 1920 / roomsx
+  const scaley = 1080 / roomsy
+  const scale = Math.min(scalex,scaley);
+  const h = scale / 2
+  canvas.width = roomsx * scale;
+  canvas.height = roomsy * scale;
   const ctx = canvas.getContext('2d');
   /* ctx.scale(0.2, 0.2);  */
   /* ctx.scale(scale, scale)  */
@@ -269,16 +273,20 @@ function renderRooms(rooms, exitMap) {
     ctx.rect(0, 0, scale, scale);
     ctx.fillStyle = color;
     ctx.fill();
-
+    const user = room.owner || room.reserver;
+    if (user && badges[user]) {
+      ctx.drawImage(badges[user], scale * 0.55, scale * 0.05, scale * 0.4, scale * 0.4);
+    }
+    let info = [];
     if (room.ts) {
-      let val = Math.min(100, ((Game.time - room.ts) / 2000) * 100);
+      /* let val = Math.min(100, ((Game.time - room.ts) / 2000) * 100);
       let color = getColorBasedOnPercentage(val);
       ctx.beginPath();
       ctx.arc(h, h, scale * 0.2, 0, Math.PI * 2);
       ctx.fillStyle = color;
-      ctx.fill();
+      ctx.fill(); */
+      info.push(`Age: ${Game.time - room.ts}`)
     }
-    let info = []
     if (room.level) {
       info.push(`Level: ${room.level}`)
     }
@@ -328,11 +336,11 @@ function renderRooms(rooms, exitMap) {
     ctx.restore();
   });
   const url = canvas.toDataURL();
-  console.log(url)
   const w = window.open("", 'mapImage');
   const image = new Image();
   image.src = url
-  w.document.body.innerHTML = image.outerHTML + `<style> body { background-color: #CCCCCC } img { position: fixed; top: 0; bottom: 0; left: 0; right: 0; width: 1000px; }</style>`
+  /* image.outerHTML + */
+  w.document.body.innerHTML =  `<style> body { background-color: #CCCCCC; background-image: url(${url}); background-size: contain; background-repeat: no-repeat; } img { position: fixed; top: 0; bottom: 0; left: 0; right: 0; width: 1000px; }</style>`
 }
 
 async function loadScripts(funcID, extrasID, roomsID) {
@@ -340,5 +348,23 @@ async function loadScripts(funcID, extrasID, roomsID) {
   eval(await conn.getMemorySegment(null, funcID));
   const { rooms } = JSON.parse(await conn.getMemorySegment(null, roomsID));
   const { exits } = JSON.parse(await conn.getMemorySegment(null, extrasID));
-  renderRooms(rooms, exits)
+  const users = []
+  window.userBadges = window.userBadges || {};
+  _.forEach(rooms, async room => {
+    const user = room.owner || room.reserver;
+    if (user) users.push(user);
+  })
+  await Promise.all(users.map(async user => new Promise((resolve, reject) => {
+    if(window.userBadges[user]) return resolve(window.userBadges[user]);
+    const img = new Image();
+    img.src = `/api/user/badge-svg?username=${user}`;
+    img.onload = function () {
+      window.userBadges[user] = img;
+      resolve();
+    }
+    img.onerror = function () {
+      resolve();
+    }
+  })))
+  renderRooms(rooms, exits, window.userBadges);
 }
