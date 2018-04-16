@@ -55,11 +55,8 @@ export default class Swarm extends BaseProcess {
       let room = Game.rooms[roomName]
       if (room && room.controller.my) {
         invoke(room.find(FIND_HOSTILE_STRUCTURES), 'destroy')
-        invoke(room.find(FIND_HOSTILE_CONSTRUCTION_SITES), 'destroy')
-        let ret = Game.flags.claim.pos.createConstructionSite(C.STRUCTURE_SPAWN)
-        if (ret === C.OK) {
-          Game.flags.claim.remove()
-        }
+        invoke(room.find(FIND_HOSTILE_CONSTRUCTION_SITES), 'remove')
+        Game.flags.claim.remove()
       } else {
         let cid = this.ensureCreep(`claimer_${roomName}`, {
           rooms: [roomName],
