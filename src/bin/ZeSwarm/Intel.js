@@ -4,6 +4,7 @@ export default class Intel {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
+    this.sleep = context.queryPosisInterface('sleep')
     this.int = context.queryPosisInterface('interrupt')
     this.segments = context.queryPosisInterface('segments')
   }
@@ -13,17 +14,20 @@ export default class Intel {
   }
 
   run () {
-    this.int.setInterrupt(C.INT_TYPE.VISION, C.INT_STAGE.START)
     if (this.segments.load(C.SEGMENTS.INTEL) === false) {
       this.segments.activate(C.SEGMENTS.INTEL)
       this.int.clearAllInterrupts()
       this.int.wait(C.INT_TYPE.SEGMENT, C.INT_STAGE.START, C.SEGMENTS.INTEL)
+    } else {
+      this.int.setInterrupt(C.INT_TYPE.VISION, C.INT_STAGE.START)
+      // this.sleep.sleep(10)
     }
   }
 
-  interrupt ({ hook: { type, stage }, key }) {
+  INTERRUPT ({ hook: { type, stage }, key }) {
+    this.log.debug(`Collecting intel on ${key}`)
     let room = Game.rooms[key]
-    let mem = this.segments.load(C.SEGMENTS.INTEL)
+    let mem = this.segments.load(C.SEGMENTS.INTEL) || {}
     let hr = mem.rooms = mem.rooms || {}
     let {
       name,
@@ -50,7 +54,7 @@ export default class Intel {
       username,
       spawns: room.spawns.map(smap),
       towers: room.towers.map(smap),
-      walls: room.walls.length,
+      walls: room.constructedWalls.length,
       ramparts: room.ramparts.length,
       creeps: room.find(C.FIND_HOSTILE_CREEPS).map(cmap),
       safemode: safeMode || 0,
