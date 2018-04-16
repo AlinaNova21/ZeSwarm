@@ -52,12 +52,12 @@ export default class SpawnManager {
               if (orphan) {
                 delete this.status[orphan]
                 status.name = orphan
-                status.status = C.EPosisSpawnStatus.SPAWNED
+                status.status = C.EPosisSpawnStatus.SPAWNING
                 this.log.info(`Assigning orphan ${orphan} to ${item.statusId}`)
                 this.spawn.getCreep(item.statusId)
               }
             }
-            if (status.status !== C.EPosisSpawnStatus.SPAWNED) {
+            if (status.status === C.EPosisSpawnStatus.QUEUED) {
               let cspawns = map(spawns, (spawn, index) => {
                 let dist = item.rooms && item.rooms[0] && (Game.map.getRoomLinearDistance(spawn.room.name, item.rooms[0]) || 0)
                 let energy = spawn.room.energyAvailable
@@ -81,7 +81,7 @@ export default class SpawnManager {
               spawns.splice(index, 1)
               let ret = spawn.spawnCreep(body, item.statusId, { memory: { _p: this.kernel.currentId } })
               this.context.log.info(`Spawning ${item.statusId}`)
-              if (typeof ret === 'string') {
+              if (ret === C.OK) {
                 status.status = C.EPosisSpawnStatus.SPAWNING
               } else {
                 status.status = C.EPosisSpawnStatus.ERROR
