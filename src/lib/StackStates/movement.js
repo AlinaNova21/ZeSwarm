@@ -53,7 +53,6 @@ export default {
         return cm
       }
     })
-    console.log(path,JSON.stringify(targets))
     if (path && path.length) {
       this.creep.moveByPath(path)
     }
