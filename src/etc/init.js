@@ -8,7 +8,7 @@ const RUN_TEST_CRON = false
 const RUN_TEST_SPAWN = false
 
 const RUN_CRONS = true
-const RUN_LEGACY = true
+const RUN_LEGACY = false
 const RUN_PROCESS_TREE_DUMP = true
 
 const STRESS_TEST_ENABLED = false
