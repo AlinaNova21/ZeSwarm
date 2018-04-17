@@ -7,7 +7,7 @@ let allied = {
 }
 
 let friendly = {
-
+  CaptainMuscles: ['shard0','shard1','shard2'].includes(Game.shard.name)
 }
 
 export class IFF {
