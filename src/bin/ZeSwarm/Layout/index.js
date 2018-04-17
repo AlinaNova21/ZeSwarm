@@ -22,6 +22,14 @@ export default class Layout extends BaseProcess {
   }
 
   run () {
+    this.flex()
+  }
+
+  fixed () {
+    
+  }
+
+  flex () {
     this.sleep.sleep(10)
     if (_.size(Game.constructionSites) === 100) return
     const room = this.room
