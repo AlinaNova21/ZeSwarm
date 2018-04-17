@@ -27,7 +27,7 @@ export default class Layout extends BaseProcess {
     const room = this.room
     const { controller: { level } } = this.room
     let offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
-    let wanted = [C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_SPAWN]
+    let wanted = [C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_SPAWN, C.STRUCTURE_TERMINAL]
     let want = _.mapValues(_.pick(C.CONTROLLER_STRUCTURES, wanted), level)
     let allSites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
     let sites = _.groupBy(allSites, 'structureType')
@@ -42,7 +42,7 @@ export default class Layout extends BaseProcess {
     //   want[C.STRUCTURE_EXTENSION] = 0
     //   want[C.STRUCTURE_CONTAINER] = 0
     // }
-    let src = room.src || room.controller
+    let src = room.spawns[0] || room.controller
     for (let type in want) {
       let amount = want[type] - ((have[type] || 0) + (sites[type] || []).length)
       console.log(type, want[type], have[type] || 0, (sites[type] || []).length)
