@@ -1,14 +1,17 @@
 import sum from 'lodash-es/sum'
 import values from 'lodash-es/values'
+import IFF from '/lib/IFF'
 
 import { SIGN_MSG, SIGN_MY_MSG } from '/etc/scout'
 
 export default {
   scout (state = {}) {
-    let { room, pos } = this.creep
-    let { controller } = room
+    const { room, pos, room: { controller } } = this.creep
     this.status = pos.toString()
-    let hostile = controller && controller.level > 0 && !controller.my
+    const user = (controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username)
+    const friend = user && IFF.isFriend(user) || false
+    const hostile = !friend && controller && controller.level > 0 && !controller.my
+    
     if (hostile) return this.log.warn(`${room.name} is hostile!`)
 
     let lastdir = 0
@@ -25,7 +28,7 @@ export default {
 
     let exit = pos.findClosestByRange(dir)
     let msg = controller && controller.my && SIGN_MY_MSG || SIGN_MSG
-    if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
+    if (!hostile && !friend && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
       this.creep.say('Signing')
       this.push('signController', controller.id, msg)
       this.push('moveNear', controller.pos)

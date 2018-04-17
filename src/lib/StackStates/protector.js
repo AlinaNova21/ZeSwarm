@@ -1,4 +1,5 @@
 import C from '/include/constants'
+import IFF from '/lib/IFF'
 
 export default {
   protector (target, cache = {}) {
