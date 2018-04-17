@@ -33,4 +33,11 @@ export class IFF {
     // TODO: Use segment for server specific lists
     // TODO: Import LOAN segment if available
   }
+  static notAlly({ owner: { username } = {}}) {
+    return !IFF.isAlly(username)
+  }
+
+  static notFriend({ owner: { username } = {}}) {
+    return !IFF.isFriend(username)
+  }
 }

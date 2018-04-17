@@ -9,7 +9,7 @@ export default {
       return this.runStack()
     }
     let { room, pos } = this.creep
-    let hostiles = room.find(C.FIND_HOSTILE_CREEPS)
+    let hostiles = room.find(C.FIND_HOSTILE_CREEPS).filter(IFF.notFriend)
     let hostile = pos.findClosestByRange(hostiles)
     this.push('attack', hostile.id)
     this.push('moveNear', hostile.id)

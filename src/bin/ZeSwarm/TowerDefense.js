@@ -36,7 +36,7 @@ export default class TowerDefense extends BaseProcess {
       return
     }
     const vis = room.visual
-    const hostiles = room.find(FIND_HOSTILE_CREEPS).filter(({ pos: { x, y } }) => x && x !== 49 && y && y !== 49).filter(({ owner: { username }}) => IFF.isAlly(username))    
+    const hostiles = room.find(FIND_HOSTILE_CREEPS).filter(({ pos: { x, y } }) => x && x !== 49 && y && y !== 49).filter(IFF.notAlly)
     if (hostiles.length) {
       console.log('Hostiles!',hostiles.map(h=>`${h} ${h.owner.username}`))
       room.towers.forEach(tower => {
