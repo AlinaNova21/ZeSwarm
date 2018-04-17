@@ -4,6 +4,8 @@ import map from 'lodash-es/map'
 import each from 'lodash-es/each'
 import invoke from 'lodash-es/invoke'
 import filter from 'lodash-es/filter'
+import static from './static'
+import { distanceTransform, blockablePixelsForRoom } from '/lib/DistanceTransform'
 
 export default class Layout extends BaseProcess {
   constructor (context) {
@@ -26,6 +28,7 @@ export default class Layout extends BaseProcess {
   }
 
   fixed () {
+    const { room, room: { controller: { level } } } = this
     
   }
 
