@@ -1,4 +1,4 @@
-export {
+export default {
   core: {
     min: [7,7],
     max: [9,9],
@@ -10,7 +10,7 @@ export {
       'rtlrotr',
       ' rsrsr ',
       '  r r  '
-    ],
+    ]
   },
   lab: {
     min: [4,4],

@@ -7,7 +7,7 @@ const OFFICIAL = {
     ZeSwarm: true
   },
   friends: {
-    CaptainMuscles: 
+    CaptainMuscles: true
   }
 }
 
@@ -15,7 +15,7 @@ const SHARD = {
   DEFAULT: {
     allied: {},
     friends: {}
-  }
+  },
   shard0: OFFICIAL,
   shard1: OFFICIAL,
   shard2: OFFICIAL,
@@ -27,7 +27,7 @@ const SHARD = {
 
 const current = SHARD[Game.shard.name] || SHARD.DEFAULT
 
-export class IFF {
+export default class IFF {
   static isFriend (user) {
     if (current.friends[user]) return true
     if (IFF.isAlly(user)) return true

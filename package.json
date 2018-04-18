@@ -9,7 +9,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c",
-    "postinstall": "typings install",
     "deploy": "rollup -c"
   },
   "repository": {
@@ -25,6 +24,7 @@
   "dependencies": {
     "lodash-es": "^4.17.4",
     "rollup-plugin-root-import": "^0.2.2",
+    "rollup-plugin-screeps": "^0.1.2",
     "source-map": "0.6.1",
     "stack-trace": "^0.0.10"
   },
