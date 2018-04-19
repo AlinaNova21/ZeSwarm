@@ -61,7 +61,18 @@ export default class TowerDefense extends BaseProcess {
           opacity: 0.3
         })
       })
+    } else {
+      this.doTowerMaint()
     }    
+  }
+  doTowerMaint () {
+    const room = this.room
+    const roads = room.find(C.FIND_STRUCTURES).filter(s => s.structureType === C.STRUCTURE_ROAD && s.hits < (s.hitsMax / 2))
+    room.towers.forEach(tower => {
+      if (tower.energy < (tower.energyCapacity / 2)) return 
+      const road = roads.pop()
+      if (road) tower.repair(road)
+    })
   }
   toString () {
     return this.memory.room
