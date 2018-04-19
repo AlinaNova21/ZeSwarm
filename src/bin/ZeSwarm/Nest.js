@@ -2,6 +2,7 @@ import C from '/include/constants'
 import each from 'lodash-es/each'
 // import C from '../include/constants'
 import BaseProcess from './BaseProcess'
+import IFF from '/lib/IFF'
 
 export default class Nest extends BaseProcess {
   constructor (context) {
@@ -72,12 +73,12 @@ export default class Nest extends BaseProcess {
       const cid = this.ensureCreep('builder_1', {
         rooms: [this.roomName],
         body: [
-          this.expand([6, C.CARRY, 6, C.WORK, 6, C.MOVE]),
-          this.expand([5, C.CARRY, 5, C.WORK, 5, C.MOVE]),
-          this.expand([4, C.CARRY, 4, C.WORK, 4, C.MOVE]),
-          this.expand([3, C.CARRY, 3, C.WORK, 3, C.MOVE]),
-          this.expand([2, C.CARRY, 2, C.WORK, 2, C.MOVE]),
-          this.expand([1, C.CARRY, 1, C.WORK, 1, C.MOVE])
+          this.expand([6, C.CARRY, 6, C.WORK, 12, C.MOVE]),
+          this.expand([5, C.CARRY, 5, C.WORK, 10, C.MOVE]),
+          this.expand([4, C.CARRY, 4, C.WORK, 8, C.MOVE]),
+          this.expand([3, C.CARRY, 3, C.WORK, 6, C.MOVE]),
+          this.expand([2, C.CARRY, 2, C.WORK, 4, C.MOVE]),
+          this.expand([1, C.CARRY, 1, C.WORK, 2, C.MOVE])
         ],
         priority: 2
       })
@@ -115,9 +116,9 @@ export default class Nest extends BaseProcess {
         })   
       }
     }
-    const hostiles = this.room.find(C.FIND_HOSTILE_CREEPS)
+    const hostiles = this.room.find(C.FIND_HOSTILE_CREEPS).filter(IFF.notFriend)
     if (hostiles.length) {
-      if (hostiles[0].owner.username === 'Invader') {
+      if (true || hostiles[0].owner.username === 'Invader') {
         const cid = this.ensureCreep('protector_1', {
           rooms: [this.roomName],
           body: [
