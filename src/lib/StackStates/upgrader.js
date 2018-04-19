@@ -20,7 +20,7 @@ export default {
     } else {
       let tgt = room.storage || room.containers.find(c => c.store.energy)
       if (tgt) {
-        if (tgt === room.storage && tgt.store.energy < 10000 && controller.ticksToDowngrade < 10000) {
+        if (tgt.structureType === 'storage' && tgt.store.energy < 10000 && (!controller.ticksToDowngrade || controller.ticksToDowngrade < 10000)) {
           this.push('sleep', Game.time + 10)
           return this.runStack()
         }
