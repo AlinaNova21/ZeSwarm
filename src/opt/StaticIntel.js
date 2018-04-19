@@ -1,5 +1,8 @@
 
-var database = {}
+var database = {
+  userIndex: [],
+  allianceindex: []
+}
 
 var database_rooms = false
 var database_user_rooms = false

@@ -21,7 +21,10 @@ const SHARD = {
   shard2: OFFICIAL,
   screepsplus1: {
     allied: {},
-    friends: {}
+    friends: {
+      Alcardian: true,
+      Reizul: true
+    }
   }
 }
 
@@ -41,9 +44,9 @@ export default class IFF {
   static isAlly (user) {
     if (current.allied[user]) return true
     const theirAlliance = intel.getUserAlliance(user)
-    if (current.allied[theirAlliance]) return true
+    if (theirAlliance && current.allied[theirAlliance]) return true
     const myAlliance = intel.getUserAlliance(C.USER)
-    if (myAlliance === theirAlliance) return true
+    if (myAlliance && myAlliance === theirAlliance) return true
     return false
   }
   static refresh () {
