@@ -8,10 +8,10 @@ export default {
   scout (state = {}) {
     const { room, pos, room: { controller } } = this.creep
     this.status = pos.toString()
-    const user = (controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username)
+    const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
     const friend = user && IFF.isFriend(user) || false
     const hostile = !friend && controller && controller.level > 0 && !controller.my
-    
+
     if (hostile) return this.log.warn(`${room.name} is hostile!`)
 
     let lastdir = 0
