@@ -67,10 +67,23 @@ export default {
       }
     }
   },
-  store (res) {
+  store (res,cache = {}) {
+    if (!cache.work) {
+      cache.work = this.creep.getActiveBodyparts(C.WORK)
+    }
     if (!this.creep.carry[res]) {
       this.pop()
       return this.runStack()
+    }
+    if (cache.work) {
+      const road = this.creep.pos.lookFor(C.LOOK_STRUCTURES).find(s => s.structureType === C.STRUCTURE_ROAD)
+      if (road && road.hits <= road.hitsMax < 100) {
+        this.creep.repair(road)
+      }
+      let cs = this.pos.lookFor(C.LOOK_CONSTRUCTION_SITES).find(s=>s.structureType === C.STRUCTURE_ROAD)
+      if (cs) {
+        return this.build(cs)
+      }
     }
     let tgt = this.creep.room.storage || (res === C.RESOURCE_ENERGY && this.creep.room.spawns.find(s => s.energy < s.energyCapacity))
     if (tgt) {
