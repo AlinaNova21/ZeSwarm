@@ -1,1 +1,2 @@
-export * from '/zos/Logger'
+import Logger from '/zos/Logger'
+export default Logger
