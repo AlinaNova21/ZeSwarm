@@ -37,6 +37,13 @@ export default class BaseProcess {
     }
     return proc
   }
+  removeChild (id) {
+    const child = this.children[id]
+    delete this.children[id]
+    if (child) {
+      this.kernel.killProcess(child)
+    }
+  }
   cleanChildren () {
     let keys = Object.keys(this.children)
     for (let i = 0; i < keys.length; i++) {
