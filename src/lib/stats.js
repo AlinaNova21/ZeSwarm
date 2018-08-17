@@ -1,5 +1,7 @@
 import config from '/etc/stats'
 
+import Logger from '/lib/Logger'
+
 /* USAGE:
 Configure CONFIG below
 At VERY top of main.js:
@@ -50,6 +52,7 @@ export class InfluxDB {
   }
   constructor (opts = {}) {
     this.opts = Object.assign(CONFIG, opts)
+    this.log = new Logger('stats')
     global.influxdb = this
     this.reset()
     this.startTick = Game.time
@@ -67,7 +70,7 @@ export class InfluxDB {
       delete global.Memory
       global.Memory = global.LastMemory
       RawMemory._parsed = global.LastMemory
-      console.log('[1] Tick has same GID!')
+      this.log.info('Tick has same GID!')
     } else {
       Memory // eslint-disable-line no-unused-expressions
       global.LastMemory = RawMemory._parsed
@@ -81,7 +84,7 @@ export class InfluxDB {
       size: RawMemory.get().length
     })
     this.endReset = Game.cpu.getUsed()
-    console.log(`[1] [Stats] Entry: ${this.cpuReset.toFixed(3)} - Exit: ${(this.endReset - this.cpuReset).toFixed(3)} - Mem: ${this.memoryParseTime.toFixed(3)} (${(RawMemory.get().length / 1024).toFixed(2)}kb)`)
+    this.log.info(`Entry: ${this.cpuReset.toFixed(3)} - Exit: ${(this.endReset - this.cpuReset).toFixed(3)} - Mem: ${this.memoryParseTime.toFixed(3)} (${(RawMemory.get().length / 1024).toFixed(2)}kb)`)
   }
   addSimpleStat (name, value = 0) {
     this.addStat(name, {}, { value })
