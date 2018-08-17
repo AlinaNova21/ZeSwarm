@@ -39,4 +39,10 @@ export class ExtensionRegistry {
   posttick() {
     this.post.forEach(fn => fn())
   }
+  reboot() {
+    Object.keys(this.registry)
+      .map(k => this.registry[k])
+      .filter(ext => ext.onreboot)
+      .forEach(ext => ext.onreboot())
+  }
 }

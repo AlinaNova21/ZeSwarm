@@ -1,4 +1,6 @@
 // Use for HTML styling (Colors loosely match screeps_console)
+import ErrorMapper from './ErrorMapper'
+
 export const LogLevel = {
   SILLY: -1,
   DEBUG: 0,
@@ -29,7 +31,7 @@ export default class Logger {
   }
   constructor (prefix = '') {
     this.prefix = prefix
-    this.level = LogLevel.INFO
+    this.level = Memory.loglevel && Memory.loglevel.default || LogLevel.INFO
     this._log = console.log // This allows for console hooking
   }
   hook (level = 'info') {
@@ -78,6 +80,9 @@ export default class Logger {
     this.log(LogLevel.ALERT, message)
   }
   error (message) {
+    if(message instanceof Error) {
+      message = ErrorMapper.map(message)
+    }
     this.log(LogLevel.ERROR, message)
   }
   fatal (message) {

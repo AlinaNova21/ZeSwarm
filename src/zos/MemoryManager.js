@@ -75,6 +75,7 @@ export default class MemoryManager {
     })
   }
   getSegment (id) {
+    this.mem.versions = this.mem.versions || {}
     if (!this.mem.versions[id] || !this.versions[id] || this.mem.versions[id] !== this.versions[id]) {
       this.reloadSegment(id)
     }

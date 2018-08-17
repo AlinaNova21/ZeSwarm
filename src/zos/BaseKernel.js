@@ -82,6 +82,13 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
     this.processInstanceCache = {}
     this.currentId = 'ROOT'
     this.log = new Logger('[Kernel]')
+    // if (!Memory.spawnVersion) {
+    //   Memory.spawnVersion = _.find(Game.spawns, a=>a).id
+    // }
+    // if (Memory.spawnVersion && Memory.spawnVersion !== _.find(Game.spawns, a=>a).id) {
+    //   this.reboot()
+    //   throw new Error('Reboot Forced')
+    // }
   }
 
   UID () {
@@ -402,6 +409,7 @@ export class BaseKernel { // implements IPosisKernel, IPosisSleepExtension {
   }
 
   reboot () {
+    this.extensionRegistry.reboot()
     this.segments.save(C.SEGMENTS.KERNEL, {})
     this.segments.posttick()
   }
