@@ -19,6 +19,7 @@ export default class Init {
   constructor (context) {
     this.context = context
     this.kernel = context.queryPosisInterface('baseKernel')
+    this.sleep = context.queryPosisInterface('sleep')
     each(config.services, ({ id, name, params, restart, enabled }) => {
       this.addService(id, name, params, restart, enabled)
     })
@@ -46,51 +47,45 @@ export default class Init {
   run () {
     this.log.info(`TICK! ${Game.time}`)
     this.manageServices()
+    this.sleep.sleep(10)
   }
 
   addService (id, name, context = {}, restart = false, enabled = true) {
-    if (this.services[id]) {
-      let serv = this.services[id]
-      serv.restart = restart
-      serv.name = name
-      serv.context = context
-      serv.enabled = enabled
-    } else {
-      this.log.warn(`Adding service ${id}`)
-      this.services[id] = {
+    this.services[id] = this.services[id] || {}
+    Object.assign(this.services[id], {
         name,
         context,
         restart,
-        status: 'started',
         enabled
-      }
-    }
+    })
   }
 
   manageServices () {
     each(this.services, (service, id) => {
       let proc
+      this.log.info(`serv ${service.name}, ${service.status}, ${service.pid}, ${!!proc}`)
       if (service.pid) proc = this.kernel.getProcessById(service.pid)
       if (!service.enabled) {
+        if (service.pid) {
+          this.log.info(`Killing stopped process ${service.name} ${service.pid}`)
+          this.kernel.killProcess(service.pid)
+        }
         service.status = 'stopped'
       }
-      switch (service.status) {
-        case 'started':
-          if (!proc) {
-            if (service.restart || !service.pid) {
-              let { pid } = this.kernel.startProcess(service.name, Object.assign({}, service.context))
-              service.pid = pid
-            } else {
-              service.status = 'stopped'
-            }
+      if (service.enabled) {
+        if (!proc) {
+          service.status = 'stopped'
+          if (service.restart || !service.pid) {
+            let { pid } = this.kernel.startProcess(service.name, Object.assign({}, service.context))
+            service.pid = pid
+            service.status = 'started'
           }
-          break
-        case 'stopped':
-          if (proc && service && service.pid) {
-            this.log.info(`Killing stopped process ${service.name} ${service.pid}`)
-            this.kernel.killProcess(service.pid)
-          }
-          break
+        }
+      } else {
+        if (proc || service.status === 'started') {
+          this.log.info(`Killing stopped process ${service.name} ${service.pid}`)
+          this.kernel.killProcess(service.pid)
+        }
       }
     })
   }
