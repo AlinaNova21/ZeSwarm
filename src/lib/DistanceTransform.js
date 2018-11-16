@@ -86,10 +86,11 @@ export function blockablePixelsForRoom(roomName) {
 }
 export function walkablePixelsForRoom(roomName) {
   var costMatrix = new PathFinder.CostMatrix();
+  var terrain = Game.map.getRoomTerrain(roomName).getRawBuffer();
   for (var y = 0; y < 50; ++y) {
     for (var x = 0; x < 50; ++x) {
-      if (Game.map.getTerrainAt(x, y, roomName) != 'wall') {
-         costMatrix.set(x, y, 1);
+      if (!(terrain[y*50+x] & TERRAIN_MASK_WALL)) {
+        costMatrix._bits[x*50+y] = 1;
       }
     }
   }
