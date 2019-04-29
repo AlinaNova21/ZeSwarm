@@ -1,3 +1,5 @@
 node_modules
 auth.js
 yarn-error.log
+testserver
+dist
