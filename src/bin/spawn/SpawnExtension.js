@@ -40,6 +40,13 @@ export default class SpawnExtension {
     this.memory.queue = this.memory.queue || []
     return this.memory.queue
   }
+  get queueLength () {
+    let cnt = 0
+    for(const queue of this.queue) {
+      cnt += queue.length
+    }
+    return cnt
+  }
   get status () {
     if (this.memory === false) return {}
     this.memory.status = this.memory.status || {}

@@ -15,6 +15,7 @@ export default {
     }
     let { room, pos } = this.creep
     if (this.creep.carry.energy) {
+      this.status = 'Looking for target'
       let sites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
       if (!sites.length) return
       let site = pos.findClosestByRange(sites)
@@ -23,13 +24,18 @@ export default {
       this.push('moveInRange', site.id, 3)
       this.runStack()
     } else {
-      let tgt = room.storage || room.containers.find(c => c.store.energy)
+      this.status = 'Looking for energy'
+      let tgt = room.storage || room.containers.find(c => c.store.energy) || room.structures[STRUCTURE_SPAWN] && room.structures[STRUCTURE_SPAWN][0]
       if (room.storage && room.storage.store.energy < 1000) {
         let { x, y, roomName } = room.storage.pos
         this.push('repeat',5,'flee', [{ pos: { x, y, roomName }, range: 5 }])
         return this.runStack()
       }
       if (tgt) {
+        if (tgt.structureType === STRUCTURE_SPAWN && this.spawn.queueLength) {
+          this.push('sleep', 5)
+          return this.runStack()
+        }
         this.push('withdraw', tgt.id, C.RESOURCE_ENERGY)
         this.push('moveNear', tgt.id)
         return this.runStack()
@@ -85,7 +91,7 @@ export default {
         return this.build(cs)
       }
     }
-    let tgt = this.creep.room.storage || (res === C.RESOURCE_ENERGY && this.creep.room.spawns.find(s => s.energy < s.energyCapacity))
+    let tgt = this.creep.room.storage || (res === C.RESOURCE_ENERGY && this.creep.room.spawns.find(s => s.energy < s.energyCapacity) || this.creep.room.extensions.find(s => s.energy < s.energyCapacity))
     if (tgt) {
       this.push('transfer', tgt.id, res)
       this.push('moveNear', tgt.id)

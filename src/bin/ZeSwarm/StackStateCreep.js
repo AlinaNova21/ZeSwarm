@@ -47,7 +47,8 @@ export default class StackStateCreep extends states {
         this.log.info(`Creep dead`)
         return this.kernel.killProcess(this.context.id)
       }
-      return // this.log.info(`Creep not ready ${status.status}`)// Still waiting on creep
+      this.status = `no creep ${status.status}`
+      return this.log.info(`Creep not ready ${status.status}`)// Still waiting on creep
     }
     try {
       this.runStack()

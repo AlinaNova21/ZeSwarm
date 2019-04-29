@@ -91,7 +91,7 @@ export default class Nest extends BaseProcess {
       let want = 0
       const stored = this.room.storage && this.room.storage.store.energy || false
       if (stored === false) {
-        want = 1
+        want = 1 + Math.floor(this.room.extensions.length / 5)
       } else {
         if (stored > 10000) {
           want = Math.min(3, stored / 10000)

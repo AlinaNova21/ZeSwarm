@@ -29,7 +29,7 @@ export default class SpawnManager {
 
   run () {
     this.context.log.info(`Sleeping for 5 ticks (${Game.time})`)
-    this.sleeper.sleep(5)
+    //this.sleeper.sleep(5)
     this.cleanup()
     if (this.queue.length) {
       let spawns = filter(Game.spawns, (spawn) => !spawn.spawning && spawn.isActive())
