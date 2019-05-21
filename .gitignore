@@ -1,2 +1,5 @@
 node_modules
 auth.js
+testserver
+dist
+.screeps.yml

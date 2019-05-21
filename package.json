@@ -1,6 +1,6 @@
 {
   "name": "screepsbot-zeswarm",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "",
   "main": "src/main.js",
   "directories": {
@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "gulp"
+    "build": "gulp",
+    "push": "screeps-api --server splus2 upload src/*.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,8 @@
   "screeps_bot": true,
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-screeps": "^1.0.3"
+    "gulp-cli": "^2.2.0",
+    "gulp-screeps": "^1.0.3",
+    "screeps-api": "^1.9.0"
   }
 }
