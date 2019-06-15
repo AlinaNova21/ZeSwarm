@@ -45,7 +45,7 @@ module.exports = {
 
     const csites = this.creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
     if (csites.length) {
-      this.push('travelTo', csites[0], { visualizePathStyle: { opacity: 1 } })
+      this.push('travelTo', csites[0].pos, { visualizePathStyle: { opacity: 1 } })
       return this.runStack()
     }
 
