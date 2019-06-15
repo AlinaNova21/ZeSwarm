@@ -14,15 +14,18 @@ module.exports = {
     const room = this.room
     const { controller: { level } } = this.room
     let offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
-    let wanted = [C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_SPAWN, C.STRUCTURE_TERMINAL]
+    let wanted = [C.STRUCTURE_CONTAINER, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_SPAWN, C.STRUCTURE_TERMINAL]
     let want = _.mapValues(_.pick(C.CONTROLLER_STRUCTURES, wanted), level)
     let allSites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
     let sites = _.groupBy(allSites, 'structureType')
     let have = _.mapValues(room.structures, 'length')
+
+    if (allSites.length) return
+
     if (level > 1) {
-      want[C.STRUCTURE_CONTAINER] = Math.min(level, C.CONTROLLER_STRUCTURES[C.STRUCTURE_CONTAINER][level])
+      want[C.STRUCTURE_CONTAINER] = 1 //Math.min(level, C.CONTROLLER_STRUCTURES[C.STRUCTURE_CONTAINER][level])
     }
-    if (level >= 4 || true) {
+    if (level <= 1 || level >= 4) {
       want[C.STRUCTURE_CONTAINER] = 0
     }
     // if (level < 3) {

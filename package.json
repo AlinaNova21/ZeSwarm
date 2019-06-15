@@ -24,6 +24,7 @@
   "dependencies": {},
   "screeps_bot": true,
   "devDependencies": {
+    "chalk": "^2.4.2",
     "gulp": "^3.9.1",
     "gulp-cli": "^2.2.0",
     "gulp-screeps": "^1.0.3",
