@@ -23,15 +23,21 @@ const styles = {
 let y = 0
 let tick = 0
 
-class Logger {
+export class Logger {
   static get LogLevel () {
     return LogLevel
   }
+
   constructor (prefix = '') {
-    this.prefix = prefix
+    this.prefix = prefix ? prefix + ' ' : ''
     this.level = Memory.loglevel && Memory.loglevel.default || LogLevel.INFO
     this._log = console.log // This allows for console hooking
   }
+
+  withPrefix (prefix) {
+    return new Logger(prefix)
+  }
+
   hook (level = 'info') {
     Object.defineProperty(console, 'log', {
       value: (...a) => {
@@ -39,53 +45,62 @@ class Logger {
       }
     })
   }
+
   unhook () {
     Object.defineProperty(console, 'log', {
       value: this._log
     })
   }
+
   log (level, message) {
     if (level >= this.level) {
       if (typeof message === 'function') {
         message = message()
       }
-      let style = styles[level] || styles.default
-      this._log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix} ${message}</log>`)
+      const style = styles[level] || styles.default
+      this._log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix}${message}</log>`)
       // this.vlog(level, `[${level}] ${this.prefix} ${message}`)
     }
   }
+
   vlog (level, message) {
     if (tick !== Game.time) y = 0.2
     tick = Game.time
-    let style = styles[level] || styles.default
-    let color = style.match(/color: ([a-z]*)/)[1]
-    let vis = new RoomVisual()
+    const style = styles[level] || styles.default
+    const color = style.match(/color: ([a-z]*)/)[1]
+    const vis = new RoomVisual()
     try {
       vis.text(message, 0, y, { align: 'left', color })
     } catch (e) {}
     y += 0.8
   }
+
   debug (message) {
     this.log(LogLevel.DEBUG, message)
   }
+
   info (message) {
     this.log(LogLevel.INFO, message)
   }
+
   warn (message) {
     this.log(LogLevel.WARN, message)
   }
+
   alert (message) {
     this.log(LogLevel.ALERT, message)
   }
+
   error (message) {
-    if(message instanceof Error) {
+    if (message instanceof Error) {
       // message = ErrorMapper.map(message)
     }
     this.log(LogLevel.ERROR, message)
   }
+
   fatal (message) {
     this.log(LogLevel.FATAL, message)
   }
 }
 
-module.exports = new Logger()
+export default new Logger()

@@ -1,24 +1,33 @@
-const C = require('constants')
+const C = require('./constants')
 const log = require('./log')
 
-function tick() {
+let census = {}
+
+function tick () {
+  console.log('manager tick')
   const rooms = Object.values(Game.rooms)
   const sources = []
   const spawns = []
   const spawnQueue = {}
-  const census = {}
-  for(const room of rooms) {
+  census = {}
+  for (const room of rooms) {
     if (!room.controller || room.controller.level === 0) continue
     if (room.controller.owner.username !== C.USER) continue
     for (const s of room.find(FIND_SOURCES)) {
-      sources.push([ s, room ])
+      sources.push([s, room])
     }
     spawnQueue[room.name] = []
     census[room.name] = {}
     const creeps = room.find(FIND_MY_CREEPS)
-    for(const creep of creeps) {
-      census[creep.memory.group] = census[creep.memory.group] || 0
-      census[creep.memory.group]++
+    for (const creep of creeps) {
+      if (creep.memory.group) {
+        census[creep.memory.group] = census[creep.memory.group] || 0
+        census[creep.memory.group]++
+      }
+      if (creep.memory.role) {
+        census[creep.memory.role] = census[creep.memory.role] || 0
+        census[creep.memory.role]++
+      }
     }
     spawns.push(...(room.spawns || []))
   }
@@ -50,7 +59,7 @@ function tick() {
     log.info(`${source.id} ${neededCreepsWork} ${neededCreepsCarry}`)
     if (neededCreepsWork) {
       spawnQueue[room.name].push({
-        name: wgroup + Game.time,
+        name: `mw_${wgroup}_${Game.time.toString(36)}`,
         body: wbody,
         cost: wbody.reduce((t, p) => t + C.BODYPART_COST[p], 0),
         memory: {
@@ -62,7 +71,7 @@ function tick() {
     }
     if (neededCreepsCarry) {
       spawnQueue[room.name].push({
-        name: cgroup + Game.time,
+        name: `mc_${cgroup}_${Game.time.toString(36)}`,
         body: cbody,
         cost: cbody.reduce((t, p) => t + C.BODYPART_COST[p], 0),
         memory: {
@@ -75,14 +84,39 @@ function tick() {
   }
   for (const room of rooms) {
     if (!room.controller || room.controller.level === 0) continue
-    if (room.controller && room.controller.owner.username !== C.USER) continue
-    if (room.controller.level >= 3 && room.energyAvailable >= 550) {
+    if (room.controller && !room.controller.my) continue
+    if (room.energyAvailable >= 250) {
+      const wantedWorkers = 6
+      const group = `workers${room.name}`
+      const need = wantedWorkers > (census[group] || 0)
+      if (need) {
+        const reps = Math.floor((room.energyAvailable - 100) / 150)
+        const body = [MOVE, CARRY]
+        for (let i = 0; i < reps; i++) {
+          body.push(MOVE, WORK)
+        }
+        spawnQueue[room.name].push({
+          name: `worker_${Game.time.toString(36)}_${Math.random().toString(36).slice(-4)}`,
+          body,
+          cost: body.reduce((l, p) => BODYPART_COST[p] + l, 0),
+          memory: {
+            group,
+            role: 'worker',
+            room: room.name,
+            stack: [['worker']]
+          }
+        })
+      }
+    }
+    if (room.controller.level >= 3 && room.energyAvailable >= 550 && spawnQueue[room.name].length === 0 && (census.scouts || 0) < 10) {
       const P2 = ([RANGED_ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, WORK, WORK])[Math.floor(Math.random() * 7)]
       spawnQueue[room.name].push({
-        name: `scout${Game.time}-${Math.random().toString(36).slice(-4)}`,
-        body: [MOVE, P2],
-        cost: C.BODYPART_COST[MOVE] + C.BODYPART_COST[P2],
+        name: `scout_${Game.time}_${Math.random().toString(36).slice(-4)}`,
+        body: [MOVE, TOUGH],
+        cost: C.BODYPART_COST[MOVE] + C.BODYPART_COST[TOUGH],
         memory: {
+          role: 'scout',
+          group: 'scouts',
           stack: [['scout']]
         }
       })
@@ -91,24 +125,29 @@ function tick() {
   for (const spawn of spawns) {
     if (spawn.spawning) continue
     const room = spawn.room
-    const [{ name, body, cost, memory } = {}] = spawnQueue[room.name].splice(0, 1)
-    if (!name) continue
-    if (spawn.room.energyAvailable < cost) continue
-    log.info(`${spawn.room.name} Spawning ${name} ${memory.group}`)
-    spawn.spawnCreep(body, name, { memory })
+    const queue = spawnQueue[room.name]
+    while (queue.length) {
+      const [{ name, body, cost, memory } = {}] = spawnQueue[room.name].splice(0, 1)
+      console.log(name, cost, spawn.room.energyAvailable)
+      if (!name) continue
+      if (spawn.room.energyAvailable < cost) continue
+      log.info(`${spawn.room.name} Spawning ${name} ${memory.group}`)
+      spawn.spawnCreep(body, name, { memory })
+      break
+    }
   }
 }
 
 module.exports = {
-  tick
+  tick,
+  census
 }
 
-
-function expandBody(body) {
+function expandBody (body) {
   let cnt = 1
-  let ret = []
-  for (let i in body) {
-    let t = body[i]
+  const ret = []
+  for (const i in body) {
+    const t = body[i]
     if (typeof t === 'number') {
       cnt = t
     } else {

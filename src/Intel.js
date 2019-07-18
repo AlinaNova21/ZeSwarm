@@ -1,9 +1,14 @@
-const log = require('./log')
-const segments = require('./MemoryManager')
-const C = require('./constants')
+import { kernel } from './kernel'
+import log from './log'
+import segments from './MemoryManager'
+import C from './constants'
 
-class Intel {
-  findTarget() {
+export class Intel {
+  constructor () {
+    kernel.createThread('intelCollect', this.collectThread())
+  }
+
+  findTarget () {
     const mem = segments.load(C.SEGMENTS.INTEL) || {}
     const rooms = Object.values(mem)
     const sorted = _.sortBy(r => {
@@ -17,14 +22,17 @@ class Intel {
     })
     return sorted[0]
   }
-  collect() {
+
+  collect () {}
+
+  * collectThread () {
     const mem = segments.load(C.SEGMENTS.INTEL) || {}
     const rooms = Object.keys(Game.rooms)
     log.info(`Collecting intel on ${rooms.length} rooms (${rooms})`)
     for (const key in Game.rooms) {
       const room = Game.rooms[key]
-      let hr = mem.rooms = mem.rooms || {}
-      let {
+      const hr = mem.rooms = mem.rooms || {}
+      const {
         name,
         controller: {
           id,
@@ -36,14 +44,14 @@ class Intel {
           reservation: { username: reserver, ticksToEnd } = {}
         } = {}
       } = room
-      if(hr[name] && hr[name].ts > Game.time - 10) continue // Don't recollect immediately
-      let [mineral] = room.find(C.FIND_MINERALS)
-      let { mineralType } = mineral || {}
-      let smap = ({ id, pos }) => ({ id, pos })
-      let cmap = ({ id, pos, body, hits, hitsMax }) => {
+      if (hr[name] && hr[name].ts > Game.time - 10) continue // Don't recollect immediately
+      const [mineral] = room.find(C.FIND_MINERALS)
+      const { mineralType } = mineral || {}
+      const smap = ({ id, pos }) => ({ id, pos })
+      const cmap = ({ id, pos, body, hits, hitsMax }) => {
         const parts = _.groupBy(body, 'type')
         body = {}
-        for(const [type, items] of Object.entries(parts)) {
+        for (const [type, items] of Object.entries(parts)) {
           body[type] = items.length
         }
         return { id, pos, body, hits, hitsMax }
@@ -65,6 +73,7 @@ class Intel {
         mineral: mineralType,
         ts: Game.time
       }
+      yield true
     }
     const outdated = []
     for (const key in mem) {
@@ -74,10 +83,11 @@ class Intel {
       if (mem[key].ts < Game.time - 5000) {
         outdated.push(key)
       }
+      yield true
     }
     this.outdated = outdated
     segments.save(C.SEGMENTS.INTEL, mem)
   }
 }
 
-module.exports = new Intel()
+export default new Intel()

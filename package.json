@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp",
-    "push": "screeps-api --server splus2 upload src/*.js"
+    "push": "rollup -c && screeps-api --server test -b ZeSwarm_v1.1 upload dist/*.js"
   },
   "repository": {
     "type": "git",
@@ -21,13 +21,16 @@
     "url": "https://github.com/ags131/screeps/issues"
   },
   "homepage": "https://github.com/ags131/screeps#readme",
-  "dependencies": {},
+  "dependencies": {
+    "rollup": "^1.17.0",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-root-import": "^0.2.4"
+  },
   "screeps_bot": true,
   "devDependencies": {
     "chalk": "^2.4.2",
-    "gulp": "^3.9.1",
-    "gulp-cli": "^2.2.0",
-    "gulp-screeps": "^1.0.3",
-    "screeps-api": "^1.9.0"
+    "screeps-api": "^1.9.0",
+    "standard": "^13.0.2"
   }
 }

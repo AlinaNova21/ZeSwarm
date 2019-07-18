@@ -1,27 +1,29 @@
 const { ScreepsAPI } = require('screeps-api')
 const chalk = require('chalk')
 
-const config = {
-  server: 'splus',
-}
-// const config = {
-//   server: 'botarena',
-// }
+const configs = [ 
+  // { server: 'splus1' },
+  // { server: 'splus2' },
+  { server: 'test' },
+]
 
-ScreepsAPI.fromConfig(config.server).then(async api => {
-  await api.socket.connect()
-  api.socket.on('console', (e) => {
-    const { data: { shard, messages: { log: logs = [] } = { }, error = '' } } = e
-    console.log(`==== ${shard || config.server} =====`)
-    for(const log of logs) {
-      console.log(colorize(log))
-    }
-    if (error) {
-      console.log(error)
-    }
+configs.forEach(runConsole)
+function runConsole(config) {
+  ScreepsAPI.fromConfig(config.server).then(async api => {
+    await api.socket.connect()
+    api.socket.on('console', (e) => {
+      const { data: { shard, messages: { log: logs = [] } = { }, error = '' } } = e
+      console.log(`==== ${shard || config.server} =====`)
+      for(const log of logs) {
+        console.log(colorize(log))
+      }
+      if (error) {
+        console.log(error)
+      }
+    })
+    api.socket.subscribe('console')
   })
-  api.socket.subscribe('console')
-})
+}
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))

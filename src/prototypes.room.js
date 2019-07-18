@@ -22,18 +22,18 @@ const multipleList = [
 
 const singleList = [
   STRUCTURE_OBSERVER, STRUCTURE_POWER_BANK, STRUCTURE_POWER_SPAWN, STRUCTURE_EXTRACTOR,
-  STRUCTURE_NUKER        // STRUCTURE_TERMINAL,   STRUCTURE_CONTROLLER,   STRUCTURE_STORAGE,
+  STRUCTURE_NUKER // STRUCTURE_TERMINAL,   STRUCTURE_CONTROLLER,   STRUCTURE_STORAGE,
 ]
 
-let obj = {
+const obj = {
   lookNear: {
     value: function (type, pos) {
-      let { x, y } = pos.pos || pos
-      let res = []
-      for(let yo = -1; yo <= 1; yo++) {
-        if(y + yo > 49 || y + yo < 0) continue
-        for(let xo = -1; xo <= 1; xo++) {
-          if(x + xo > 49 || x + xo < 0) continue
+      const { x, y } = pos.pos || pos
+      const res = []
+      for (let yo = -1; yo <= 1; yo++) {
+        if (y + yo > 49 || y + yo < 0) continue
+        for (let xo = -1; xo <= 1; xo++) {
+          if (x + xo > 49 || x + xo < 0) continue
           res.push(...this.lookForAt(type, x + xo, y + yo))
         }
       }
@@ -56,10 +56,10 @@ let obj = {
   },
   level: {
     get: function () {
-      let RCL = this.controller && this.controller.level || 0
+      const RCL = this.controller && this.controller.level || 0
       let PRL = RCL
       _.each(STRUCTURES_TO_CHECK, (structure) => {
-        let have = this.structures[structure] && this.structures[structure].length || 0
+        const have = this.structures[structure] && this.structures[structure].length || 0
         for (let i = 0; i <= PRL; i++) {
           if (have < C.CONTROLLER_STRUCTURES[structure][i]) {
             PRL = (i - 1)
@@ -93,4 +93,3 @@ singleList.forEach(function (type) {
 })
 
 Object.defineProperties(Room.prototype, obj)
-

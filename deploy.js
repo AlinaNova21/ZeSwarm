@@ -14,10 +14,37 @@ const config3 = {
   server: 'botarena',
   rooms: [['E4S7', 30, 35]]
 }
+const config4 = {
+  server: 'splus2',
+  rooms: [['W8N8', 25, 25]]
+}
+const config5 = {
+  server: 'pbrun',
+  rooms: [
+    ['W2N2', 20, 25],
+    ['W8N3', 20, 25]
+  ]
+}
+const config6 = {
+  server: 'test',
+  rooms: [['W5N2', 40, 20]]
+}
+const config7 = {
+  server: 'pi',
+  rooms: [
+    ['W2N2', 20, 25],
+    ['W8N3', 20, 25]
+  ]
+}
 // const config = config1
 // const config = config2
-const config = config3
-
+// const config = config3
+// const config = config4
+// const config = config5
+const config = config6
+// const config = config7
+const BRANCH = 'ZeSwarm_v1.1'
+// const BRANCH='default'
 ScreepsAPI.fromConfig(config.server).then(async api => {
   const ret = await api.raw.user.badge({ "type": 24, "color1": "#ff0000", "color2": "#ffb400", "color3": "#ff6a27", "param": 0, "flip": false })
   if (ret.ok) console.log('Badge Set')
@@ -37,7 +64,16 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
     })(file))
   }
   await Promise.all(ps)
-  await api.code.set('default', modules)
+  const resp = await api.raw.user.cloneBranch('', BRANCH, modules)
+  console.log(resp)
+  const { list: branches } = await api.raw.user.branches()
+  console.log(branches)
+  const branch = branches.find(b => b.branch === BRANCH) || {}
+  if (!branch.activeWorld) {
+    await api.raw.user.setActiveBranch(BRANCH, 'activeWorld')
+    console.log(`Active branch set to ${BRANCH}`)
+  }
+  
   console.log('Code Pushed')
   const { status } = await api.raw.user.worldStatus()
   // const rooms = [['E4S7', 30, 35]]

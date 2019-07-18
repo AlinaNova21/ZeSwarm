@@ -1,9 +1,9 @@
 module.exports = {
   runStack () {
     if (typeof this.stack[0] === 'string') this.creep.memory.stack = [this.stack]
-    let [[name, ...args]=[]] = this.stack.slice(-1) || []
+    const [[name, ...args] = []] = this.stack.slice(-1) || []
     this.log.debug(() => `runStack: ${name}`)
-    let func = this[name]
+    const func = this[name]
     if (func) {
       func.apply(this, args)
     } else {

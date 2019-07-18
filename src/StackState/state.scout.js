@@ -1,13 +1,13 @@
-const log = require('./log')
-const intel = require('./Intel')
-const { sayings, psayings, shooting } = require('./sayings')
+const log = require('/log')
+const intel = require('/Intel')
+const { sayings, psayings, shooting } = require('/sayings')
 
-const C = require('constants')
+const C = require('/constants')
 const SIGN_MSG = `Territory of ${C.USER}`
 const SIGN_MY_MSG = `${C.USER} - https://github.com/ags131/ZeSwarm`
 
 module.exports = {
-  scout(state = {}) {
+  scout (state = {}) {
     if (!state.z) state.z = this.creep.notifyWhenAttacked(false)
     if (!state.work) {
       state.work = this.creep.getActiveBodyparts(C.WORK)
@@ -15,7 +15,7 @@ module.exports = {
       state.ranged = this.creep.getActiveBodyparts(C.RANGED_ATTACK)
       state.heal = this.creep.getActiveBodyparts(C.heal)
     }
-    if(Game.cpu.getUsed() >= 90) return
+    if (Game.cpu.getUsed() >= 90) return
     this.origScout(this.creep)
     const { room, pos, room: { controller } } = this.creep
     this.status = pos.toString()
@@ -26,7 +26,7 @@ module.exports = {
     }
 
     const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
-    const friend = controller && controller.owner && controller.owner.username === Game.spawns.Spawn1.username
+    const friend = controller && controller.my
     const hostile = !friend && controller && controller.level > 0 && !controller.my
 
     if (hostile) return log.warn(`${room.name} is hostile!`)
@@ -62,13 +62,13 @@ module.exports = {
     this.push('moveNear', exit, { roomCallback })
     this.runStack()
   },
-  origScout() {
+  origScout () {
     const c = this.creep
     {
-      let target = c.pos.findClosestByRange(FIND_HOSTILE_CREEPS, { filter: c => c.owner.username != 'Source Keeper' })
+      const target = c.pos.findClosestByRange(FIND_HOSTILE_CREEPS, { filter: c => c.owner.username != 'Source Keeper' })
       if (target && (!c.room.controller || (c.room.controller && (!c.room.controller.safeMode || c.room.controller.my))) && !c.getActiveBodyparts(WORK)) {
         if (target.pos.getRangeTo(c) <= 3) {
-          let txt = shooting[Math.floor(Math.random() * shooting.length)]
+          const txt = shooting[Math.floor(Math.random() * shooting.length)]
           if (target.pos.isNearTo(c)) {
             if (c.getActiveBodyparts(ATTACK)) {
               c.attack(target)
@@ -88,24 +88,23 @@ module.exports = {
         return
       }
       if (target && target.pos.getRangeTo(c) < 8) {
-        let hostiles = c.room.find(FIND_HOSTILE_CREEPS).filter(c => c.getActiveBodyparts(ATTACK) + c.getActiveBodyparts(RANGED_ATTACK) > 2)
-        let result = PathFinder.search(c.pos, hostiles.map(c => ({ pos: c.pos, range: c.getActiveBodyparts(RANGED_ATTACK) ? 15 : 3 })), { flee: true })
+        const hostiles = c.room.find(FIND_HOSTILE_CREEPS).filter(c => c.getActiveBodyparts(ATTACK) + c.getActiveBodyparts(RANGED_ATTACK) > 2)
+        const result = PathFinder.search(c.pos, hostiles.map(c => ({ pos: c.pos, range: c.getActiveBodyparts(RANGED_ATTACK) ? 15 : 3 })), { flee: true })
         if (result && result.path.length) {
           c.say('Fleeing')
           return c.moveByPath(result.path)
         }
-
       }
     }
     {
       if (Game.flags.target) {
         Game.flags.target.remove()
       }
-      let target = c.pos.findClosestByRange(FIND_STRUCTURES, { filter(s) { return !s.my && s.structureType != 'controller' && s.structureType != 'wall' && s.structureType != 'constructedWall' && s.structureType != 'rampart' } })
+      const target = c.pos.findClosestByRange(FIND_STRUCTURES, { filter (s) { return !s.my && s.structureType != 'controller' && s.structureType != 'wall' && s.structureType != 'constructedWall' && s.structureType != 'rampart' } })
       if (target && target.pos.getRangeTo(c) <= 30 && c.room.controller && !c.room.controller.safeMode) {
-        let towers = c.room.find(FIND_STRUCTURES, { filter(s) { return s.structureType == 'tower' } }) || []
+        const towers = c.room.find(FIND_STRUCTURES, { filter (s) { return s.structureType == 'tower' } }) || []
         if (!towers.length) {
-          //c.room.createFlag(c.pos, 'target',COLOR_RED,COLOR_YELLOW)
+          // c.room.createFlag(c.pos, 'target',COLOR_RED,COLOR_YELLOW)
           // Memory.flags = Memory.flags || {}
           // Memory.flags.target = {
           //   ts: Game.time
@@ -135,16 +134,16 @@ module.exports = {
       }
     }
     if (c.memory.phrase && c.memory.phrase.length) {
-      let txt = c.memory.phrase.shift()
+      const txt = c.memory.phrase.shift()
       c.say(txt, true)
     }
     if (Math.random() > 0.9) {
       let txt = sayings[Math.floor(Math.random() * sayings.length)]
       if (c.room.controller && c.room.controller.owner && c.room.controller.owner.username && c.room.controller.owner.username != C.USER) {
-        let user = c.room.controller.owner.username
+        const user = c.room.controller.owner.username
         txt = psayings[Math.floor(Math.random() * psayings.length)]
         if (Math.random() > 0.7) {
-          let smileys = '😀😁😃😄😆😉😊☺️😛😜😝😈'
+          const smileys = '😀😁😃😄😆😉😊☺️😛😜😝😈'
           txt = smileys.substr(Math.floor(Math.random() * (smileys.length / 2)) * 2, 2)
         }
         txt = txt.replace(/USER/, user)

@@ -2,14 +2,16 @@ const minBy = _.minBy
 const map = _.map
 
 class MemoryManager {
-  get mem() {
+  get mem () {
     return this.memget()
   }
-  get lru() {
+
+  get lru () {
     this.mem.lru = this.mem.lru || {}
     return this.mem.lru
   }
-  constructor(memget) {
+
+  constructor (memget) {
     this.memget = memget || (() => {
       Memory.__segments = Memory.__segments || {}
       return Memory.__segments
@@ -37,24 +39,27 @@ class MemoryManager {
       }
     }
   }
-  activate(id) {
+
+  activate (id) {
     if (!id && id !== 0) return
     if (this.mem.active.indexOf(id) === -1) {
       this.mem.active.push(id)
     }
     console.log(`MM: ${this.mem.active}`)
   }
-  deactivate(id) {
-    let ind = this.mem.active.indexOf(id)
+
+  deactivate (id) {
+    const ind = this.mem.active.indexOf(id)
     if (ind === -1) return
     this.mem.active.splice(ind, 1)
   }
-  endOfTick() {
+
+  endOfTick () {
     try {
       while (this.mem.active.length > 10) {
         console.log(`MM: Active too long, pruning ${this.mem.active}`)
-        let min = minBy(map(this.lru, (time, id) => ({ id, time })), 'time')
-        let ind = min ? this.mem.active.indexOf(min.id) : -1
+        const min = minBy(map(this.lru, (time, id) => ({ id, time })), 'time')
+        const ind = min ? this.mem.active.indexOf(min.id) : -1
         if (ind !== -1) {
           delete this.lru[min.id]
           this.mem.active.splice(ind, 1)
@@ -74,14 +79,16 @@ class MemoryManager {
       }
     })
   }
-  getSegment(id) {
+
+  getSegment (id) {
     this.mem.versions = this.mem.versions || {}
     if (!this.mem.versions[id] || !this.versions[id] || this.mem.versions[id] !== this.versions[id]) {
       this.reloadSegment(id)
     }
     return this.mem.pendingSaves[id] || (typeof this.segments[id] === 'undefined' ? false : this.segments[id])
   }
-  reloadSegment(id) {
+
+  reloadSegment (id) {
     this.mem.versions[id] = this.mem.versions[id] || 0
     this.versions[id] = this.mem.versions[id]
     if (this.mem.pendingSaves[id]) {
@@ -96,36 +103,43 @@ class MemoryManager {
     }
     return false
   }
-  initSegment(id, v = {}) {
+
+  initSegment (id, v = {}) {
     RawMemory.segments[id] = JSON.stringify(v)
   }
-  hasSegment(id) {
+
+  hasSegment (id) {
     return typeof RawMemory.segments[id] !== 'undefined'
   }
-  saveSegment(id, v) {
+
+  saveSegment (id, v) {
     if (typeof v === 'object') v = JSON.stringify(v, null, this.mem.readable[id] ? 2 : null)
     if (v.length > 100 * 1024) return
     RawMemory.segments[id] = v
     delete this.mem.pendingSaves[id]
   }
-  markForSaving(id, v) {
+
+  markForSaving (id, v) {
     this.mem.pendingSaves[id] = v
     this.mem.versions[id] = this.mem.versions[id] || 0
     this.mem.versions[id]++
   }
-  load(id) {
+
+  load (id) {
     if (!~this.fixed.indexOf(id)) {
       this.lru[id] = Game.time
     }
     return this.getSegment(id)
   }
-  save(id, v) {
+
+  save (id, v) {
     if (!~this.fixed.indexOf(id)) {
       this.lru[id] = Game.time
     }
     this.markForSaving(id, v)
   }
-  wrap(name, id) {
+
+  wrap (name, id) {
     Object.defineProperty(RawMemory, name, {
       get: function () {
         return this.mem.pendingSaves[id] || RawMemory.segments[id]
@@ -135,7 +149,8 @@ class MemoryManager {
       }
     })
   }
-  posttick() {
+
+  posttick () {
     this.endOfTick()
   }
 }

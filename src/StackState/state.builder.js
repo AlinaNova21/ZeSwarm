@@ -1,4 +1,4 @@
-const C = require('constants')
+const C = require('/constants')
 
 module.exports = {
   builder (cache = {}) {
@@ -11,8 +11,8 @@ module.exports = {
       let sites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
       if (!sites.length) return this.pop()
       sites = _.sortBy(sites, site => -site.progress / site.progressTotal)
-      let site = _.first(sites) // pos.findClosestByRange(sites)
-      let hitsMax = Math.ceil(this.creep.carry.energy / (cache.work * C.BUILD_POWER))
+      const site = _.first(sites) // pos.findClosestByRange(sites)
+      const hitsMax = Math.ceil(this.creep.carry.energy / (cache.work * C.BUILD_POWER))
       if (this.creep.pos.isEqualTo(site.pos)) {
         this.creep.move(Math.ceil(Math.random() * 7))
         return
