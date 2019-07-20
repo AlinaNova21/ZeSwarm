@@ -28,7 +28,7 @@ function * creepSaysThread () {
         yield true
         continue
       }
-      if (creep.memory.role === 'scout') {
+      if (creep.memory.role === 'scout' && Math.random() > 0.8) {
         let txt = sayings[Math.floor(Math.random() * sayings.length)]
         const { room } = creep
         if (room.controller && room.controller.owner && room.controller.owner.username && !room.controller.my) {
@@ -50,6 +50,7 @@ function * creepSaysThread () {
 
 function * creepSayWords (creepName, parts, pub = true) {
   for (const part of parts) {
+    if (!Game.creeps[creepName]) return
     Game.creeps[creepName].say(part, pub)
     yield
   }
@@ -87,12 +88,16 @@ function * creepThreadManager ({ kernel }) {
 function * newStackStateThread (creepName) {
   while (Game.creeps[creepName]) {
     const creep = Game.creeps[creepName]
+    const start = Game.cpu.getUsed()
     try {
       // log.info(`[StackState] ${creepName}`)
       StackState.runCreep(creep)
     } catch (err) {
       log.error(`Creep ${creep} failed to run ${err.stack}`)
     }
+    const end = Game.cpu.getUsed()
+    const dur = end - start
+    creep.room.visual.text(dur.toFixed(2), creep.pos.x, creep.pos.y - 0.5)
     yield
   }
   delete Memory.creeps[creepName]

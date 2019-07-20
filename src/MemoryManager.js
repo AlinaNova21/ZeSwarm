@@ -65,7 +65,7 @@ class MemoryManager {
           this.mem.active.splice(ind, 1)
         }
       }
-      // console.log()
+      console.log()
       RawMemory.setActiveSegments(this.mem.active)
     } catch (e) {
       console.log(`ERROR: Failed to set active. Reseting Active List ${e.stack}`)
@@ -114,7 +114,7 @@ class MemoryManager {
 
   saveSegment (id, v) {
     if (typeof v === 'object') v = JSON.stringify(v, null, this.mem.readable[id] ? 2 : null)
-    if (v.length > 100 * 1024) return
+    if (v.length > 100 * 1024) return console.log(`Segment ${id} too long ${Math.floor(v.length/1024)}kb`)
     RawMemory.segments[id] = v
     delete this.mem.pendingSaves[id]
   }

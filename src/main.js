@@ -1,21 +1,28 @@
 import MemHack from './MemHack'
+import stats from './stats'
 import './prototypes.room'
 import './Traveler'
 import layout from './layout'
-import manager from './manager'
 import { kernel } from './kernel'
-import intel from './Intel'
+import './Intel'
+import './manager'
 import './CreepManager'
 import './DefenseManager'
+import './SpawnManager'
+import memoryManager from './MemoryManager'
+import log from '/log'
 
 if (!Memory.lastTick) {
   Memory.lastTick = Date.now()
 }
 
-console.log('preloop')
 export function loop () {
-  console.log('loop')
   MemHack.pretick()
+  stats.reset()
+  stats.addStat('memory', {}, {
+    parse: MemHack.parseTime,
+    used: RawMemory.get().length
+  })
   const now = Date.now()
   const lt = Memory.lastTick
   Memory.lastTick = now
@@ -33,8 +40,6 @@ export function loop () {
   vis.text(`Tick Timing ${(t / 1000).toFixed(3)}s`, 25, 3, { size: 3 })
   vis.text(`Avg ${(avg / 1000).toFixed(3)}s`, 25, 6, { size: 3 })
 
-  const workers = _.filter(Game.creeps, c => c.memory.role === 'worker')
-  const scouts = _.filter(Game.creeps, c => c.memory.role === 'scout')
   const ccnt = _.size(Game.creeps)
   vis.text(`${ccnt} alive`, 25, 8, { size: 1 })
 
@@ -45,13 +50,16 @@ export function loop () {
     const cnt = (' '.repeat(3) + roles[role].length).slice(-3)
     vis.text(`${cnt} ${role}`, 25, 9 + off++, { size: 1 })
   }
-  Memory.census = {
-    workers,
-    scouts
-  }
-
-  manager.tick()
   layout.run()
   kernel.tick()
+  memoryManager.posttick()
+  stats.commit()
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })
+  try {
+    let { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
+    const MB = (v) => ((v / 1024) / 1024).toFixed(3)
+    log.warn(`HEAP: Used: ${MB(used_heap_size)}MB Available: ${MB(total_available_size)}MB Limit: ${MB(heap_size_limit)}MB`)
+  } catch (e) {
+    log.warn('HEAP: Unavailable')
+  }
 }

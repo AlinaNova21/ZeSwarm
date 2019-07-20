@@ -9,7 +9,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp",
-    "push": "rollup -c && screeps-api --server test -b ZeSwarm_v1.1 upload dist/*.js"
+    "push": "rollup -c && screeps-api --server test -b ZeSwarm_v1.1 upload dist/main.js",
+    "push:splus1": "rollup -c && screeps-api --server splus -b ZeSwarm_v1.1 upload dist/main.js",
+    "push:splus2": "rollup -c && screeps-api --server splus2 -b ZeSwarm_v1.1 upload dist/main.js",
+    "push:fordo": "rollup -c && screeps-api --server fordo -b ZeSwarm_v1.1 upload dist/main.js"
   },
   "repository": {
     "type": "git",

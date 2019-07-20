@@ -13,7 +13,7 @@ const states = ({
     return this.creep.memory.stack
   },
   runCreep (creep, baseState = ['scout']) {
-    creep.memory.stack = creep.memory.stack || [baseState]
+    creep.memory.stack = creep.memory.stack || [creep.memory.role || baseState]
     this.creep = creep
     this.runStack()
   },
@@ -63,6 +63,7 @@ const states = ({
     this.runStack()
   },
   resolveTarget (tgt) {
+    if (!tgt) return tgt
     if (typeof tgt === 'string') {
       return Game.getObjectById(tgt)
     }
@@ -84,13 +85,19 @@ const states = ({
     this.creep.move(dir)
     this.pop()
   },
+  moveOntoExit (exitDir) {
+    const exit = this.creep.pos.findClosestByRange(exitDir)
+    const dir = this.creep.pos.getDirectionTo(exit)
+    this.creep.move(dir)
+    this.pop()
+  },
   travelTo (target, opts = {}) {
     if (typeof opts.roomCallback === 'string') {
       opts.roomCallback = new Function(opts.roomCallback)
     }
     const tgt = this.resolveTarget(target)
     if (!tgt) return this.pop()
-    if (this.creep.pos.isEqualTo(tgt)) {
+    if (this.creep.pos.isEqualTo(tgt.pos || tgt)) {
       this.pop()
       this.runStack()
     } else {

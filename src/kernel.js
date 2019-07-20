@@ -112,6 +112,5 @@ function * loopScheduler (threads) {
 
 export function * sleep (ticks) {
   const end = Game.time + ticks
-  console.log('sleep')
   while (Game.time < end) yield
 }

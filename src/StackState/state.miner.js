@@ -18,7 +18,7 @@ module.exports = {
     }
     if (_.sum(this.creep.carry) == this.creep.carryCapacity) {
       this.creep.say('Zzzz..')
-      return
+      // return
     }
     if (tgt instanceof Source) {
       if (tgt.energy) {
@@ -38,9 +38,9 @@ module.exports = {
       return this.runStack()
     }
     if (_.sum(_.values(this.creep.carry)) === this.creep.carryCapacity) {
-      const room = Game.rooms[this.creep.memory.home]
+      const room = Game.rooms[this.creep.memory.room]
       const spawn = room.spawns[0]
-      const cont = spawn.pos.findClosestByRange(room.containers)
+      const cont = room.controller.level >= 4 && room.storage || spawn.pos.findClosestByRange(room.containers)
       const tgt = cont || spawn
       if (cont && cont.store.energy === cont.storeCapacity) {
         this.push('flee', cont, 2)
@@ -62,10 +62,10 @@ module.exports = {
     if (resources.length) {
       this.push('pickup', resources[0].id)
       this.push('moveNear', resources[0].id)
-      return this.runStack()
+      // return this.runStack()
     }
     let creeps = tgt.findInRange(C.FIND_MY_CREEPS, 2)
-    creeps = creeps.filter(c => c.memory.group === wgroup && c.carry.energy > 10)
+    creeps = creeps.filter(c => c.memory.group === wgroup && c.carry.energy > 30)
     const creep = this.creep.pos.findClosestByRange(creeps)
     if (creep) {
       const vis = this.creep.room.visual

@@ -3,11 +3,12 @@ const intel = require('/Intel')
 const { sayings, psayings, shooting } = require('/sayings')
 
 const C = require('/constants')
-const SIGN_MSG = `Territory of ${C.USER}`
-const SIGN_MY_MSG = `${C.USER} - https://github.com/ags131/ZeSwarm`
+const SIGN_MSG = `Territory of ZeSwarm - ${C.USER}`
+const SIGN_MY_MSG = `ZeSwarm - https://github.com/ags131/ZeSwarm`
 
 module.exports = {
   scout (state = {}) {
+    const debug = this.creep.name === 'scout_13651666_najb'
     if (!state.z) state.z = this.creep.notifyWhenAttacked(false)
     if (!state.work) {
       state.work = this.creep.getActiveBodyparts(C.WORK)
@@ -15,16 +16,17 @@ module.exports = {
       state.ranged = this.creep.getActiveBodyparts(C.RANGED_ATTACK)
       state.heal = this.creep.getActiveBodyparts(C.heal)
     }
-    if (Game.cpu.getUsed() >= 90) return
+    // if (Game.cpu.getUsed() >= 90) return
     this.origScout(this.creep)
     const { room, pos, room: { controller } } = this.creep
     this.status = pos.toString()
 
     const target = intel.outdated && intel.outdated.length && intel.outdated[Math.floor(Math.random() * intel.outdated.length)]
     if (target) {
+      console.log(target)
       this.push('moveToRoom', new RoomPosition(25, 25, target), { preferHighway: true })
     }
-
+    
     const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
     const friend = controller && controller.my
     const hostile = !friend && controller && controller.level > 0 && !controller.my
@@ -42,7 +44,7 @@ module.exports = {
     while (!exits[dir] || (dir === lastdir && _.size(exits) > 1)) {
       dir = Math.ceil(Math.random() * 8)
     }
-
+    
     const csites = this.creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
     if (csites.length) {
       this.push('travelTo', csites[0].pos, { visualizePathStyle: { opacity: 1 } })
@@ -51,16 +53,18 @@ module.exports = {
 
     const exit = pos.findClosestByRange(dir)
     const msg = controller && controller.my && SIGN_MY_MSG || SIGN_MSG
-    if (!hostile && !friend && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
+    if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
       this.creep.say('Signing')
       this.push('signController', controller.id, msg)
       this.push('moveNear', controller.pos)
       return this.runStack()
     }
     const roomCallback = `r => r === '${room.name}' ? undefined : false`
-    this.push('move', dir)
-    this.push('moveNear', exit, { roomCallback })
-    this.runStack()
+    if (exit) {
+      this.push('moveOntoExit', dir)
+      this.push('moveNear', exit, { roomCallback })
+      this.runStack()
+    }
   },
   origScout () {
     const c = this.creep

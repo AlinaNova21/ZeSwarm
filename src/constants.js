@@ -10,8 +10,8 @@ Object.keys(global)
   })
 
 C.RECIPES = {}
-for (var a in REACTIONS) {
-  for (var b in C.REACTIONS[a]) {
+for (let a in REACTIONS) {
+  for (let b in C.REACTIONS[a]) {
     C.RECIPES[C.REACTIONS[a][b]] = [a, b]
   }
 }

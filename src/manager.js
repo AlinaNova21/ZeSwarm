@@ -1,21 +1,28 @@
-const C = require('./constants')
-const log = require('./log')
+import { kernel } from '/kernel'
+import C from './constants'
+import log from './log'
+import { sleep } from './kernel';
+import { createTicket } from './SpawnManager'
+import intel from './Intel';
 
-let census = {}
+export let census = {}
 
-function tick () {
-  console.log('manager tick')
+kernel.createThread('managerThread', managerThread())
+
+function * managerThread() {
+  while (true) {
+    yield * tick()
+    yield * sleep(2)
+  }
+}
+
+function * tick () {
   const rooms = Object.values(Game.rooms)
   const sources = []
   const spawns = []
   const spawnQueue = {}
   census = {}
   for (const room of rooms) {
-    if (!room.controller || room.controller.level === 0) continue
-    if (room.controller.owner.username !== C.USER) continue
-    for (const s of room.find(FIND_SOURCES)) {
-      sources.push([s, room])
-    }
     spawnQueue[room.name] = []
     census[room.name] = {}
     const creeps = room.find(FIND_MY_CREEPS)
@@ -29,7 +36,30 @@ function tick () {
         census[creep.memory.role]++
       }
     }
+    if (!room.controller || room.controller.level === 0) continue
+    if (room.controller.owner.username !== C.USER) continue
+    for (const s of room.find(FIND_SOURCES)) {
+      sources.push([s, room])
+    }
     spawns.push(...(room.spawns || []))
+    const neighbors = Object.values(Game.map.describeExits(room.name))
+    console.log(`Found neighbors ${neighbors}`)
+    for (const neighbor of neighbors) {
+      const int = intel.rooms[neighbor]
+      if (!int) continue
+      console.log(`Considering ${neighbor} for remote H:${!!int.hostile && !int.creeps.find(c => c.hostile)}`)
+      if (int.sources.length === 2 && !int.hostile && !int.creeps.find(c => c.hostile)) {
+        // if (!Game.rooms[neighbor]) {
+        //   console.log(`No vision in ${neighbor}`)
+        //   this.outdated.push(neighbor)
+        //   continue
+        // }
+        console.log(`Using ${neighbor} as remote`)
+        for (const { id, pos: [x, y] } of int.sources) {
+          sources.push([{ id, pos: { x, y, roomName: neighbor } }, room])
+        }   
+      }
+    }
   }
 
   for (const [source, room] of sources) {
@@ -47,78 +77,70 @@ function tick () {
     }
     if (room.controller.level <= 1) continue
     const maxParts = Math.min(25, Math.floor(((room.energyCapacityAvailable / 50) * 0.8) / 2))
-    const needed = Math.max(2, Math.ceil((source.energyCapacity / (C.ENERGY_REGEN_TIME / (data.dist * 2))) / 50)) + 2
+    const needed = Math.max(2, Math.ceil(((source.energyCapacity || C.SOURCE_ENERGY_NEUTRAL_CAPACITY) / (C.ENERGY_REGEN_TIME / (data.dist * 2))) / 50)) + 2
     const wantedCarry = Math.ceil(needed / maxParts)
     const wantedWork = Math.min(5, Math.floor((room.energyCapacityAvailable - 100) / 100))
     const cbody = expandBody([maxParts, C.CARRY, maxParts, C.MOVE])
-    const wbody = expandBody([1, C.CARRY, 1, C.MOVE, wantedWork, C.WORK])
+    const wbody = expandBody([1, C.CARRY, room.name === source.pos.roomName ? 1 : wantedWork, C.MOVE, wantedWork, C.WORK])
     const cgroup = `${source.id}c`
     const wgroup = `${source.id}w`
-    const neededCreepsCarry = Math.max(0, wantedCarry - (census[cgroup] || 0))
-    const neededCreepsWork = Math.max(0, Math.ceil(5 / wantedWork) - (census[wgroup] || 0))
-    log.info(`${source.id} ${neededCreepsWork} ${neededCreepsCarry}`)
-    if (neededCreepsWork) {
-      spawnQueue[room.name].push({
-        name: `mw_${wgroup}_${Game.time.toString(36)}`,
-        body: wbody,
-        cost: wbody.reduce((t, p) => t + C.BODYPART_COST[p], 0),
-        memory: {
-          group: wgroup,
-          home: room.name,
-          stack: [['miningWorker', data.pos]]
-        }
-      })
+    log.info(`${source.id} ${wantedCarry} ${5 / wantedWork}`)
+    const valid = () => {
+      const int = intel.rooms[source.pos.roomName]
+      return room.name === source.pos.roomName || (!int.hostile && !int.creeps.find(c => c.hostile))
     }
-    if (neededCreepsCarry) {
-      spawnQueue[room.name].push({
-        name: `mc_${cgroup}_${Game.time.toString(36)}`,
-        body: cbody,
-        cost: cbody.reduce((t, p) => t + C.BODYPART_COST[p], 0),
-        memory: {
-          group: cgroup,
-          home: room.name,
-          stack: [['miningCollector', data.pos, wgroup]]
-        }
-      })
-    }
+    createTicket(cgroup, {
+      valid,
+      count: wantedCarry,
+      body: cbody,
+      memory: {
+        role: 'miningCollector',
+        room: room.name,
+        stack: [['miningCollector', data.pos, wgroup]]
+      }
+    })
+    createTicket(wgroup, {
+      valid,
+      count: Math.ceil(5 / wantedWork),
+      body: wbody,
+      memory: {
+        role: 'miningWorker',
+        room: room.name,
+        stack: [['miningWorker', data.pos]]
+      }
+    })
   }
   for (const room of rooms) {
     if (!room.controller || room.controller.level === 0) continue
     if (room.controller && !room.controller.my) continue
-    if (room.energyAvailable >= 250) {
-      const wantedWorkers = 6
-      const group = `workers${room.name}`
-      const need = wantedWorkers > (census[group] || 0)
-      if (need) {
-        const reps = Math.floor((room.energyAvailable - 100) / 150)
-        const body = [MOVE, CARRY]
-        for (let i = 0; i < reps; i++) {
-          body.push(MOVE, WORK)
-        }
-        spawnQueue[room.name].push({
-          name: `worker_${Game.time.toString(36)}_${Math.random().toString(36).slice(-4)}`,
-          body,
-          cost: body.reduce((l, p) => BODYPART_COST[p] + l, 0),
-          memory: {
-            group,
-            role: 'worker',
-            room: room.name,
-            stack: [['worker']]
-          }
-        })
+    const group = `workers${room.name}`
+    const reps = Math.floor((room.energyAvailable - 100) / 150)
+    const body = [MOVE, CARRY]
+    if (!reps) continue
+    for (let i = 0; i < reps; i++) {
+      if (room.controller.level >= 4 && i % 2 === 1) {
+        body.push(MOVE, CARRY)
+      } else {
+        body.push(MOVE, WORK)
       }
     }
-    if (room.controller.level >= 3 && room.energyAvailable >= 550 && spawnQueue[room.name].length === 0 && (census.scouts || 0) < 10) {
-      const P2 = ([RANGED_ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, WORK, WORK])[Math.floor(Math.random() * 7)]
-      spawnQueue[room.name].push({
-        name: `scout_${Game.time}_${Math.random().toString(36).slice(-4)}`,
+    createTicket(group, {
+      // count: room.controller.level >= 4 ? 10 : 6,
+      count: 6,
+      body,
+      memory: {
+        role: 'worker',
+        room: room.name
+      }
+    })
+    if (room.controller.level >= 3 && room.energyAvailable >= 550) {
+      createTicket(`scouts_${room.name}`, {
+        valid: () => Game.rooms[room.name].controller.level >= 3,
         body: [MOVE, TOUGH],
-        cost: C.BODYPART_COST[MOVE] + C.BODYPART_COST[TOUGH],
         memory: {
-          role: 'scout',
-          group: 'scouts',
-          stack: [['scout']]
-        }
+          role: 'scout'
+        },
+        count: 10 + Math.min(intel.outdated.length, 10)
       })
     }
   }
@@ -132,13 +154,13 @@ function tick () {
       if (!name) continue
       if (spawn.room.energyAvailable < cost) continue
       log.info(`${spawn.room.name} Spawning ${name} ${memory.group}`)
-      spawn.spawnCreep(body, name, { memory })
+      // spawn.spawnCreep(body, name, { memory })
       break
     }
   }
 }
 
-module.exports = {
+export default {
   tick,
   census
 }

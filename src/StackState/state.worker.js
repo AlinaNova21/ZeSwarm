@@ -10,7 +10,7 @@ module.exports = {
     }
     const room = this.creep.room
     const homeRoom = Game.rooms[cache.homeRoom]
-    const hasAllWorkers = Memory.census.workers.filter(w => w.room.name === room.name).length >= 6
+    const hasAllWorkers = true //Memory.census.workers.filter(w => w.room.name === room.name).length >= 6
     if (!this.creep.carry.energy) {
       const [, n, roomName] = this.creep.name.split('.')
       if (roomName && this.creep.pos.roomName != roomName) {
@@ -20,7 +20,7 @@ module.exports = {
       if (room.controller.level > 1) {
         const room = Game.rooms[this.creep.memory.home] || this.creep.room
         const spawn = room.spawns[0]
-        const cont = spawn.pos.findClosestByRange(room.containers)
+        const cont = room.controller.level >= 4 && room.storage || spawn.pos.findClosestByRange(room.containers)
         if (cont && cont.store.energy) {
           this.push('moveNear', cont.id)
           this.push('withdraw', cont.id, RESOURCE_ENERGY)

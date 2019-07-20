@@ -36,13 +36,23 @@ const config7 = {
     ['W8N3', 20, 25]
   ]
 }
+const config8 = {
+  server: 'splus',
+  rooms: [['W8N8', 25, 25]]
+}
+const config9 = {
+  server: 'fordo',
+  rooms: [['W3N7', 30, 20]]
+}
 // const config = config1
 // const config = config2
 // const config = config3
 // const config = config4
 // const config = config5
-const config = config6
+// const config = config6
 // const config = config7
+// const config = config8
+const config = config9
 const BRANCH = 'ZeSwarm_v1.1'
 // const BRANCH='default'
 ScreepsAPI.fromConfig(config.server).then(async api => {
@@ -50,20 +60,20 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
   if (ret.ok) console.log('Badge Set')
   const modules = {}
   const ps = []
-  const files = (await fs.readdir('src')).map(f => `src/${f}`)
-  for (const file of files) {
-    ps.push((async (file) => {
-      const { name, ext } = path.parse(file)
-      const data = await fs.readFile(file)
-      if (ext === '.js') {
-        modules[name] = data.toString('utf8')
-      }
-      if (ext === '.wasm') {
-        modules[name] = { binary: data.toString('base64') }
-      }
-    })(file))
-  }
-  await Promise.all(ps)
+  // const files = (await fs.readdir('src')).map(f => `src/${f}`)
+  // for (const file of files) {
+  //   ps.push((async (file) => {
+  //     const { name, ext } = path.parse(file)
+  //     const data = await fs.readFile(file)
+  //     if (ext === '.js') {
+  //       modules[name] = data.toString('utf8')
+  //     }
+  //     if (ext === '.wasm') {
+  //       modules[name] = { binary: data.toString('base64') }
+  //     }
+  //   })(file))
+  // }
+  // await Promise.all(ps)
   const resp = await api.raw.user.cloneBranch('', BRANCH, modules)
   console.log(resp)
   const { list: branches } = await api.raw.user.branches()
