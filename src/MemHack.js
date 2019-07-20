@@ -1,3 +1,7 @@
+// Usage:
+// At top of main: import MemHack from './MemHack'
+// At top of loop(): MemHack.pretick()
+// Thats it!
 const MemHack = {
   memory: null,
   parseTime: -1,
