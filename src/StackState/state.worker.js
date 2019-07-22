@@ -28,11 +28,11 @@ module.exports = {
         }
       }
       const creeps = this.creep.room.find(FIND_MY_CREEPS)
-        .filter(c => c.saying === 'Zzzz..')
+        .filter(c => c.memory.role === 'miningWorker' && c.carry.energy > 30)
       if (creeps.length) {
         const creep = this.creep.pos.findClosestByRange(creeps)
         this.push('moveNear', creep.pos)
-        this.push('say', 'Trans')
+        this.push('say', 'take miner')
         this.push('revTransfer', creep.id, RESOURCE_ENERGY)
         return this.runStack()
       }

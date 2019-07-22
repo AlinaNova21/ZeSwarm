@@ -16,8 +16,9 @@ const psayings = `
 Looking|for food|in|USER's|room
 Prepare|to be|eaten|USER
 Planning|to eat|USER
-Scouting|USER
+👁️ USER
 ...
+👁️
 `.split('\n').filter(s => s)
 
 module.exports = {

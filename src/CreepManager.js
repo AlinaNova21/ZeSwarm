@@ -6,6 +6,27 @@ import { sayings, psayings } from '/sayings'
 kernel.createThread('creepMemoryCleanup', creepMemoryCleanup())
 kernel.createThread('creepThreadManager', creepThreadManager({ kernel }))
 kernel.createThread('creepSaysThread', creepSaysThread())
+kernel.createThread('creepIDThread', creepIDThread())
+
+function * creepIDThread () {
+  const roles = {
+    miningCollector: '🚚',
+    miningWorker: '⛏️',
+    worker: '👷',
+    scout: '👁️',
+    reserver: '🏴'
+  }
+  while (true) {
+    for (const { room, pos: { x, y }, memory: { role } } of Object.values(Game.creeps)) {
+      const icon = roles[role] || ''
+      if (icon) {
+        room.visual.text(icon, x, y + 0.1, { size: 0.4 })
+      }
+      yield true
+    }
+    yield
+  }
+}
 
 function * creepMemoryCleanup () {
   while (true) {
@@ -20,6 +41,15 @@ function * creepMemoryCleanup () {
 }
 
 function * creepSaysThread () {
+  const start = Game.time
+  const random = [
+    'For the|swarm!',
+    'No bugs!',
+    'Kill bugs',
+    'Grow even|stronger!',
+    'Upgrade|applied!'
+  ]
+  const startPhrase = random[Math.floor(Math.random() * random.length)].split('|')
   while (true) {
     for (const creep of Object.values(Game.creeps)) {
       if (creep.saying) continue
@@ -28,14 +58,23 @@ function * creepSaysThread () {
         yield true
         continue
       }
-      if (creep.memory.role === 'scout' && Math.random() > 0.8) {
+      if (Game.time === start) {
+        kernel.createThread(`creepSay_${creep.name}`, creepSayWords(creep.name, startPhrase))
+        continue
+      }
+      if (Math.random() < 0.001) {
+        const startPhrase = random[Math.floor(Math.random() * random.length)].split('|')
+        kernel.createThread(`creepSay_${creep.name}`, creepSayWords(creep.name, startPhrase))
+        continue
+      }
+      if (creep.memory.role === 'scout' && Math.random() > 0.6) {
         let txt = sayings[Math.floor(Math.random() * sayings.length)]
         const { room } = creep
         if (room.controller && room.controller.owner && room.controller.owner.username && !room.controller.my) {
           const user = room.controller.owner.username
           txt = psayings[Math.floor(Math.random() * psayings.length)]
           if (Math.random() > 0.7) {
-            const smileys = '😀😁😃😄😆😉😊☺️😛😜😝😈'
+            const smileys = '😀😁😃😄😆😉😊☺️😛😜😝😈👁️'
             txt = smileys.substr(Math.floor(Math.random() * (smileys.length / 2)) * 2, 2)
           }
           txt = txt.replace(/USER/, user)
@@ -97,7 +136,7 @@ function * newStackStateThread (creepName) {
     }
     const end = Game.cpu.getUsed()
     const dur = end - start
-    creep.room.visual.text(dur.toFixed(2), creep.pos.x, creep.pos.y - 0.5)
+    creep.room.visual.text(dur.toFixed(2), creep.pos.x, creep.pos.y - 0.5, { size: 0.4, opacity: 0.7 })
     yield
   }
   delete Memory.creeps[creepName]

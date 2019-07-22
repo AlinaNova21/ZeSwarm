@@ -7,6 +7,18 @@ const SIGN_MSG = `Territory of ZeSwarm - ${C.USER}`
 const SIGN_MY_MSG = `ZeSwarm - https://github.com/ags131/ZeSwarm`
 
 module.exports = {
+  scoutVision (roomName) {
+    if (this.creep.room.name !== roomName) {
+      this.push('moveToRoom', roomName)
+      return this.runStack()
+    }
+    const park = this.creep.room.controller && this.creep.room.controller.pos || new RoomPosition(25, 25, roomName)
+    if (!this.creep.pos.inRangeTo(park, 3)) {
+      this.push('moveInRange', park, 3)
+      return this.runStack()
+    }
+    this.creep.say('👁️', true)
+  },
   scout (state = {}) {
     const debug = this.creep.name === 'scout_13651666_najb'
     if (!state.z) state.z = this.creep.notifyWhenAttacked(false)
@@ -22,7 +34,7 @@ module.exports = {
     this.status = pos.toString()
 
     const target = intel.outdated && intel.outdated.length && intel.outdated[Math.floor(Math.random() * intel.outdated.length)]
-    if (target) {
+    if (target && false) {
       console.log(target)
       this.push('moveToRoom', new RoomPosition(25, 25, target), { preferHighway: true })
     }
@@ -136,27 +148,6 @@ module.exports = {
       if (!target && c.room.controller && Game.flags.target && Game.flags.target.pos.roomName == c.room.name) {
         Game.flags.target.remove()
       }
-    }
-    if (c.memory.phrase && c.memory.phrase.length) {
-      const txt = c.memory.phrase.shift()
-      c.say(txt, true)
-    }
-    if (Math.random() > 0.9) {
-      let txt = sayings[Math.floor(Math.random() * sayings.length)]
-      if (c.room.controller && c.room.controller.owner && c.room.controller.owner.username && c.room.controller.owner.username != C.USER) {
-        const user = c.room.controller.owner.username
-        txt = psayings[Math.floor(Math.random() * psayings.length)]
-        if (Math.random() > 0.7) {
-          const smileys = '😀😁😃😄😆😉😊☺️😛😜😝😈'
-          txt = smileys.substr(Math.floor(Math.random() * (smileys.length / 2)) * 2, 2)
-        }
-        txt = txt.replace(/USER/, user)
-      }
-      if (~txt.indexOf('|')) {
-        ;[txt, ...phrase] = txt.split('|')
-        c.memory.phrase = phrase
-      }
-      c.say(txt, true)
     }
   }
 }

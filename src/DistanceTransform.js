@@ -13,7 +13,7 @@
     it to a high value (e.g., 255) for this. Set oob to 0 to treat out of bounds
     as background pixels.
 */
-module.exports.distanceTransform = function distanceTransform (foregroundPixels, oob = 255) {
+export function distanceTransform (foregroundPixels, oob = 255) {
   var dist = foregroundPixels // not a copy. We're modifying the input
   // Variables to represent the 3x3 neighborhood of a pixel.
   var A, B, C
@@ -51,7 +51,7 @@ module.exports.distanceTransform = function distanceTransform (foregroundPixels,
   return dist
 }
 
-module.exports.wallOrAdjacentToExit = function wallOrAdjacentToExit (x, y, roomName) {
+export function wallOrAdjacentToExit (x, y, roomName) {
   if (x > 1 && x < 48 && y > 1 && y < 48) return Game.map.getTerrainAt(x, y, roomName) == 'wall'
   if (x == 0 || y == 0 || x == 49 || y == 49) return true
 
@@ -73,18 +73,18 @@ module.exports.wallOrAdjacentToExit = function wallOrAdjacentToExit (x, y, roomN
   return !(A == 'wall' && B == 'wall' && C == 'wall')
 }
 
-module.exports.blockablePixelsForRoom = function blockablePixelsForRoom (roomName) {
+export function blockablePixelsForRoom (roomName) {
   var costMatrix = new PathFinder.CostMatrix()
   for (var y = 0; y < 50; ++y) {
     for (var x = 0; x < 50; ++x) {
-      if (!this.wallOrAdjacentToExit(x, y, roomName)) {
+      if (!wallOrAdjacentToExit(x, y, roomName)) {
         costMatrix.set(x, y, 1)
       }
     }
   }
   return costMatrix
 }
-module.exports.walkablePixelsForRoom = function walkablePixelsForRoom (roomName) {
+export function walkablePixelsForRoom (roomName) {
   var costMatrix = new PathFinder.CostMatrix()
   var terrain = Game.map.getRoomTerrain(roomName).getRawBuffer()
   for (var y = 0; y < 50; ++y) {
@@ -97,20 +97,32 @@ module.exports.walkablePixelsForRoom = function walkablePixelsForRoom (roomName)
   return costMatrix
 }
 
-module.exports.invertMatrix = function invertMatrix (matrix) {
+export function invertMatrix (matrix, neg = 254) {
   const cm = new PathFinder.CostMatrix()
   let x, y, v
   for (y = 0; y < 50; ++y) {
     for (x = 0; x < 50; ++x) {
       v = matrix.get(x, y)
-      if (v < 255 && v > 0) v = 254 - v
+      if (v < 255 && v > 0) v = neg - v
       cm.set(x, y, v)
     }
   }
   return cm
 }
 
-module.exports.getIndexed = function getIndexed (matrix) {
+export function multMatrix (matrix, mul = 1) {
+  const cm = new PathFinder.CostMatrix()
+  let x, y, v
+  for (y = 0; y < 50; ++y) {
+    for (x = 0; x < 50; ++x) {
+      v = matrix.get(x, y)
+      cm.set(x, y, Math.min(255, Math.max(0, v * mul)))
+    }
+  }
+  return cm
+}
+
+export function getIndexed (matrix) {
   const index = {}
   let x, y, v
   for (y = 0; y < 50; ++y) {

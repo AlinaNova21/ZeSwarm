@@ -34,6 +34,7 @@ const states = ({
   pop () {
     this.stack.pop()
   },
+  idle () {},
   noop () {
     this.pop()
   },
@@ -133,7 +134,9 @@ const states = ({
     }
     const tgt = this.resolveTarget(target)
     if (this.creep.pos.roomName === tgt.roomName) {
+      const exits = this.creep.room.find(FIND_EXIT)
       this.pop()
+      this.push('flee', exits)
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
@@ -202,7 +205,7 @@ for (const state of otherStates) {
   Object.assign(states, state)
 }
 
-const funcsToWrap = ['attack', 'rangedAttack', 'heal', 'upgradeController', 'claimController', 'attackController', 'signController', 'moveTo', 'build', 'harvest', 'repair', 'pickup', 'withdraw', 'transfer']
+const funcsToWrap = ['attack', 'rangedAttack', 'heal', 'upgradeController', 'claimController', 'reserveController', 'attackController', 'signController', 'moveTo', 'build', 'harvest', 'repair', 'pickup', 'withdraw', 'transfer']
 funcsToWrap.forEach(wrap)
 
 function wrap (func) {

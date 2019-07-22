@@ -34,8 +34,16 @@ export class Kernel {
 
   [Symbol.iterator] () { return this }
 
+  hasThread (name) {
+    return this.threads.has(name)
+  }
+
   createThread (name, gen) {
     this.threads.set(name, gen)
+  }
+
+  destroyThread (name) {
+    return this.threads.delete(name)
   }
 }
 

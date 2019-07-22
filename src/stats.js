@@ -1,6 +1,6 @@
 // import config from '/etc/stats'
 import { Logger } from '/log'
-
+import C from './constants'
 /* USAGE:
 Configure CONFIG below
 At VERY top of main.js:
@@ -69,7 +69,7 @@ export class InfluxDB {
     this.reset()
     this.startTick = Game.time
     this.shard = (Game.shard && Game.shard.name) || 'shard0'
-    this.user = _.find(Game.spawns, v => v).owner.username
+    this.user = C.USER // _.find(Game.spawns, v => v).owner.username
   }
   reset () {
     if (Game.time === this.startTick) return // Don't reset on new tick

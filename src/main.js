@@ -2,13 +2,15 @@ import MemHack from './MemHack'
 import stats from './stats'
 import './prototypes.room'
 import './Traveler'
-import layout from './layout'
+import './RoomVisual'
 import { kernel } from './kernel'
+import './layout'
 import './Intel'
 import './manager'
 import './CreepManager'
 import './DefenseManager'
 import './SpawnManager'
+import './ExpansionPlanner'
 import memoryManager from './MemoryManager'
 import log from '/log'
 
@@ -50,7 +52,6 @@ export function loop () {
     const cnt = (' '.repeat(3) + roles[role].length).slice(-3)
     vis.text(`${cnt} ${role}`, 25, 9 + off++, { size: 1 })
   }
-  layout.run()
   kernel.tick()
   memoryManager.posttick()
   stats.commit()
