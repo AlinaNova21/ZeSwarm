@@ -9,11 +9,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp",
-    "push:test": "rollup -c && screeps-api --server test -b ZeSwarm_v1.1 upload dist/main.js",
-    "push:splus1": "rollup -c && screeps-api --server splus -b ZeSwarm_v1.1 upload dist/main.js",
-    "push:splus2": "rollup -c && screeps-api --server splus2 -b ZeSwarm_v1.1 upload dist/main.js",
-    "push:fordo": "rollup -c && screeps-api --server fordo -b ZeSwarm_v1.1 upload dist/main.js",
-    "push": "yarn run push:test && yarn run push:splus1 && yarn run push:splus2 && yarn run push:fordo"
+    "push:test": "rollup -c && yarn run push --server test",
+    "push:splus1": "rollup -c && yarn run push --server splus",
+    "push:splus2": "rollup -c && yarn run push --server splus2",
+    "push:fordo": "rollup -c && yarn run push --server fordo",
+    "push:all": "rollup -c && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server fordo",
+    "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js"
   },
   "repository": {
     "type": "git",

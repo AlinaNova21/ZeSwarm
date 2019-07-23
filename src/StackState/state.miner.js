@@ -77,7 +77,7 @@ module.exports = {
       const cont = room.controller.level >= 4 && room.storage || spawn.pos.findClosestByRange(room.containers)
       const tgt = cont || spawn
       if (cont && cont.store.energy === cont.storeCapacity) {
-        this.push('flee', cont, 2)
+        this.push('flee', [{ pos: cont.pos, range: 4 }])
         return this.runStack()
       } else {
         this.push('transfer', tgt.id, C.RESOURCE_ENERGY)
@@ -122,6 +122,14 @@ module.exports = {
       this.push('revTransfer', creep.id, resourceType)
       this.push('moveNear', creep.id)
       return this.runStack()
+    } else {
+      const [src] = this.creep.pos.findInRange(FIND_SOURCES, 4)
+      if (src) {
+        this.creep.say('No Miner')
+        this.push('sleep', Game.time + 10)
+        this.push('flee', [{ pos: src.pos, range: 6 }])
+        return this.runStack()
+      }
     }
     // this.push('sleep', Game.time + 5)
     // return this.runStack()

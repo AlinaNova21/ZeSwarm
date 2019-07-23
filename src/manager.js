@@ -1,13 +1,13 @@
 import { kernel } from '/kernel'
 import C from './constants'
 import log from './log'
-import { sleep } from './kernel';
+import { sleep, restartThread } from './kernel';
 import { createTicket, destroyTicket } from './SpawnManager'
 import intel from './Intel';
 
 export let census = {}
 
-kernel.createThread('managerThread', managerThread())
+kernel.createThread('managerThread', restartThread(managerThread))
 
 function * managerThread() {
   while (true) {
@@ -31,7 +31,7 @@ function * managerThread() {
           census[creep.memory.role]++
         }
       }
-      if (!room.controller || room.controller.level === 0) continue
+      if (!room.controller || room.controller.level < 2) continue
       if (room.controller.owner.username !== C.USER) continue
       const key = `mining_${room.name}`
       if (!kernel.hasThread(key)) {
@@ -80,7 +80,7 @@ function * managerThread() {
         workers = 4
       }
       if (room.controller.level === 2) {
-        workers += 6
+        workers += 10
       }
       if (room.controller.level === 3) {
         workers += Math.floor(srcCount / 2)
@@ -94,7 +94,8 @@ function * managerThread() {
         body,
         memory: {
           role: 'worker',
-          room: room.name
+          homeRoom: room.name,
+          room: room.memory.donor || room.name
         }
       })
       if (room.controller.level >= 3 && room.energyAvailable >= 550) {
@@ -131,9 +132,12 @@ function * miningManager (homeRoomName, roomName) {
     for (const { id, pos: [x, y] } of int.sources) {
       const spos = { x, y, roomName }
       if (!paths[id] || !paths[id].length) {
-        const { path, ops, cost, incomplete } = PathFinder.search(spos, homeRoom.spawns.map(s => ({ pos: s.pos, range: 1 })))
+        const { path, ops, cost, incomplete } = PathFinder.search(spos, homeRoom.spawns.map(s => ({ pos: s.pos, range: 1 })), {
+          maxOps: 5000,
+          swampCost: 2
+        })
         if (incomplete) {
-          log.alert(`Path incomplete to source ${spos}`)
+          log.alert(`Path incomplete to source ${spos.x},${spos.y} ${spos.roomName} ops: ${ops} cost: ${cost} path: ${JSON.stringify(path)}`)
           continue
         }
         paths[id] = path
@@ -152,11 +156,11 @@ function * miningManager (homeRoomName, roomName) {
       const carryRoundTrip = Math.ceil(energyRoundTrip / 50)
       // log.info(`${id} ${energyPerTick} ${roundTrip} ${energyRoundTrip} ${carryRoundTrip}`)
       const neededCarry = Math.max(2, carryRoundTrip) + 2
-      const wantedCarry = Math.ceil(neededCarry / maxParts)
+      const wantedCarry = (homeRoom.energyCapacityAvailable ? Math.ceil(neededCarry / maxParts) : 0)
       const neededWork = Math.min(maxWork, Math.floor((homeRoom.energyCapacityAvailable - 100) / (remote ? 150 : 100)))
       // const neededWork = energyPerTick / C.HARVEST_POWER
       // const maxWorkParts = (homeRoom.energyCapacityAvailable - 50) 
-      const wantedWork = remote ? 1 : Math.ceil(maxWork / neededWork)
+      const wantedWork = remote ? 1 : (homeRoom.energyCapacityAvailable ? Math.ceil(maxWork / neededWork) : 0)
       const cbody = expandBody([maxParts, C.CARRY, maxParts, C.MOVE])
       const wbody = expandBody([1, C.CARRY, remote ? 3 : 1, C.MOVE, remote ? 6 : neededWork, C.WORK])
       const cgroup = `${id}c`

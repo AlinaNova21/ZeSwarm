@@ -3,6 +3,7 @@ const otherStates = [
   require('./state.scout'),
   require('./state.worker'),
   require('./state.builder'),
+  require('./state.claimer'),
   require('./state.miner')
 ]
 const states = ({
@@ -136,13 +137,21 @@ const states = ({
     if (this.creep.pos.roomName === tgt.roomName) {
       const exits = this.creep.room.find(FIND_EXIT)
       this.pop()
-      this.push('flee', exits)
+      this.push('flee', exits.map(e => ({ pos: e, range: 1 })))
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
     }
   },
   flee (targets) {
+    if (!Array.isArray(targets)) {
+      return this.pop()
+    }
+    targets = targets.filter(t => !!t && (t.range && t.pos))
+    if (targets.length === 0) {
+      log.alert(`Aborting broken flee ${JSON.stringify(targets)}`)
+      return this.pop()
+    }
     const { path } = PathFinder.search(this.creep.pos, targets, {
       flee: true,
       roomCallback (room) {

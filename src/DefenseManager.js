@@ -1,6 +1,6 @@
-import { kernel } from '/kernel'
+import { kernel, restartThread } from '/kernel'
 
-kernel.createThread('defenseManagerTowers', defenseManagerTowersThread())
+kernel.createThread('defenseManagerTowers', restartThread(defenseManagerTowersThread))
 
 const allowPassage = ['Sergey']
 

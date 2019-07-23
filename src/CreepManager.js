@@ -1,12 +1,12 @@
 import StackState from './StackState'
-import { kernel, sleep } from '/kernel'
+import { kernel, sleep, restartThread } from './kernel'
 import log from '/log'
 import { sayings, psayings } from '/sayings'
 
-kernel.createThread('creepMemoryCleanup', creepMemoryCleanup())
-kernel.createThread('creepThreadManager', creepThreadManager({ kernel }))
-kernel.createThread('creepSaysThread', creepSaysThread())
-kernel.createThread('creepIDThread', creepIDThread())
+kernel.createThread('creepMemoryCleanup', restartThread(creepMemoryCleanup))
+kernel.createThread('creepThreadManager', restartThread(creepThreadManager))
+kernel.createThread('creepSaysThread', restartThread(creepSaysThread))
+kernel.createThread('creepIDThread', restartThread(creepIDThread))
 
 function * creepIDThread () {
   const roles = {
@@ -14,7 +14,8 @@ function * creepIDThread () {
     miningWorker: '⛏️',
     worker: '👷',
     scout: '👁️',
-    reserver: '🏴'
+    reserver: '🏴',
+    claimer: '🏁'
   }
   while (true) {
     for (const { room, pos: { x, y }, memory: { role } } of Object.values(Game.creeps)) {
@@ -95,7 +96,7 @@ function * creepSayWords (creepName, parts, pub = true) {
   }
 }
 
-function * creepThreadManager ({ kernel }) {
+function * creepThreadManager () {
   const threads = kernel.threads
   const prefix = 'stackState_'
   while (true) {

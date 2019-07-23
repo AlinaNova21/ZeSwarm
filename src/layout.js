@@ -1,6 +1,9 @@
 import C from './constants'
 import { distanceTransform, blockablePixelsForRoom, invertMatrix, multMatrix } from './DistanceTransform'
 import { kernel } from '/kernel'
+import { Logger } from './log';
+
+const log = new Logger('[LayoutManager]')
 
 export let census = {}
 
@@ -20,6 +23,7 @@ export function * layoutThread () {
   while (true) {
     for (const roomName in Game.rooms) {
       const room = Game.rooms[roomName]
+      const planFlag = Game.flags.plan
       if (room.controller && room.controller.my) {
         yield * flex(room)
       }
@@ -61,7 +65,12 @@ export function * flex (room) {
   const walkable = blockablePixelsForRoom(room.name)
   const distance = multMatrix(invertMatrix(distanceTransform(walkable), 8), 3)
   // this.drawCostMatrix(distance)
+  const memSrc = room.memory.layoutStart && new RoomPosition(room.memory.layoutStart[0], room.memory.layoutStart[1], room.name)
   const src = room.spawns[0] || room.structures.all.find(s => s.my && s.structureType !== STRUCTURE_CONTROLLER) || room.controller
+  if (!(src instanceof StructureController)) {
+    const { x, y } = src.pos
+    room.memory.layoutStart = [x, y]
+  }
   for (const type in want) {
     const amount = want[type] - ((have[type] || 0) + (sites[type] || []).length)
     // console.log(type, want[type], have[type] || 0, (sites[type] || []).length)
@@ -73,10 +82,16 @@ export function * flex (room) {
       ...room.find(C.FIND_SOURCES)
     ].map(getRange)
     console.log(`Want ${amount} of ${type}`)
-    const pos = findPos(src.pos, positions, offGrid.includes(type), distance)
+    if (type === STRUCTURE_SPAWN && !have[STRUCTURE_SPAWN] && memSrc) {
+      room.createConstructionSite(memSrc, STRUCTURE_SPAWN)
+      return
+    }
+    const pos = findPos(memSrc || src.pos, positions, offGrid.includes(type), distance)
     if (pos) {
       room.createConstructionSite(pos, type)
       return
+    } else {
+      console.log(`Couldn't find position for ${type} with src ${src} and memSrc ${memSrc} pos is ${typeof pos}`)
     }
   }
 }
@@ -91,7 +106,7 @@ function getRange (s) {
       range = 3
       break
     case 'controller':
-      range = 4
+      range = 5
     case 'spawn':
       // range = 3
       break
@@ -123,6 +138,8 @@ function findPos (origin, avoid, invert = false, cmBase = false) {
     const vis = new RoomVisual()
     vis.poly(result.path.map(({ x, y }) => [x, y]), { stroke: 'red' })
     return result.path.slice(-1)[0]
+  } else {
+    log.alert(`Layout path failed ${JSON.stringify(result)}`)
   }
 }
 function drawCostMatrix (costMatrix, color = '#FF0000') {

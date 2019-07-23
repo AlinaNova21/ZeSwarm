@@ -6,6 +6,7 @@ export class Kernel {
   constructor () {
     this.threads = new Map()
     log.info(`Kernel Created`)
+    this.pidGen = calcCPUPID()
   }
 
   tick () {
@@ -15,7 +16,9 @@ export class Kernel {
     }
     log.info(`threads: ${[...this.threads.keys()]}`)
     let cnt = 0
-    const scheduler = loopScheduler(this.threads)
+    const { value: limit } = this.pidGen.next()
+    log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
+    const scheduler = loopScheduler(this.threads, limit)
     for (const _val of scheduler) { // eslint-disable-line no-unused-vars
       // log.info(`tick ${val}`)
       cnt++
@@ -25,7 +28,8 @@ export class Kernel {
 
   next (val) {
     if (val === true) {
-      this.scheduler = loopScheduler(this.threads)
+      const { value } = this.pidGen.next()
+      this.scheduler = loopScheduler(this.threads, value)
       return { done: false, value: false }
     }
     const { done } = this.scheduler.next()
@@ -100,10 +104,36 @@ class Thread {
   [Symbol.iterator] () { return this }
 }
 
-function * loopScheduler (threads) {
+function * calcCPUPID () {
+  const Kp = 0.03
+  const Ki = 0.02
+  const Kd = 0
+  const Mi = 500
+  const Se = 0.5
+  let e = 0
+  let i = 0
+  while (true) {
+    const le = e
+    e = Se * (Game.cpu.bucket - 9500)
+    i = i + e
+    i = Math.min(Math.max(i, -Mi), Mi)
+
+    const Up = (Kp * e)
+    const Ui = (Ki * i)
+    const Ud = Kd * (e / le) * e
+
+    const output = Up + Ui + Ud
+
+    const limit = Math.max(Game.cpu.limit + output - Game.cpu.getUsed(), Game.cpu.limit * 0.2)
+    // console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
+    yield limit
+  }
+}
+
+function * loopScheduler (threads, limit) {
   const queue = Array.from(threads.entries())
   for (const item of queue) {
-    if (Game.cpu.getUsed() > Game.cpu.limit) {
+    if (Game.cpu.getUsed() > limit) {
       log.info(`[loopScheduler] CPU Limit reached`)
     }
     // log.info(`[loopScheduler] Running ${item[0]}`)
@@ -121,4 +151,14 @@ function * loopScheduler (threads) {
 export function * sleep (ticks) {
   const end = Game.time + ticks
   while (Game.time < end) yield
+}
+
+export function * restartThread(fn) {
+  while (true) {
+    try {
+      yield * fn()
+    } catch (err) {
+      log.error(`Thread exited with error: ${err.stack || err.message || err}`)
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import { kernel } from '/kernel'
+import { kernel, restartThread } from '/kernel'
 import { Logger } from '/log'
 
 const log = new Logger('[SpawnManager]')
@@ -15,7 +15,7 @@ def format:
 }
 */
 
-kernel.createThread('spawnManagerSpawnThread', spawnManagerSpawnThread())
+kernel.createThread('spawnManagerSpawnThread', restartThread(spawnManagerSpawnThread))
 
 export function createTicket (name, def) {
   tickets.set(name, def)

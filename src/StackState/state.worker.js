@@ -18,9 +18,8 @@ module.exports = {
         return this.runStack()
       }
       if (room.controller.level > 1) {
-        const room = Game.rooms[this.creep.memory.home] || this.creep.room
         const spawn = room.spawns[0]
-        const cont = room.controller.level >= 4 && room.storage || spawn.pos.findClosestByRange(room.containers)
+        const cont = room.controller.level >= 4 && room.storage || (spawn && spawn.pos.findClosestByRange(room.containers))
         if (cont && cont.store.energy) {
           this.push('moveNear', cont.id)
           this.push('withdraw', cont.id, RESOURCE_ENERGY)
