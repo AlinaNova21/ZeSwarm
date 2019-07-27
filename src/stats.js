@@ -26,7 +26,7 @@ such as roomName, sectorName, etc, low overall spread.
 const config = {
   driver: 'Graphite', // Graphite, InfluxDB
   format: 'plain', // Or JSON, only applies to Graphite driver
-  types: ['memory', 'segment', 'console'], // memory, segment, console (the agent limits memory and segment to 15 second poll intervals)
+  types: ['memory', 'segment'], // memory, segment, console (the agent limits memory and segment to 15 second poll intervals)
   key: '__stats',
   segment: 99,
   baseStats: true,

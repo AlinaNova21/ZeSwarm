@@ -165,7 +165,7 @@ function * miningManager (homeRoomName, roomName) {
       const wbody = expandBody([1, C.CARRY, remote ? 3 : 1, C.MOVE, remote ? 6 : neededWork, C.WORK])
       const cgroup = `${id}c`
       const wgroup = `${id}w`
-      log.info(`${id} ${wantedCarry} ${wantedWork}`)
+      // log.info(`${id} ${wantedCarry} ${wantedWork}`)
       createTicket(wgroup, {
         valid: () => Game.time < timeout,
         count: wantedWork,
@@ -190,6 +190,7 @@ function * miningManager (homeRoomName, roomName) {
     }
     if (remote) {
       const rgroup = `${roomName}r`
+      if (!Game.rooms[roomName]) continue
       const { controller: { id, pos } = {} } = Game.rooms[roomName]
       if (id) {
         createTicket(rgroup, {

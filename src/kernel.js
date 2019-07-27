@@ -18,7 +18,8 @@ export class Kernel {
     let cnt = 0
     const { value: limit } = this.pidGen.next()
     log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
-    const scheduler = loopScheduler(this.threads, limit)
+    this.scheduler = {}
+    const scheduler = loopScheduler(this.threads, this.scheduler)
     for (const _val of scheduler) { // eslint-disable-line no-unused-vars
       // log.info(`tick ${val}`)
       cnt++
@@ -43,7 +44,7 @@ export class Kernel {
   }
 
   createThread (name, gen) {
-    this.threads.set(name, gen)
+    this.threads.set(name, new Thread(name, gen))
   }
 
   destroyThread (name) {
@@ -130,20 +131,29 @@ function * calcCPUPID () {
   }
 }
 
-function * loopScheduler (threads, limit) {
+function * loopScheduler (threads, limit, state = {}) {
   const queue = Array.from(threads.entries())
   for (const item of queue) {
     if (Game.cpu.getUsed() > limit) {
       log.info(`[loopScheduler] CPU Limit reached`)
+      return
     }
     // log.info(`[loopScheduler] Running ${item[0]}`)
-    const { done, value } = item[1].next()
-    if (!done && value === true) {
-      queue.push(item)
-    }
-    if (done) {
+    state.current = item[0]
+    try {
+      const { done, value } = item[1].next()
+      if (!done && value === true) {
+        queue.push(item)
+      }
+      if (done) {
+        threads.delete(item[0])
+      }
+    } catch (err) {
       threads.delete(item[0])
+      log.error(`Error running thread: ${item[0]} ${err.stack || err.message || err}`)
     }
+    state.current = null
+
     yield
   }
 }
@@ -153,12 +163,14 @@ export function * sleep (ticks) {
   while (Game.time < end) yield
 }
 
-export function * restartThread(fn) {
+export function * restartThread (fn) {
+  const name = kernel.scheduler.current
   while (true) {
     try {
       yield * fn()
     } catch (err) {
-      log.error(`Thread exited with error: ${err.stack || err.message || err}`)
+      log.error(`Thread '${name}' exited with error: ${err.stack || err.message || err}`)
     }
+    yield
   }
 }
