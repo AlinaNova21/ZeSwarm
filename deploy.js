@@ -44,6 +44,10 @@ const config9 = {
   server: 'fordo',
   rooms: [['W3N7', 30, 20]]
 }
+const config10 = {
+  server: 'prtest',
+  rooms: [['W3N7', 30, 20]]
+}
 // const config = config1
 // const config = config2
 // const config = config3
@@ -52,7 +56,8 @@ const config9 = {
 // const config = config6
 // const config = config7
 // const config = config8
-const config = config9
+// const config = config9
+const config = config10
 const BRANCH = 'ZeSwarm_v1.1'
 // const BRANCH='default'
 ScreepsAPI.fromConfig(config.server).then(async api => {

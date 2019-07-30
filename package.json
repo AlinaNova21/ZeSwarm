@@ -13,6 +13,7 @@
     "push:splus1": "rollup -c && yarn run push --server splus",
     "push:splus2": "rollup -c && yarn run push --server splus2",
     "push:fordo": "rollup -c && yarn run push --server fordo",
+    "push:prtest": "rollup -c && yarn run push --server prtest",
     "push:all": "rollup -c && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server fordo",
     "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js"
   },
