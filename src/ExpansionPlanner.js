@@ -39,9 +39,9 @@ function * expansionPlanner () {
       if (int.owner || int.level) continue // Not claimable, already owned
       if (int.sources.length < 2) continue // We want at least 2 sources
       const [room, lRange] = rooms
-        .filter(r => r.level >= 4)
+        .filter(r => r.level >= 3)
         .map(r => [r, Game.map.getRoomLinearDistance(r.name, int.name)])
-        .reduce((l, n) => l && l[1] < n[1] ? l : n, null)
+        .reduce((l, n) => l && l[1] < n[1] ? l : n, null) || []
       if (!room) continue
       if (lRange > 8) continue
       const route = Game.map.findRoute(room.name, int.name, { routeCallback: avoidHostile })
