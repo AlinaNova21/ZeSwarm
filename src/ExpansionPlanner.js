@@ -17,7 +17,7 @@ function * expansionPlanner () {
     for (const target of targets) {
       const [src, dest, expire] = target
       const key = `createNest_${dest}`
-      if (Game.time >= expire || (Game.rooms[dest] && Game.rooms[dest].controller.my)) {
+      if (Game.time >= expire || (Game.rooms[dest] && Game.rooms[dest].controller.my && Game.rooms[dest].spawn)) {
         if (kernel.hasThread(key)) {
           kernel.destroyThread(key)
         }
@@ -29,7 +29,7 @@ function * expansionPlanner () {
         kernel.createThread(key, createNest(src, dest, timeout))
       }
     }
-    if (Game.gcl.level <= rooms.length + targets.size) {
+    if (targets.size > 2 || Game.gcl.level <= rooms.length + targets.size) {
       yield
       continue
     }
@@ -73,21 +73,31 @@ function * createNest (src, target, expire) {
   const log = new Logger(`[Nesting${target}]`)
   while (true) {
     if (Game.time >= expire) return
-    if (Game.rooms[target] && Game.rooms[target].controller.my) return
-    const int = intel.rooms[target]
-    const room = Game.rooms[target]
-    const timeout = Math.min(expire, Game.time + 200)
-    console.log(`Wanted: Claimer. Where: ${target}`)
-    createTicket(`claimer_${target}`, {
-      valid: () => Game.time < timeout,
-      count: 1,
-      body: [MOVE, CLAIM],
-      memory: {
-        role: 'claimer',
-        room: src,
-        stack: [['claimRoom', target]]
+    if (!Game.rooms[target] || !Game.rooms[target].controller.my) {
+      const int = intel.rooms[target]
+      const room = Game.rooms[target]
+      const timeout = Math.min(expire, Game.time + 200)
+      console.log(`Wanted: Claimer. Where: ${target}`)
+      createTicket(`claimer_${target}`, {
+        valid: () => Game.time < timeout,
+        count: 1,
+        body: [MOVE, CLAIM],
+        memory: {
+          role: 'claimer',
+          room: src,
+          stack: [['claimRoom', target]]
+        }
+      })
+    } else {
+      const room = Game.rooms[target]
+      if (!room) {
+        yield
+        continue
       }
-    })
+      if (Game.rooms[target].spawn) {
+        return
+      }
+    }
     yield
   }
 }

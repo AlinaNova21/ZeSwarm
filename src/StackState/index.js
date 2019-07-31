@@ -131,7 +131,17 @@ const states = ({
   },
   moveToRoom (target, opts = {}) {
     if (typeof target === 'string' && target.match(/^[EW]\d+[NS]\d+$/)) {
-      target = { x: 25, y: 25, roomName: target }
+      let [x, y] = [25, 25]
+      target = { x, y, roomName: target }
+    }
+    const terrain = Game.map.getRoomTerrain(target.roomName)
+    if (terrain.get(target.x, target.y) !== 0) {
+      while (terrain.get(x, y) !== 0) {
+        x = Math.floor(Math.random() * 20) + 15
+        y = Math.floor(Math.random() * 20) + 15
+      }
+      this.pop()
+      this.push('moveToRoom', target)
     }
     const tgt = this.resolveTarget(target)
     if (this.creep.pos.roomName === tgt.roomName) {

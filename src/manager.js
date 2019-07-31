@@ -120,7 +120,10 @@ function * miningManager (homeRoomName, roomName) {
   const maxWork = remote ? 6 : 5
   while (true) {
     const homeRoom = Game.rooms[homeRoomName]
-    if (!homeRoom || !homeRoom.controller.my) return
+    if (!homeRoom || !homeRoom.controller.my) {
+      yield
+      return
+    }
     const int = intel.rooms[roomName]
     if (!int) {
       yield * getVision(roomName)
@@ -138,6 +141,7 @@ function * miningManager (homeRoomName, roomName) {
         })
         if (incomplete) {
           log.alert(`Path incomplete to source ${spos.x},${spos.y} ${spos.roomName} ops: ${ops} cost: ${cost} path: ${JSON.stringify(path)}`)
+          yield
           continue
         }
         paths[id] = path
@@ -147,6 +151,7 @@ function * miningManager (homeRoomName, roomName) {
       const source = Game.getObjectById(id)
       if (!source) {
         log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName]?'T':'F'}`)
+        yield
         continue
       }
       const capacity = source.energyCapacity || C.SOURCE_ENERGY_NEUTRAL_CAPACITY
@@ -190,7 +195,10 @@ function * miningManager (homeRoomName, roomName) {
     }
     if (remote) {
       const rgroup = `${roomName}r`
-      if (!Game.rooms[roomName]) continue
+      if (!Game.rooms[roomName]) { 
+        yield true
+        continue
+      }
       const { controller: { id, pos } = {} } = Game.rooms[roomName]
       if (id) {
         createTicket(rgroup, {

@@ -10,6 +10,7 @@ export class Kernel {
   }
 
   tick () {
+    if (Game.cpu.bucket < 1000) return
     if (!this.threads.has('kBase')) {
       log.info('Starting kBase')
       this.threads.set('kBase', kernelBase(this))
@@ -19,8 +20,11 @@ export class Kernel {
     const { value: limit } = this.pidGen.next()
     log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
     this.scheduler = {}
-    const scheduler = loopScheduler(this.threads, this.scheduler)
-    for (const _val of scheduler) { // eslint-disable-line no-unused-vars
+    const scheduler = loopScheduler(this.threads, limit, this.scheduler)
+    for (const val of scheduler) { // eslint-disable-line no-unused-vars
+      if (typeof val === 'string') {
+        this.threads.delete(val)
+      }
       // log.info(`tick ${val}`)
       cnt++
     }
@@ -151,6 +155,7 @@ function * loopScheduler (threads, limit, state = {}) {
     } catch (err) {
       threads.delete(item[0])
       log.error(`Error running thread: ${item[0]} ${err.stack || err.message || err}`)
+      yield item[0]
     }
     state.current = null
 
