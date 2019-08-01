@@ -20,6 +20,9 @@ function * managerThread() {
     for (const room of rooms) {
       spawnQueue[room.name] = []
       census[room.name] = {}
+      if (room.spawns.length && room.memory.donor) {
+        delete room.memory.donor
+      }
       const creeps = room.find(FIND_MY_CREEPS)
       for (const creep of creeps) {
         if (creep.memory.group) {
@@ -65,25 +68,28 @@ function * managerThread() {
     for (const room of rooms) {
       if (!room.controller || room.controller.level === 0) continue
       if (room.controller && !room.controller.my) continue
-      const group = `workers${room.name}`
-      const reps = Math.max(1, Math.floor((room.energyAvailable - 100) / 150))
+      const group = `workers_${room.name}`
+      const reps = Math.max(1, Math.min(24, Math.floor((room.energyAvailable - 100) / 150)))
       const body = [MOVE, CARRY]
       for (let i = 0; i < reps; i++) {
-        if (room.controller.level >= 2 && i % 2 === 1) {
+        if (room.level >= 2 && i % 2 === 1) {
           body.push(MOVE, CARRY)
         } else {
           body.push(MOVE, WORK)
         }
       }
       let workers = 6
-      if (room.controller.level === 4) {
+      if (room.level === 4) {
         workers = 4
       }
-      if (room.controller.level === 2) {
+      if (room.level === 2) {
         workers += 10
       }
-      if (room.controller.level === 3) {
+      if (room.level === 3) {
         workers += Math.floor(srcCount / 2)
+      }
+      if (room.storage && room.storage.store.energy < 20000) {
+        workers = 2
       }
       if (room.storage && room.storage.store.energy > 100000) {
         workers += 4
@@ -98,7 +104,7 @@ function * managerThread() {
           room: room.memory.donor || room.name
         }
       })
-      if (room.controller.level >= 3 && room.energyAvailable >= 550) {
+      if (room.level >= 3 && room.energyAvailable >= 550) {
         createTicket(`scouts_${room.name}`, {
           valid: () => Game.rooms[room.name].controller.level >= 3,
           body: [TOUGH, MOVE],
@@ -121,14 +127,11 @@ function * miningManager (homeRoomName, roomName) {
   while (true) {
     const homeRoom = Game.rooms[homeRoomName]
     if (!homeRoom || !homeRoom.controller.my) {
-      yield
       return
     }
     const int = intel.rooms[roomName]
     if (!int) {
-      yield * getVision(roomName)
-      yield
-      continue
+      return
     }
     const maxParts = Math.min(25, Math.floor(((homeRoom.energyCapacityAvailable / 50) * 0.8) / 2))
     const timeout = Game.time + 10
@@ -141,7 +144,7 @@ function * miningManager (homeRoomName, roomName) {
         })
         if (incomplete) {
           log.alert(`Path incomplete to source ${spos.x},${spos.y} ${spos.roomName} ops: ${ops} cost: ${cost} path: ${JSON.stringify(path)}`)
-          yield
+          yield true
           continue
         }
         paths[id] = path
@@ -151,7 +154,7 @@ function * miningManager (homeRoomName, roomName) {
       const source = Game.getObjectById(id)
       if (!source) {
         log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName]?'T':'F'}`)
-        yield
+        yield true
         continue
       }
       const capacity = source.energyCapacity || C.SOURCE_ENERGY_NEUTRAL_CAPACITY
@@ -191,12 +194,11 @@ function * miningManager (homeRoomName, roomName) {
           stack: [['miningCollector', spos, wgroup]]
         }
       })
-      yield true
     }
     if (remote) {
       const rgroup = `${roomName}r`
       if (!Game.rooms[roomName]) { 
-        yield true
+        yield
         continue
       }
       const { controller: { id, pos } = {} } = Game.rooms[roomName]
@@ -213,7 +215,7 @@ function * miningManager (homeRoomName, roomName) {
         })
       }
     }
-    // yield * sleep(5)
+    yield * sleep(5)
     yield
   }
 }

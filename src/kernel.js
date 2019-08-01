@@ -131,21 +131,29 @@ function * calcCPUPID () {
 
     const limit = Math.max(Game.cpu.limit + output - Game.cpu.getUsed(), Game.cpu.limit * 0.2)
     // console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
-    yield limit
+    yield limit || 0
   }
 }
 
 function * loopScheduler (threads, limit, state = {}) {
   const queue = Array.from(threads.entries())
+  const counts = {}
   for (const item of queue) {
     if (Game.cpu.getUsed() > limit) {
       log.info(`[loopScheduler] CPU Limit reached`)
+      const report = queue.slice(queue.indexOf(item))
+        .map(i => [i[0], counts[i[0]]])
+        .filter(i => i[1] > 5)
+        .map(([a,b]) => `${a}: ${b}`)
+      log.info(`[loopScheduler] Threads remaining: ${report}`)
       return
     }
     // log.info(`[loopScheduler] Running ${item[0]}`)
     state.current = item[0]
     try {
       const { done, value } = item[1].next()
+      counts[item[0]] = counts[item[0]] || 0
+      counts[item[0]]++ 
       if (!done && value === true) {
         queue.push(item)
       }

@@ -40,13 +40,14 @@ function * expansionPlanner () {
       if (int.sources.length < 2) continue // We want at least 2 sources
       const [room, lRange] = rooms
         .filter(r => r.level >= 3)
-        .map(r => [r, Game.map.getRoomLinearDistance(r.name, int.name)])
-        .reduce((l, n) => l && l[1] < n[1] ? l : n, null) || []
+        .map(r => [r, Game.map.findRoute(r.name, int.name, { routeCallback: avoidHostile })])
+        .filter(r => r[1])
+        .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
       if (!room) continue
       if (lRange > 8) continue
       const route = Game.map.findRoute(room.name, int.name, { routeCallback: avoidHostile })
       if (route.length > 12) continue // Avoid settling too far
-      if (route.length < 5) continue // Avoid settling too close
+      if (route.length < 6) continue // Avoid settling too close
       // kernel.createThread(`settle_${int.name}`, settleRoom(room.name, int.name))
       log.info(`Found room to settle: ${int.name} ${lRange} ${route.length}`)
       candidates.add([room.name, int.name, timeout])

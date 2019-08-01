@@ -4,6 +4,7 @@ const otherStates = [
   require('./state.worker'),
   require('./state.builder'),
   require('./state.claimer'),
+  require('./state.raiders'),
   require('./state.miner')
 ]
 const states = ({
@@ -130,8 +131,8 @@ const states = ({
     }
   },
   moveToRoom (target, opts = {}) {
+    let [x, y] = [25, 25]
     if (typeof target === 'string' && target.match(/^[EW]\d+[NS]\d+$/)) {
-      let [x, y] = [25, 25]
       target = { x, y, roomName: target }
     }
     const terrain = Game.map.getRoomTerrain(target.roomName)
@@ -147,7 +148,7 @@ const states = ({
     if (this.creep.pos.roomName === tgt.roomName) {
       const exits = this.creep.room.find(FIND_EXIT)
       this.pop()
-      this.push('flee', exits.map(e => ({ pos: e, range: 1 })))
+      // this.push('flee', exits.map(e => ({ pos: e, range: 2 })))
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
@@ -224,7 +225,7 @@ for (const state of otherStates) {
   Object.assign(states, state)
 }
 
-const funcsToWrap = ['attack', 'rangedAttack', 'heal', 'upgradeController', 'claimController', 'reserveController', 'attackController', 'signController', 'moveTo', 'build', 'harvest', 'repair', 'pickup', 'withdraw', 'transfer']
+const funcsToWrap = ['attack', 'rangedAttack', 'dismantle', 'heal', 'upgradeController', 'claimController', 'reserveController', 'attackController', 'signController', 'moveTo', 'build', 'harvest', 'repair', 'pickup', 'withdraw', 'transfer']
 funcsToWrap.forEach(wrap)
 
 function wrap (func) {

@@ -64,8 +64,11 @@ function * spawnManagerSpawnThread () {
       }
       memory.group = memory.group || ticket.group
       const id = UID()
+      if (body.length > 50) {
+        log.alert(`${spawn.room.name} body too long! ${body.length} ${id} ${memory.group}`)
+      }
       log.info(`${spawn.room.name} Spawning ${id} ${memory.group}`)
-      spawn.spawnCreep(body, id, { memory })
+      spawn.spawnCreep(body.slice(0,50), id, { memory })
     }
     yield
   }
@@ -80,7 +83,7 @@ function * gatherCensus () {
   census = {}
   const creeps = Object.values(Game.creeps)
   for (const creep of creeps) {
-    const roomName = creep.room.name
+    const roomName = creep.memory.room || creep.room.name
     if (creep.ticksToLive < 100) continue
     census[roomName] = census[roomName] || {}
     if (creep.memory.group) {
@@ -95,6 +98,5 @@ function * gatherCensus () {
       census[roomName][creep.memory.role] = census[roomName][creep.memory.role] || []
       census[roomName][creep.memory.role].push(creep)
     }
-    yield true
   }
 }

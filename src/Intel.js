@@ -1,4 +1,4 @@
-import { kernel } from './kernel'
+import { kernel, restartThread } from './kernel'
 import log from './log'
 import segments from './MemoryManager'
 import C from './constants'
@@ -7,7 +7,7 @@ const FORMAT_VERSION = 1
 
 export class Intel {
   constructor () {
-    kernel.createThread('intelCollect', this.collectThread())
+    kernel.createThread('intelCollect', restartThread(() => this.collectThread()))
     this.outdated = []
     this.rooms = {}
   }
@@ -38,6 +38,7 @@ export class Intel {
       log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.outdated.length}`)
       for (const key in Game.rooms) {
         const room = Game.rooms[key]
+        if (!room) continue
         const hr = mem.rooms = mem.rooms || {}
         const {
           name,
@@ -71,6 +72,7 @@ export class Intel {
           reserver,
           spawns: room.spawns.length || undefined,
           towers: room.towers.length || undefined,
+          drained: room.towers.filter(t => t.energy < t.energyCapacity / 2).length || undefined,
           walls: room.constructedWalls.length || undefined,
           ramparts: room.ramparts.length || undefined,
           creeps: room.find(C.FIND_HOSTILE_CREEPS).map(cmap),

@@ -76,8 +76,10 @@ module.exports = {
       const spawn = room.spawns[0]
       const cont = room.controller.level >= 4 && room.storage || spawn.pos.findClosestByRange(room.containers)
       const tgt = cont || spawn
-      if (cont && cont.store.energy === cont.storeCapacity) {
-        this.push('flee', [{ pos: cont.pos, range: 4 }])
+      const cap = tgt && (tgt.storeCapacity || tgt.energyCapacity) || 1
+      const has = tgt && (tgt.energy || (tgt.store && tgt.store.energy)) || 0
+      if (tgt && has === cap) {
+        this.push('flee', [{ pos: tgt.pos, range: 4 }])
         return this.runStack()
       } else {
         this.push('transfer', tgt.id, C.RESOURCE_ENERGY)

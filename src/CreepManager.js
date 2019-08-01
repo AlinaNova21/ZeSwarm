@@ -15,7 +15,8 @@ function * creepIDThread () {
     worker: '👷',
     scout: '👁️',
     reserver: '🏴',
-    claimer: '🏁'
+    claimer: '🏁',
+    cleaningCrew: '🧹'
   }
   while (true) {
     for (const { room, pos: { x, y }, memory: { role } } of Object.values(Game.creeps)) {

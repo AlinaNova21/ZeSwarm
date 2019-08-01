@@ -1,18 +1,20 @@
 import C from './constants'
 import { distanceTransform, blockablePixelsForRoom, invertMatrix, multMatrix } from './DistanceTransform'
-import { kernel } from '/kernel'
+import { kernel, restartThread } from '/kernel'
 import { Logger } from './log';
+import { sleep } from './kernel';
 
 const log = new Logger('[LayoutManager]')
 
 export let census = {}
 
-kernel.createThread('csiteVisualizer', csiteVisualizer())
-kernel.createThread('layoutThread', layoutThread())
+kernel.createThread('csiteVisualizer', restartThread(() => csiteVisualizer()))
+kernel.createThread('layoutThread', restartThread(() => layoutThread()))
 
 function * csiteVisualizer () {
   while(true) {
     for (const csite of Object.values(Game.constructionSites)) {
+      if (!csite.room) continue
       csite.room.visual.structure(csite.pos.x, csite.pos.y, csite.structureType, { opacity: 0.5 })
     }
     yield
@@ -21,15 +23,16 @@ function * csiteVisualizer () {
 
 export function * layoutThread () {
   while (true) {
+    yield true
     for (const roomName in Game.rooms) {
       const room = Game.rooms[roomName]
       const planFlag = Game.flags.plan
-      if (room.controller && room.controller.my) {
+      if (room && room.controller && room.controller.my) {
         yield * flex(room)
       }
       yield true
     }
-    yield
+    yield * sleep(10)
   }
 }
 
@@ -64,7 +67,7 @@ export function * flex (room) {
   if (!Object.keys(want).length) return
   const walkable = blockablePixelsForRoom(room.name)
   const distance = multMatrix(invertMatrix(distanceTransform(walkable), 8), 3)
-  // this.drawCostMatrix(distance)
+  // if (room.name === 'W8S6') drawCostMatrix(distance)
   const memSrc = room.memory.layoutStart && new RoomPosition(room.memory.layoutStart[0], room.memory.layoutStart[1], room.name)
   const src = room.spawns[0] || room.structures.all.find(s => s.my && s.structureType !== STRUCTURE_CONTROLLER) || room.controller
   if (!(src instanceof StructureController)) {
@@ -93,6 +96,7 @@ export function * flex (room) {
     } else {
       console.log(`Couldn't find position for ${type} with src ${src} and memSrc ${memSrc} pos is ${typeof pos}`)
     }
+    yield true
   }
 }
 function getRange (s) {
@@ -114,7 +118,11 @@ function getRange (s) {
   return { pos, range }
 }
 function findPos (origin, avoid, invert = false, cmBase = false) {
-  console.log('findPos', invert, origin, avoid)
+  console.log('findPos', invert, origin, JSON.stringify(avoid))
+  const { visual } = Game.rooms[origin.roomName]
+  avoid.forEach(a => visual.circle(a.pos.x, a.pos.y, { radius: a.range, fill: 'red' }))
+  // const ind = avoid.findIndex(a => a.pos.x === origin.x && a.pos.y === origin.y)
+  // if (ind >= 0) avoid.splice(ind, 1)
   const result = PathFinder.search(origin, avoid, {
     flee: true,
     swampCost: 1,
@@ -130,20 +138,27 @@ function findPos (origin, avoid, invert = false, cmBase = false) {
           if (!v) cm.set(x, y, 255)
         }
       }
+      const {x, y} = Game.rooms[room].controller.pos
+      for (let xo = -1; xo < 2; xo++) {
+        for (let yo = -1; yo < 2; yo++) {
+          cm.set(x + xo, y + yo, 2)
+        }
+      }
       avoid.forEach(({ pos: { x, y } }) => cm.set(x, y, 2))
       return cm
     }
   })
+  // if (origin.roomName === 'W8S6') drawCostMatrix(cmBase, '#ff0000')
   if (result && result.path.length) {
-    const vis = new RoomVisual()
+    const vis = new RoomVisual(origin.roomName)
     vis.poly(result.path.map(({ x, y }) => [x, y]), { stroke: 'red' })
     return result.path.slice(-1)[0]
   } else {
     log.alert(`Layout path failed ${JSON.stringify(result)}`)
   }
 }
-function drawCostMatrix (costMatrix, color = '#FF0000') {
-  var vis = new RoomVisual();
+function drawCostMatrix (costMatrix, color = '#FF0000', visual) {
+  var vis = visual || new RoomVisual();
   var x, y, v;
   var max = 1;
   for (y = 0; y < 50; ++y) {
