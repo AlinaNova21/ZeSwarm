@@ -28,6 +28,7 @@ function * expansionPlanner () {
         log.info(`Creating nest thread for ${dest}`)
         kernel.createThread(key, createNest(src, dest, timeout))
       }
+      yield true
     }
     if (targets.size > 2 || Game.gcl.level <= rooms.length + targets.size) {
       yield

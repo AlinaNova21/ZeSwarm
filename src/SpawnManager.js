@@ -40,7 +40,6 @@ function * spawnManagerSpawnThread () {
       if (have < ticket.count) {
         needed.push(ticket)
       }
-      yield true
     }
     const spawns = {}
     for (const room of Object.values(Game.rooms)) {

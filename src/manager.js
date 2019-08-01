@@ -89,7 +89,7 @@ function * managerThread() {
         workers += Math.floor(srcCount / 2)
       }
       if (room.storage && room.storage.store.energy < 20000) {
-        workers = 2
+        workers = room.energyAvailable > 400 ? 2 : workers + 4
       }
       if (room.storage && room.storage.store.energy > 100000) {
         workers += 4

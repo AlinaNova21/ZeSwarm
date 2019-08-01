@@ -138,22 +138,28 @@ function * calcCPUPID () {
 function * loopScheduler (threads, limit, state = {}) {
   const queue = Array.from(threads.entries())
   const counts = {}
+  const cpu = {}
   for (const item of queue) {
     if (Game.cpu.getUsed() > limit) {
       log.info(`[loopScheduler] CPU Limit reached`)
       const report = queue.slice(queue.indexOf(item))
-        .map(i => [i[0], counts[i[0]]])
-        .filter(i => i[1] > 5)
-        .map(([a,b]) => `${a}: ${b}`)
+        .map(i => [i[0], cpu[i[0]]])
+        .filter(i => i[1] > 2)
+        .map(([a,b]) => `${a}: ${b.toFixed(3)}`)
       log.info(`[loopScheduler] Threads remaining: ${report}`)
       return
     }
     // log.info(`[loopScheduler] Running ${item[0]}`)
     state.current = item[0]
     try {
+      const start = Game.cpu.getUsed()
       const { done, value } = item[1].next()
+      const end = Game.cpu.getUsed()
+      const dur = end - start
       counts[item[0]] = counts[item[0]] || 0
       counts[item[0]]++ 
+      cpu[item[0]] = cpu[item[0]] || 0
+      cpu[item[0]] += dur
       if (!done && value === true) {
         queue.push(item)
       }

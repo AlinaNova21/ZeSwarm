@@ -46,7 +46,7 @@ function * raidPlanner() {
       yield true
     }
     log.info(`Active`)
-    // yield * sleep(5)
+    yield * sleep(20)
     yield
   }
 }
