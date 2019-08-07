@@ -52,23 +52,24 @@ export function distanceTransform (foregroundPixels, oob = 255) {
 }
 
 export function wallOrAdjacentToExit (x, y, roomName) {
-  if (x > 1 && x < 48 && y > 1 && y < 48) return Game.map.getTerrainAt(x, y, roomName) == 'wall'
+  var terrain = Game.map.getRoomTerrain(roomName)
+  if (x > 1 && x < 48 && y > 1 && y < 48) return terrain.get(x, y) == 'wall'
   if (x == 0 || y == 0 || x == 49 || y == 49) return true
 
-  if (Game.map.getTerrainAt(x, y, roomName) == 'wall') return true
+  if (terrain.get(x, y) == 'wall') return true
 
   var A, B, C
   if (x == 1) {
-    A = Game.map.getTerrainAt(0, y - 1, roomName); B = Game.map.getTerrainAt(0, y, roomName); C = Game.map.getTerrainAt(0, y + 1, roomName)
+    A = terrain.get(0, y - 1); B = terrain.get(0, y); C = terrain.get(0, y + 1)
   }
   if (x == 48) {
-    A = Game.map.getTerrainAt(49, y - 1, roomName); B = Game.map.getTerrainAt(49, y, roomName); C = Game.map.getTerrainAt(49, y + 1, roomName)
+    A = terrain.get(49, y - 1); B = terrain.get(49, y); C = terrain.get(49, y + 1)
   }
   if (y == 1) {
-    A = Game.map.getTerrainAt(x - 1, 0, roomName); B = Game.map.getTerrainAt(x, 0, roomName); C = Game.map.getTerrainAt(x + 1, 0, roomName)
+    A = terrain.get(x - 1, 0); B = terrain.get(x, 0); C = terrain.get(x + 1, 0)
   }
   if (y == 48) {
-    A = Game.map.getTerrainAt(x - 1, 49, roomName); B = Game.map.getTerrainAt(x, 49, roomName); C = Game.map.getTerrainAt(x + 1, 49, roomName)
+    A = terrain.get(x - 1, 49); B = terrain.get(x, 49); C = terrain.get(x + 1, 49)
   }
   return !(A == 'wall' && B == 'wall' && C == 'wall')
 }
