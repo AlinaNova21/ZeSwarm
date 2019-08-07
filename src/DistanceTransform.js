@@ -52,7 +52,7 @@ export function distanceTransform (foregroundPixels, oob = 255) {
 }
 
 export function wallOrAdjacentToExit (x, y, roomName) {
-  var terrain = Game.map.getRoomTerrain(roomName);
+  var terrain = Game.map.getRoomTerrain(roomName)
   if (x > 1 && x < 48 && y > 1 && y < 48) return terrain.get(x, y) == 'wall'
   if (x == 0 || y == 0 || x == 49 || y == 49) return true
 
