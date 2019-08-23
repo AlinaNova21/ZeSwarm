@@ -19,6 +19,7 @@ function * creepIDThread () {
     cleaningCrew: '🧹'
   }
   while (true) {
+    while (Game.cpu.bucket < 5000) yield
     for (const { room, pos: { x, y }, memory: { role } } of Object.values(Game.creeps)) {
       const icon = roles[role] || ''
       if (icon) {

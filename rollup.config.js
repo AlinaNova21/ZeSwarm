@@ -19,7 +19,7 @@ export default {
       extensions: '.js'
     }),
     resolve({
-      module: true,
+      // module: true,
       preferBuiltins: false
     }),
     commonjs(),

@@ -46,7 +46,7 @@ export function loop () {
   const ccnt = _.size(Game.creeps)
   vis.text(`${ccnt} alive`, 25, 8, { size: 1 })
 
-  const roles = _.groupBy(Game.creeps, c => c.memory.role || c.memory.stack[0][0])
+  const roles = _.groupBy(Game.creeps, c => c.memory.role || (c.memory.stack && c.memory.stack[0][0]) || 'unknown')
   console.log(`${ccnt} alive`)
   let off = 0
   for (const role in roles) {
@@ -58,7 +58,7 @@ export function loop () {
   stats.commit()
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })
   try {
-    let { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
+    const { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
     const MB = (v) => ((v / 1024) / 1024).toFixed(3)
     log.warn(`HEAP: Used: ${MB(used_heap_size)}MB Available: ${MB(total_available_size)}MB Limit: ${MB(heap_size_limit)}MB`)
   } catch (e) {

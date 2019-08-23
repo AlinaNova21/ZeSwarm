@@ -53,7 +53,7 @@ module.exports = {
       if (cont && !this.creep.pos.isEqualTo(cont.pos)) {
         this.push('moveTo', cont.pos)
         return this.runStack()
-      }      
+      }
       if (tgt.energy) {
         this.push('repeat', 5, 'harvest', tgt.id)
         this.push('repair', cont.id)
@@ -128,6 +128,13 @@ module.exports = {
       const [src] = this.creep.pos.findInRange(FIND_SOURCES, 4)
       if (src) {
         this.creep.say('No Miner')
+        const resource = this.creep.pos.findClosestByRange(this.creep.room.find(FIND_DROPPED_RESOURCES)
+          .filter(r => r.resourceType === resourceType))
+        if (resource) {
+          this.push('pickup', resource.id)
+          this.push('moveNear', resource.id)
+          return this.runStack()
+        }
         this.push('sleep', Game.time + 10)
         this.push('flee', [{ pos: src.pos, range: 6 }])
         return this.runStack()

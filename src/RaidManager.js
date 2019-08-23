@@ -1,15 +1,19 @@
 import intel from './Intel'
-import { kernel, restartThread, sleep } from './kernel';
-import { Logger } from './log';
-import { createTicket, destroyTicket } from './SpawnManager';
+import { kernel, restartThread, sleep } from './kernel'
+import { Logger } from './log'
+import { createTicket, destroyTicket } from './SpawnManager'
 import C from './constants'
 
 const log = new Logger('[RaidPlanner]')
 
 kernel.createThread('RaidPlanner', restartThread(raidPlanner))
 
-function * raidPlanner() {
+function * raidPlanner () {
   while (true) {
+    if (Game.cpu.bucket < 4000) {
+      yield
+      continue
+    }
     const roomIntel = Object.values(intel.rooms).filter(r => r.hostile)
     for (const int of roomIntel) {
       if (int.ts < Game.time - 10000) {
@@ -22,7 +26,7 @@ function * raidPlanner() {
         .map(r => [r, Game.map.findRoute(r.name, int.name, {})])
         .filter(r => r[1] && r[1].length < 25)
         .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
-      if (!closestRoom) { 
+      if (!closestRoom) {
         log.alert(`No available room to raid ${int.name}`)
         yield true
         continue
@@ -51,7 +55,6 @@ function * raidPlanner() {
   }
 }
 
-
 function * cleaningCrew (srcRoom, tgtRoom) {
   const timeout = Game.time + 2000
   while (true) {
@@ -77,7 +80,7 @@ function * cleaningCrew (srcRoom, tgtRoom) {
   }
 }
 
-function * getVision(roomName, timeout = 5000) {
+function * getVision (roomName, timeout = 5000) {
   const ticket = `scout_${roomName}`
   createTicket(ticket, {
     body: [MOVE],

@@ -129,7 +129,9 @@ function * calcCPUPID () {
 
     const output = Up + Ui + Ud
 
-    const limit = Math.max(Game.cpu.limit + output - Game.cpu.getUsed(), Game.cpu.limit * 0.2)
+    const minLimit = Math.max(10, Game.cpu.limit * 0.2)
+    const limit = Math.max(Game.cpu.limit + output - Game.cpu.getUsed(), minLimit)
+    log.info(`[PID] limit: ${limit} out: ${output} min: ${minLimit}`)
     // console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
     yield limit || 0
   }
@@ -139,16 +141,8 @@ function * loopScheduler (threads, limit, state = {}) {
   const queue = Array.from(threads.entries())
   const counts = {}
   const cpu = {}
+  log.info(`Current CPU: ${Game.cpu.getUsed()}/${Game.cpu.limit}`)
   for (const item of queue) {
-    if (Game.cpu.getUsed() > limit) {
-      log.info(`[loopScheduler] CPU Limit reached`)
-      const report = queue.slice(queue.indexOf(item))
-        .map(i => [i[0], cpu[i[0]]])
-        .filter(i => i[1] > 2)
-        .map(([a,b]) => `${a}: ${b.toFixed(3)}`)
-      log.info(`[loopScheduler] Threads remaining: ${report}`)
-      return
-    }
     // log.info(`[loopScheduler] Running ${item[0]}`)
     state.current = item[0]
     try {
@@ -157,7 +151,7 @@ function * loopScheduler (threads, limit, state = {}) {
       const end = Game.cpu.getUsed()
       const dur = end - start
       counts[item[0]] = counts[item[0]] || 0
-      counts[item[0]]++ 
+      counts[item[0]]++
       cpu[item[0]] = cpu[item[0]] || 0
       cpu[item[0]] += dur
       if (!done && value === true) {
@@ -173,6 +167,15 @@ function * loopScheduler (threads, limit, state = {}) {
     }
     state.current = null
 
+    if (Game.cpu.getUsed() > limit) {
+      log.info(`[loopScheduler] CPU Limit reached`)
+      const report = queue.slice(queue.indexOf(item))
+        .map(i => [i[0], cpu[i[0]]])
+        .filter(i => i[1] > 2)
+        .map(([a, b]) => `${a}: ${b.toFixed(3)}`)
+      log.info(`[loopScheduler] Threads remaining: ${report}`)
+      return
+    }
     yield
   }
 }

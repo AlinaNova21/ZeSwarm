@@ -1,7 +1,7 @@
 import intel from './Intel'
-import { kernel, restartThread } from './kernel';
-import { Logger } from './log';
-import { createTicket } from './SpawnManager';
+import { kernel, restartThread, sleep } from './kernel'
+import { Logger } from './log'
+import { createTicket } from './SpawnManager'
 import C from './constants'
 
 const log = new Logger('[ExpansionPlanner]')
@@ -10,6 +10,11 @@ kernel.createThread('expansionPlanner', restartThread(expansionPlanner))
 
 function * expansionPlanner () {
   while (true) {
+    if (Game.cpu.bucket < 4000) {
+      yield
+      continue
+    }
+    yield * sleep(100)
     const targets = new Set(Memory.targets || [])
     const rooms = Object.values(Game.rooms).filter(r => r.controller && r.controller.my)
     log.info(`Settling: ${targets.size ? Array.from(targets).map(a => a[1]) : 'Nowhere'}`)

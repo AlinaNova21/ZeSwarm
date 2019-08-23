@@ -15,6 +15,7 @@ const states = ({
     return this.creep.memory.stack
   },
   runCreep (creep, baseState = ['scout']) {
+    if (creep.name.startsWith('settler_')) return
     creep.memory.stack = creep.memory.stack || [creep.memory.role || baseState]
     this.creep = creep
     this.runStack()
@@ -36,7 +37,7 @@ const states = ({
   pop () {
     this.stack.pop()
   },
-  idle () {},
+  idle () { },
   noop () {
     this.pop()
   },
