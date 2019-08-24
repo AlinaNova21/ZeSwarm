@@ -31,16 +31,12 @@ function * raidPlanner () {
         yield true
         continue
       }
-      if (!int.safemode && !int.towers && int.spawns) {
-        const key = `cleaningCrew_${int.name}`
-        if (!kernel.hasThread(key)) {
-          log.warn(`Creating cleaning crew active: ${closestRoom} => ${int.name}`)
-          kernel.createThread(key, cleaningCrew(closestRoom.name, int.name))
-        }
-      }
 
-      if (!int.safemode && int.towers && int.drained) {
-        const room = Game.rooms[int.name]
+      let needsClean = false
+
+      needsClean |= !int.safemode && (!int.towers || !int.owner) && int.spawns
+      needsClean |= !int.safemode && int.towers && int.drained
+      if (needsClean) {
         const key = `cleaningCrew_${int.name}`
         if (!kernel.hasThread(key)) {
           log.warn(`Creating cleaning crew active: ${closestRoom} => ${int.name}`)

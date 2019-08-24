@@ -1,15 +1,15 @@
 import { kernel } from '/kernel'
 import C from './constants'
 import log from './log'
-import { sleep, restartThread } from './kernel';
+import { sleep, restartThread } from './kernel'
 import { createTicket, destroyTicket } from './SpawnManager'
-import intel from './Intel';
+import intel from './Intel'
 
 export let census = {}
 
 kernel.createThread('managerThread', restartThread(managerThread))
 
-function * managerThread() {
+function * managerThread () {
   while (true) {
     const rooms = Object.values(Game.rooms)
     const sources = []
@@ -18,6 +18,7 @@ function * managerThread() {
     census = {}
     let srcCount = 0
     for (const room of rooms) {
+      if (!Game.rooms[room.name]) continue
       spawnQueue[room.name] = []
       census[room.name] = {}
       if (room.spawns.length && room.memory.donor) {
@@ -66,6 +67,7 @@ function * managerThread() {
       yield true
     }
     for (const room of rooms) {
+      if (!Game.rooms[room.name]) continue
       if (!room.controller || room.controller.level === 0) continue
       if (room.controller && !room.controller.my) continue
       const group = `workers_${room.name}`
@@ -116,7 +118,7 @@ function * managerThread() {
       }
       yield true
     }
-    yield * sleep(2)
+    yield * sleep(10)
   }
 }
 
@@ -153,7 +155,7 @@ function * miningManager (homeRoomName, roomName) {
       if (!Game.rooms[roomName]) yield * getVision(roomName)
       const source = Game.getObjectById(id)
       if (!source) {
-        log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName]?'T':'F'}`)
+        log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName] ? 'T' : 'F'}`)
         yield true
         continue
       }
@@ -167,7 +169,7 @@ function * miningManager (homeRoomName, roomName) {
       const wantedCarry = (homeRoom.energyCapacityAvailable ? Math.ceil(neededCarry / maxParts) : 0)
       const neededWork = Math.min(maxWork, Math.floor((homeRoom.energyCapacityAvailable - 100) / (remote ? 150 : 100)))
       // const neededWork = energyPerTick / C.HARVEST_POWER
-      // const maxWorkParts = (homeRoom.energyCapacityAvailable - 50) 
+      // const maxWorkParts = (homeRoom.energyCapacityAvailable - 50)
       const wantedWork = remote ? 1 : (homeRoom.energyCapacityAvailable ? Math.ceil(maxWork / neededWork) : 0)
       const cbody = expandBody([maxParts, C.CARRY, maxParts, C.MOVE])
       const wbody = expandBody([1, C.CARRY, remote ? 3 : 1, C.MOVE, remote ? 6 : neededWork, C.WORK])
@@ -197,7 +199,7 @@ function * miningManager (homeRoomName, roomName) {
     }
     if (remote) {
       const rgroup = `${roomName}r`
-      if (!Game.rooms[roomName]) { 
+      if (!Game.rooms[roomName]) {
         yield
         continue
       }

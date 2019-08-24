@@ -99,19 +99,24 @@ const states = ({
     if (typeof opts.roomCallback === 'string') {
       opts.roomCallback = new Function(opts.roomCallback)
     }
+    opts.returnData = opts.returnData || {}
     const tgt = this.resolveTarget(target)
     if (!tgt) return this.pop()
-    if (this.creep.pos.isEqualTo(tgt.pos || tgt)) {
+    if (this.creep.pos.isEqualTo(tgt.pos || tgt) || this.creep.pos.inRangeTo(tgt.pos || tgt, opts.range || 0)) {
       this.pop()
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
+      if (opts.returnData.pathfinderReturn && opts.returnData.pathfinderReturn.incomplete) {
+        this.pop()
+      }
     }
   },
   moveNear (target, opts = {}) {
     if (typeof opts.roomCallback === 'string') {
       opts.roomCallback = new Function(opts.roomCallback)
     }
+    opts.returnData = opts.returnData || {}
     const tgt = this.resolveTarget(target)
     if (!tgt) this.pop()
     if (this.creep.pos.isNearTo(tgt)) {
@@ -119,6 +124,9 @@ const states = ({
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
+      if (opts.returnData.pathfinderReturn && opts.returnData.pathfinderReturn.incomplete) {
+        this.pop()
+      }
     }
   },
   moveInRange (target, range, opts = {}) {

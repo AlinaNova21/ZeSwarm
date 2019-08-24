@@ -13,6 +13,10 @@ module.exports = {
     Memory.rooms[room.name] = Memory.rooms[room.name] || {}
     Memory.rooms[room.name].donor = this.creep.memory.room
     if (!controller) throw new Error('Cannot claim room without controller!!!')
+    const keep = []
+    room.find(C.FIND_HOSTILE_STRUCTURES)
+      .filter(s => !keep.includes(s.structureType))
+      .forEach(s => s.destroy())
     this.push('signController', controller.id, 'For ZeSwarm!')
     this.push('claimController', controller.id)
     this.push('say', 'MINE!', true)

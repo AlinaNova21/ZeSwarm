@@ -1,18 +1,18 @@
 import C from './constants'
 import { distanceTransform, blockablePixelsForRoom, invertMatrix, multMatrix } from './DistanceTransform'
 import { kernel, restartThread } from '/kernel'
-import { Logger } from './log';
-import { sleep } from './kernel';
+import { Logger } from './log'
+import { sleep } from './kernel'
 
 const log = new Logger('[LayoutManager]')
 
-export let census = {}
+export const census = {}
 
 kernel.createThread('csiteVisualizer', restartThread(() => csiteVisualizer()))
 kernel.createThread('layoutThread', restartThread(() => layoutThread()))
 
 function * csiteVisualizer () {
-  while(true) {
+  while (true) {
     for (const csite of Object.values(Game.constructionSites)) {
       if (!csite.room) continue
       csite.room.visual.structure(csite.pos.x, csite.pos.y, csite.structureType, { opacity: 0.5 })
@@ -69,7 +69,7 @@ export function * flex (room) {
   const distance = multMatrix(invertMatrix(distanceTransform(walkable), 8), 3)
   // if (room.name === 'W8S6') drawCostMatrix(distance)
   const memSrc = room.memory.layoutStart && new RoomPosition(room.memory.layoutStart[0], room.memory.layoutStart[1], room.name)
-  const src = room.spawns[0] || room.structures.all.find(s => s.my && s.structureType !== STRUCTURE_CONTROLLER) || room.controller
+  const src = room.spawns.filter(s => s.my)[0] || room.structures.all.find(s => s.my && s.structureType !== STRUCTURE_CONTROLLER) || room.controller
   if (!(src instanceof StructureController)) {
     const { x, y } = src.pos
     room.memory.layoutStart = [x, y]
@@ -138,13 +138,14 @@ function findPos (origin, avoid, invert = false, cmBase = false) {
           if (!v) cm.set(x, y, 255)
         }
       }
-      const {x, y} = Game.rooms[room].controller.pos
+      const { x, y } = Game.rooms[room].controller.pos
       for (let xo = -1; xo < 2; xo++) {
         for (let yo = -1; yo < 2; yo++) {
           cm.set(x + xo, y + yo, 2)
         }
       }
       avoid.forEach(({ pos: { x, y } }) => cm.set(x, y, 2))
+      Game.rooms[room].constructedWalls.forEach(({ pos: { x, y } }) => cm.set(x, y, 255))
       return cm
     }
   })
@@ -158,22 +159,22 @@ function findPos (origin, avoid, invert = false, cmBase = false) {
   }
 }
 function drawCostMatrix (costMatrix, color = '#FF0000', visual) {
-  var vis = visual || new RoomVisual();
-  var x, y, v;
-  var max = 1;
+  var vis = visual || new RoomVisual()
+  var x, y, v
+  var max = 1
   for (y = 0; y < 50; ++y) {
     for (x = 0; x < 50; ++x) {
-      v = costMatrix.get(x, y);
-      max = Math.max(max, v);
+      v = costMatrix.get(x, y)
+      max = Math.max(max, v)
     }
   }
 
   for (y = 0; y < 50; ++y) {
     for (x = 0; x < 50; ++x) {
-      v = costMatrix.get(x, y);
+      v = costMatrix.get(x, y)
       if (v > 0) {
-        vis.circle(x, y, {radius:v/max/2, fill:color, opacity:0.5});
-        vis.text(v, x, y+0.25, {size:v/max, color: 'black',outline:'#ccc', opacity:0.5});
+        vis.circle(x, y, { radius: v / max / 2, fill: color, opacity: 0.5 })
+        vis.text(v, x, y + 0.25, { size: v / max, color: 'black', outline: '#ccc', opacity: 0.5 })
       }
     }
   }
