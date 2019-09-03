@@ -1,5 +1,5 @@
 // Use for HTML styling (Colors loosely match screeps_console)
-const LogLevel = {
+export const LogLevel = {
   SILLY: -1,
   DEBUG: 0,
   INFO: 1,
@@ -11,11 +11,11 @@ const LogLevel = {
 
 const styles = {
   default: 'color: white; background-color: black',
-  [LogLevel.SILLY]: 'color: darkblue',
-  [LogLevel.DEBUG]: 'color: darkblue',
-  [LogLevel.INFO]: 'color: darkgreen',
-  [LogLevel.ALERT]: 'color: cyan',
-  [LogLevel.WARN]: 'color: white',
+  [LogLevel.SILLY]: 'color: blue',
+  [LogLevel.DEBUG]: 'color: #008FAF',
+  [LogLevel.INFO]: 'color: green',
+  [LogLevel.ALERT]: 'color: #00BFAF',
+  [LogLevel.WARN]: 'color: orange',
   [LogLevel.ERROR]: 'color: red',
   [LogLevel.FATAL]: 'color: yellow; background-color: red'
 }
@@ -30,7 +30,7 @@ export class Logger {
 
   constructor (prefix = '') {
     this.prefix = prefix ? prefix + ' ' : ''
-    this.level = Memory.loglevel && Memory.loglevel.default || LogLevel.INFO
+    this.level = Memory.loglevel ? Memory.loglevel.default : LogLevel.INFO
     this._log = console.log // This allows for console hooking
   }
 

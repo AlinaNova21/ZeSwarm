@@ -28,22 +28,30 @@ function runConsole (config) {
   })
 }
 
-async function sleep (ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+// async function sleep (ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms))
+// }
 
 function colorize (text) {
   const [, tag, style] = text.match(/<([\w-]+) .*?style="(.+?)".*?>/) || []
   if (!tag) return text
   const raw = text.replace(/<.+?>/g, '')
-  const styles = style.split(';').map(s => s.split(':'))
+  const styles = style.split(';').map(s => s.split(':').map(v => v.trim()))
   let fn = chalk
   for (const [name, value] of styles) {
-    if (name == 'color') {
-      fn = chalk.keyword(value.trim())
+    if (name === 'color') {
+      if (value.startsWith('#')) {
+        fn = chalk.hex(value)
+      } else {
+        fn = chalk.keyword(value)
+      }
     }
-    if (name == 'background-color') {
-      fn = chalk.bgKeyword(value.trim())
+    if (name === 'background-color') {
+      if (value.startsWith('#')) {
+        fn = chalk.bgHex(value)
+      } else {
+        fn = chalk.bgKeyword(value)
+      }
     }
   }
   return fn(raw)

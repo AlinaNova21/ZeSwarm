@@ -1,6 +1,6 @@
-import { Logger } from './log'
+import { Logger, LogLevel } from './log'
 
-const log = new Logger('[kernel]')
+const log = new Logger('[Kernel]')
 
 export class Kernel {
   constructor () {
@@ -18,7 +18,6 @@ export class Kernel {
     log.info(`threads: ${[...this.threads.keys()]}`)
     let cnt = 0
     const { value: limit } = this.pidGen.next()
-    log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
     this.scheduler = {}
     const scheduler = loopScheduler(this.threads, limit, this.scheduler)
     for (const val of scheduler) { // eslint-disable-line no-unused-vars
@@ -28,7 +27,8 @@ export class Kernel {
       // log.info(`tick ${val}`)
       cnt++
     }
-    log.info(`Ran ${this.threads.size} threads with a total of ${cnt} iterations`)
+    log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
+    log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Ran ${this.threads.size} threads with a total of ${cnt} iterations`)
   }
 
   next (val) {
@@ -61,7 +61,7 @@ export const kernel = new Kernel()
 function * kernelBase (kernel) {
   const ctx = { kernel }
   const baseThreads = [
-    ['kTest', kTest]
+    // ['kTest', kTest]
   ]
   while (true) {
     for (const [name, fn, ...args] of baseThreads) {
@@ -70,23 +70,6 @@ function * kernelBase (kernel) {
       }
       yield true
     }
-    yield
-  }
-}
-
-function * counter (end, start = 0, step = 1) {
-  for (let i = start; i < end; i += step) {
-    yield i
-  }
-}
-
-function * kTest () {
-  while (true) {
-    log.info(`[kTest] ${Game.time}`)
-    // for (const v of counter(10)) {
-    //   log.info(`[kTest] ${v}`)
-    //   yield true
-    // }
     yield
   }
 }
@@ -141,9 +124,10 @@ function * loopScheduler (threads, limit, state = {}) {
   const queue = Array.from(threads.entries())
   const counts = {}
   const cpu = {}
-  log.info(`Current CPU: ${Game.cpu.getUsed()}/${Game.cpu.limit}`)
+  const logger = log.withPrefix(log.prefix + '[LoopScheduler]')
+  logger.info(`Current CPU: ${Game.cpu.getUsed()}/${Game.cpu.limit}`)
   for (const item of queue) {
-    // log.info(`[loopScheduler] Running ${item[0]}`)
+    // logger.info(`[loopScheduler] Running ${item[0]}`)
     state.current = item[0]
     try {
       const start = Game.cpu.getUsed()
@@ -168,12 +152,12 @@ function * loopScheduler (threads, limit, state = {}) {
     state.current = null
 
     if (Game.cpu.getUsed() > limit) {
-      log.info(`[loopScheduler] CPU Limit reached`)
+      logger.info(`CPU Limit reached`)
       const report = queue.slice(queue.indexOf(item))
         .map(i => [i[0], cpu[i[0]]])
         .filter(i => i[1] > 2)
         .map(([a, b]) => `${a}: ${b.toFixed(3)}`)
-      log.info(`[loopScheduler] Threads remaining: ${report}`)
+      logger.info(`Threads remaining: ${report}`)
       return
     }
     yield

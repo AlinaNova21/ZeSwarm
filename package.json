@@ -38,5 +38,15 @@
     "chalk": "^2.4.2",
     "screeps-api": "^1.9.0",
     "standard": "^13.0.2"
+  },
+  "standard": {
+    "globals": [
+      "Game",
+      "Memory",
+      "PathFinder",
+      "RawMemory",
+      "RoomPosition",
+      "RoomVisual"
+    ]
   }
 }

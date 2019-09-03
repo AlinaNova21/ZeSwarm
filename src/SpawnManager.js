@@ -1,13 +1,13 @@
 import { kernel, restartThread } from '/kernel'
 import { Logger } from '/log'
-
+import C from '/constants'
 const log = new Logger('[SpawnManager]')
 
 const tickets = new Map()
 export let census = {}
 
-/* 
-def format: 
+/*
+def format:
 {
   body: string[][]
   count: number
@@ -19,7 +19,7 @@ kernel.createThread('spawnManagerSpawnThread', restartThread(spawnManagerSpawnTh
 
 export function createTicket (name, def) {
   tickets.set(name, def)
-  def.cost = def.cost || def.body.reduce((val, part) => val + BODYPART_COST[part], 0)
+  def.cost = def.cost || def.body.reduce((val, part) => val + C.BODYPART_COST[part], 0)
   def.group = def.group || name
 }
 
@@ -35,14 +35,17 @@ function * spawnManagerSpawnThread () {
   while (true) {
     const needed = []
     yield * gatherCensus()
-    for (const [name,ticket] of tickets.entries()) {
+    for (const [name, ticket] of tickets.entries()) {
       const have = (census[name] || []).length
       if (have < ticket.count) {
         needed.push(ticket)
       }
     }
+    log.info(`Tickets needing creeps: ${needed.length}`)
+    // log.info(`Tickets needing creeps: ${needed.length} ${needed.map(t => t.group)}`)
     const spawns = {}
     for (const room of Object.values(Game.rooms)) {
+      if (!room.controller || !room.controller.my) continue
       for (const spawn of room.spawns) {
         if (spawn.spawning) continue
         spawns[room.name] = spawns[room.name] || []
@@ -52,6 +55,7 @@ function * spawnManagerSpawnThread () {
     for (const ticket of needed) {
       const { body, cost, memory, valid } = ticket
       if (typeof valid === 'function' && !valid()) {
+        log.info(`Deleting invalid ticket ${ticket.group}`)
         tickets.delete(ticket.group)
         continue
       }
@@ -59,6 +63,7 @@ function * spawnManagerSpawnThread () {
       if (!spawn) break
       if (spawn.room.energyAvailable < cost) {
         spawns[spawn.room.name].push(spawn)
+        log.info(`Not enough energy to spawn ${ticket.group}. Needed: ${cost} Have: ${spawn.room.energyAvailable} in ${spawn.room.name}`)
         continue
       }
       memory.group = memory.group || ticket.group
@@ -67,7 +72,7 @@ function * spawnManagerSpawnThread () {
         log.alert(`${spawn.room.name} body too long! ${body.length} ${id} ${memory.group}`)
       }
       log.info(`${spawn.room.name} Spawning ${id} ${memory.group}`)
-      spawn.spawnCreep(body.slice(0,50), id, { memory })
+      spawn.spawnCreep(body.slice(0, 50), id, { memory })
     }
     yield
   }

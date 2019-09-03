@@ -1,4 +1,5 @@
 const log = require('/log')
+const C = require('/constants')
 const otherStates = [
   require('./state.scout'),
   require('./state.worker'),
@@ -15,7 +16,10 @@ const states = ({
     return this.creep.memory.stack
   },
   runCreep (creep, baseState = ['scout']) {
-    if (creep.name.startsWith('settler_')) return
+    if (creep.name.startsWith('settler_')) {
+      if (!creep.room.find(C.FIND_MY_SPAWNS).length) return
+      baseState = ['worker']
+    }
     creep.memory.stack = creep.memory.stack || [creep.memory.role || baseState]
     this.creep = creep
     this.runStack()
@@ -37,7 +41,6 @@ const states = ({
   pop () {
     this.stack.pop()
   },
-  idle () { },
   noop () {
     this.pop()
   },
@@ -55,7 +58,8 @@ const states = ({
     if (--count > 0) {
       this.push('loop', states, count)
     }
-    eachRight(states, state => this.push(...state))
+    log.error(`Loop State incomplete, don't use!`)
+    // eachRight(states, state => this.push(...state))
     this.runStack()
   },
   repeat (count, ...state) {
@@ -97,6 +101,7 @@ const states = ({
   },
   travelTo (target, opts = {}) {
     if (typeof opts.roomCallback === 'string') {
+      // eslint-disable-next-line no-new-func
       opts.roomCallback = new Function(opts.roomCallback)
     }
     opts.returnData = opts.returnData || {}
@@ -114,6 +119,7 @@ const states = ({
   },
   moveNear (target, opts = {}) {
     if (typeof opts.roomCallback === 'string') {
+      // eslint-disable-next-line no-new-func
       opts.roomCallback = new Function(opts.roomCallback)
     }
     opts.returnData = opts.returnData || {}
@@ -155,7 +161,7 @@ const states = ({
     }
     const tgt = this.resolveTarget(target)
     if (this.creep.pos.roomName === tgt.roomName) {
-      const exits = this.creep.room.find(FIND_EXIT)
+      // const exits = this.creep.room.find(C.FIND_EXIT)
       this.pop()
       // this.push('flee', exits.map(e => ({ pos: e, range: 2 })))
       this.runStack()
@@ -182,7 +188,7 @@ const states = ({
         const r = Game.rooms[room]
         if (r) {
           r.structures.all.forEach(({ structureType, pos: { x, y } }) => {
-            if (OBSTACLE_OBJECT_TYPES.includes(structureType)) {
+            if (C.OBSTACLE_OBJECT_TYPES.includes(structureType)) {
               cm.set(x, y, 254)
             }
           })
@@ -220,12 +226,20 @@ const states = ({
       return this.runStack()
     }
   },
-  revTransfer (target, res = RESOURCE_ENERGY, amt) {
+  revTransfer (target, res = C.RESOURCE_ENERGY, amt) {
     const tgt = this.resolveTarget(target)
     if (tgt) {
       tgt.transfer(this.creep, res, amt)
     }
     this.pop()
+  },
+  resolvePos (pos, type, ...state) {
+    const tgt = this.resolveTarget(pos)
+    const structs = tgt.lookFor(C.LOOK_STRUCTURES)
+    const struct = structs.find(s => s.structureType === type)
+    this.pop()
+    this.push(...state, struct.id)
+    this.runStack()
   }
 })
 module.exports = states

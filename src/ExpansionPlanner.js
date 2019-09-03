@@ -77,18 +77,17 @@ function avoidHostile (roomName, fromRoomName) {
 }
 
 function * createNest (src, target, expire) {
-  const log = new Logger(`[Nesting${target}]`)
+  const log = new Logger(`[Nesting] [${target}]`)
   while (true) {
     if (Game.time >= expire) return
+    log.info(`Nest target ${src} => ${target}`)
     if (!Game.rooms[target] || !Game.rooms[target].controller.my) {
-      const int = intel.rooms[target]
-      const room = Game.rooms[target]
       const timeout = Math.min(expire, Game.time + 200)
-      console.log(`Wanted: Claimer. Where: ${target}`)
+      log.info(`Wanted: Claimer. Where: ${target}`)
       createTicket(`claimer_${target}`, {
         valid: () => Game.time < timeout,
         count: 1,
-        body: [MOVE, CLAIM],
+        body: [C.MOVE, C.CLAIM],
         memory: {
           role: 'claimer',
           room: src,

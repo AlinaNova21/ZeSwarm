@@ -1,7 +1,9 @@
 import StackState from './StackState'
 import { kernel, sleep, restartThread } from './kernel'
-import log from '/log'
 import { sayings, psayings } from '/sayings'
+import { Logger } from './log'
+
+const log = new Logger('[CreepThreadManager]')
 
 kernel.createThread('creepMemoryCleanup', restartThread(creepMemoryCleanup))
 kernel.createThread('creepThreadManager', restartThread(creepThreadManager))
@@ -55,6 +57,7 @@ function * creepSaysThread () {
   const startPhrase = random[Math.floor(Math.random() * random.length)].split('|')
   while (true) {
     for (const creep of Object.values(Game.creeps)) {
+      if (!Game.creeps[creep.name]) continue
       if (creep.saying) continue
       if (creep.ticksToLive === 1) {
         creep.say('RIP Me', true)
@@ -105,6 +108,7 @@ function * creepThreadManager () {
     let created = 0
     let cleanup = 0
     for (const creepName in Game.creeps) {
+      if (!Game.creeps[creepName]) continue
       const key = `${prefix}${creepName}`
       if (!threads.has(key)) {
         const thread = newStackStateThread(creepName)
@@ -122,7 +126,7 @@ function * creepThreadManager () {
       }
       yield true
     }
-    log.info(`[creepThreadManager] Created: ${created}, cleaned up: ${cleanup}`)
+    log.info(`Created: ${created}, cleaned up: ${cleanup}`)
     yield
   }
 }

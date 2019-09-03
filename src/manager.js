@@ -1,19 +1,17 @@
 import { kernel } from '/kernel'
 import C from './constants'
-import log from './log'
+import { Logger } from './log'
 import { sleep, restartThread } from './kernel'
 import { createTicket, destroyTicket } from './SpawnManager'
 import intel from './Intel'
 
 export let census = {}
-
+const log = new Logger('[Manager]')
 kernel.createThread('managerThread', restartThread(managerThread))
 
 function * managerThread () {
   while (true) {
     const rooms = Object.values(Game.rooms)
-    const sources = []
-    const spawns = []
     const spawnQueue = {}
     census = {}
     let srcCount = 0
@@ -24,7 +22,7 @@ function * managerThread () {
       if (room.spawns.length && room.memory.donor) {
         delete room.memory.donor
       }
-      const creeps = room.find(FIND_MY_CREEPS)
+      const creeps = room.find(C.FIND_MY_CREEPS)
       for (const creep of creeps) {
         if (creep.memory.group) {
           census[creep.memory.group] = census[creep.memory.group] || 0
@@ -45,7 +43,7 @@ function * managerThread () {
       // 1C3M6W = 800
       if (room.energyCapacityAvailable < 800) continue
       const neighbors = Object.values(Game.map.describeExits(room.name))
-      log.info(`Found neighbors ${neighbors}`)
+      log.info(`[${room.name}] Found neighbors ${neighbors}`)
       for (const neighbor of neighbors) {
         const int = intel.rooms[neighbor]
         if (!int) continue
@@ -72,12 +70,12 @@ function * managerThread () {
       if (room.controller && !room.controller.my) continue
       const group = `workers_${room.name}`
       const reps = Math.max(1, Math.min(24, Math.floor((room.energyAvailable - 100) / 150)))
-      const body = [MOVE, CARRY]
+      const body = [C.MOVE, C.CARRY]
       for (let i = 0; i < reps; i++) {
         if (room.level >= 2 && i % 2 === 1) {
-          body.push(MOVE, CARRY)
+          body.push(C.MOVE, C.CARRY)
         } else {
-          body.push(MOVE, WORK)
+          body.push(C.MOVE, C.WORK)
         }
       }
       let workers = 6
@@ -106,19 +104,20 @@ function * managerThread () {
           room: room.memory.donor || room.name
         }
       })
-      if (room.level >= 3 && room.energyAvailable >= 550) {
+      if (room.controller.level >= 3 && room.energyAvailable >= 550) {
         createTicket(`scouts_${room.name}`, {
           valid: () => Game.rooms[room.name].controller.level >= 3,
-          body: [TOUGH, MOVE],
+          body: [C.TOUGH, C.MOVE],
           memory: {
             role: 'scout'
           },
-          count: 10 + Math.min(intel.outdated.length, 10)
+          count: 5 + Math.min(intel.outdated.length, 10)
         })
       }
       yield true
     }
-    yield * sleep(10)
+    // yield * sleep(10)
+    yield
   }
 }
 
@@ -129,10 +128,12 @@ function * miningManager (homeRoomName, roomName) {
   while (true) {
     const homeRoom = Game.rooms[homeRoomName]
     if (!homeRoom || !homeRoom.controller.my) {
+      log.alert(`No vision in ${homeRoomName}`)
       return
     }
     const int = intel.rooms[roomName]
     if (!int) {
+      log.alert(`No intel for ${homeRoomName}`)
       return
     }
     const maxParts = Math.min(25, Math.floor(((homeRoom.energyCapacityAvailable / 50) * 0.8) / 2))
@@ -152,7 +153,7 @@ function * miningManager (homeRoomName, roomName) {
         paths[id] = path
       }
       const dist = paths[id].length
-      if (!Game.rooms[roomName]) yield * getVision(roomName)
+      if (!Game.rooms[roomName]) yield * getVision(roomName, 100)
       const source = Game.getObjectById(id)
       if (!source) {
         log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName] ? 'T' : 'F'}`)
@@ -208,7 +209,7 @@ function * miningManager (homeRoomName, roomName) {
         createTicket(rgroup, {
           valid: () => Game.time < timeout,
           count: 1,
-          body: expandBody([2, MOVE, 2, CLAIM]),
+          body: expandBody([2, C.MOVE, 2, C.CLAIM]),
           memory: {
             role: 'reserver',
             room: homeRoomName,
@@ -225,7 +226,7 @@ function * miningManager (homeRoomName, roomName) {
 function * getVision (roomName, timeout = 5000) {
   const ticket = `scout_${roomName}`
   createTicket(ticket, {
-    body: [MOVE],
+    body: [C.MOVE],
     memory: {
       role: 'scout',
       stack: [['scoutVision', roomName]]
@@ -243,7 +244,6 @@ function * getVision (roomName, timeout = 5000) {
 }
 
 export default {
-  tick,
   census
 }
 

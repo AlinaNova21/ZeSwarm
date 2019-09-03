@@ -1,7 +1,12 @@
 import { kernel, restartThread } from './kernel'
-import log from './log'
 import segments from './MemoryManager'
 import C from './constants'
+import { Logger } from './log'
+
+import groupBy from 'lodash/groupBy'
+import sortBy from 'lodash/sortBy'
+
+const log = new Logger('[Intel]')
 
 const FORMAT_VERSION = 1
 
@@ -14,12 +19,11 @@ export class Intel {
 
   findTarget () {
     const mem = segments.load(C.SEGMENTS.INTEL) || {}
-    const rooms = Object.values(mem)
-    const sorted = _.sortBy(r => {
+    const sorted = sortBy(mem.rooms, r => {
       if (r.ts < Game.time - 5000) return 0 // We want rooms with recent intel
       if (r.towers.length) return 0 // Can't fight towers, yet
       if (r.safemode) return 0 // Ignore safemode
-      const score = 0
+      let score = 0
       if (r.reserver) score += 1
       if (r.level) score += r.level
       return score
@@ -35,7 +39,7 @@ export class Intel {
       const mem = segments.load(C.SEGMENTS.INTEL) || {}
       this.rooms = mem.rooms || {}
       const rooms = Object.keys(Game.rooms)
-      log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.outdated.length}`)
+      log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.outdated.length}/${Object.keys(this.rooms).length}`)
       for (const key in Game.rooms) {
         const room = Game.rooms[key]
         if (!room) continue
@@ -49,7 +53,7 @@ export class Intel {
             my,
             safeMode,
             owner: { username: owner } = {},
-            reservation: { username: reserver, ticksToEnd } = {}
+            reservation: { username: reserver } = {}
           } = {}
         } = room
         if (hr[name] && hr[name].ts > Game.time - 10) continue // Don't recollect immediately
@@ -57,7 +61,7 @@ export class Intel {
         const { mineralType } = mineral || {}
         const smap = ({ id, pos: { x, y } }) => ({ id, pos: [x, y] })
         const cmap = ({ id, pos: { x, y }, body, hits, hitsMax, my, owner: { username } }) => {
-          const parts = _.groupBy(body, 'type')
+          const parts = groupBy(body, 'type')
           body = {}
           for (const [type, items] of Object.entries(parts)) {
             body[type] = items.length
@@ -65,14 +69,14 @@ export class Intel {
           return { id, pos: [x, y], body, hits, hitsMax, my: my || undefined, username, hostile: !my || undefined }
         }
         hr[room.name] = {
-          hostile: level && !my || undefined,
+          hostile: (level && !my) || undefined,
           name,
           level: level || undefined,
           owner,
           reserver,
           spawns: room.spawns.length || undefined,
           towers: room.towers.length || undefined,
-          drained: room.towers.filter(t => t.energy < t.energyCapacity / 2).length || undefined,
+          drained: room.towers.reduce((l, v) => l + (v.energy / v.energyCapacity), 0) < (room.towers.length / 2) || undefined,
           walls: room.constructedWalls.length || undefined,
           ramparts: room.ramparts.length || undefined,
           creeps: room.find(C.FIND_HOSTILE_CREEPS).map(cmap),
@@ -91,7 +95,7 @@ export class Intel {
           delete mem.rooms[key]
           continue
         }
-        if (mem.rooms[key].ts < Game.time - 5000 || mem.rooms[key].v != FORMAT_VERSION) {
+        if (mem.rooms[key].ts < Game.time - 5000 || mem.rooms[key].v !== FORMAT_VERSION) {
           outdated.push(key)
         }
         yield true

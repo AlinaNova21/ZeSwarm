@@ -1,8 +1,19 @@
+/* eslint-disable */
+
 /**
  * To start using Traveler, require it in main.js:
  * Example: var Traveler = require('Traveler.js');
  */
 'use strict'
+
+// const { Logger } = require('./log')
+// const log = new Logger()
+// const console = {
+//   log (...a) {
+//     log.alert(...a)
+//   }
+// }
+
 Object.defineProperty(exports, '__esModule', { value: true })
 class Traveler {
   /**
