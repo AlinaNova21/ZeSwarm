@@ -116,7 +116,7 @@ function * managerThread () {
       }
       yield true
     }
-    // yield * sleep(10)
+    yield * sleep(20)
     yield
   }
 }

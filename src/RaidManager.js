@@ -6,6 +6,8 @@ import C from './constants'
 
 const log = new Logger('[RaidPlanner]')
 
+const ENABLE_RAIDING = false
+
 kernel.createThread('RaidPlanner', restartThread(raidPlanner))
 const routeCache = new Map()
 
@@ -22,10 +24,14 @@ function findRoute (src, dst, opts = {}) {
   const route = routeCache.get(key)
   return route.path
 }
-
 function * raidPlanner () {
+  const raiding = new Set()
   while (true) {
     if (Game.cpu.bucket < 4000) {
+      yield
+      continue
+    }
+    if (!ENABLE_RAIDING) {
       yield
       continue
     }
@@ -54,12 +60,16 @@ function * raidPlanner () {
 
       needsClean |= !int.safemode && (!int.towers || !int.owner) && (int.spawns || int.walls)
       needsClean |= !int.safemode && int.towers && int.drained
-      if (needsClean) {
+      needsClean &= int.owner !== C.USER
+      if (needsClean && raiding.size === 0) {
         const key = `cleaningCrew_${int.name}`
+        raiding.add(int.name)
         if (!kernel.hasThread(key)) {
           log.warn(`Creating cleaning crew: ${closestRoom.name} => ${int.name}`)
           kernel.createThread(key, cleaningCrew(closestRoom.name, int.name))
         }
+      } else {
+        raiding.delete(int.name)
       }
       yield true
     }

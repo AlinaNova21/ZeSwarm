@@ -93,8 +93,8 @@ class Thread {
 }
 
 function * calcCPUPID () {
-  const Kp = 0.03
-  const Ki = 0.02
+  const Kp = 0.025
+  const Ki = 0.03
   const Kd = 0
   const Mi = 500
   const Se = 0.5
