@@ -60,7 +60,7 @@ function * spawnManagerSpawnThread () {
         continue
       }
       const spawn = findSpawn(ticket.memory.room, spawns)
-      if (!spawn) break
+      if (!spawn) continue
       if (spawn.room.energyAvailable < cost) {
         spawns[spawn.room.name].push(spawn)
         log.info(`Not enough energy to spawn ${ticket.group}. Needed: ${cost} Have: ${spawn.room.energyAvailable} in ${spawn.room.name}`)
