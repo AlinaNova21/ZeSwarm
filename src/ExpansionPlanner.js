@@ -86,6 +86,8 @@ function * createNest (src, target, expire) {
       log.info(`Wanted: Claimer. Where: ${target}`)
       createTicket(`claimer_${target}`, {
         valid: () => Game.time < timeout,
+        parent: `room_${src}`,
+        weight: 5,
         count: 1,
         body: [C.MOVE, C.CLAIM],
         memory: {

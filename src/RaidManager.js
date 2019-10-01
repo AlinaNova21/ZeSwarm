@@ -91,6 +91,8 @@ function * cleaningCrew (srcRoom, tgtRoom) {
     const ts = Game.time + 100
     createTicket(`cleaningCrew_${srcRoom}_${tgtRoom}`, {
       valid: () => Game.time < ts,
+      parent: `room_${srcRoom}`,
+      weight: 1,
       count: 3,
       body: [C.WORK, C.WORK, C.WORK, C.WORK, C.MOVE, C.MOVE, C.MOVE, C.MOVE],
       memory: {

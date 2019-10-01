@@ -39,7 +39,7 @@ module.exports = {
       const sn = Math.floor(Math.random() * srcs.length)
       const src = srcs[sn]
       if (!src) return this.creep.suicide()
-      if (hasAllWorkers && Math.random() < 0.5) {
+      if (hasAllWorkers && Math.random() < 0.5 && room.energyAvailable >= room.energyCapacity * 0.75) {
         this.push('builder')
       }
       const harvCnt = Math.ceil(this.creep.carryCapacity / (cache.work * C.HARVEST_POWER))

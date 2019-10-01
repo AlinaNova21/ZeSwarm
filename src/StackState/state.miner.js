@@ -115,9 +115,10 @@ module.exports = {
       return this.runStack()
     }
     let creeps = tgt.findInRange(C.FIND_MY_CREEPS, 4)
-    creeps = creeps.filter(c => c.memory.group === wgroup && c.carry[resourceType] > 30)
+    creeps = creeps.filter(c => c.memory.group === wgroup)
     const creep = this.creep.pos.findClosestByRange(creeps)
     if (creep) {
+      if (creep.carry[resourceType] < 30) return
       const vis = this.creep.room.visual
       vis.line(creep.pos, this.creep.pos, { color: 'red' })
       vis.circle(creep.pos, { radius: 0.5, stroke: 'red', strokeWidth: 0.2 })
@@ -135,8 +136,8 @@ module.exports = {
           this.push('moveNear', resource.id)
           return this.runStack()
         }
-        this.push('sleep', Game.time + 10)
-        this.push('flee', [{ pos: src.pos, range: 6 }])
+        this.push('sleep', Game.time + 5)
+        this.push('flee', [{ pos: src.pos, range: 3 }])
         return this.runStack()
       }
     }
