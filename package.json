@@ -9,6 +9,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "gulp",
+    "push:botarena": "rollup -c && yarn run push --server botarena",
+    "push:local": "rollup -c && yarn run push --server local",
     "push:test": "rollup -c && yarn run push --server test",
     "push:splus1": "rollup -c && yarn run push --server splus",
     "push:splus2": "rollup -c && yarn run push --server splus2",

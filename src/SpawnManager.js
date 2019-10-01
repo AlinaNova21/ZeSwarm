@@ -64,7 +64,8 @@ function * spawnManagerSpawnThreadV2 () {
         const t = tickets.get(node.id)
         if (typeof t.valid === 'function' && !t.valid()) {
           log.info(`Deleting invalid ticket ${t.group}`)
-          tickets.delete(t.group)
+          destroyTicket(t.group)
+          // tickets.delete(t.group)
           return
         }
         if (!t.cost) return // Skip 'virtual' tickets

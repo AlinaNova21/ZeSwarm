@@ -1,6 +1,6 @@
-const C = require('/constants')
+import C from '/constants'
 
-module.exports = {
+export default {
   worker (target, cache = {}) {
     if (!cache.work) {
       cache.work = this.creep.getActiveBodyparts(C.WORK)
@@ -10,32 +10,32 @@ module.exports = {
     }
     const room = this.creep.room
     const homeRoom = Game.rooms[cache.homeRoom]
-    const hasAllWorkers = true //Memory.census.workers.filter(w => w.room.name === room.name).length >= 6
+    const hasAllWorkers = true // Memory.census.workers.filter(w => w.room.name === room.name).length >= 6
     if (!this.creep.carry.energy) {
-      const [, n, roomName] = this.creep.name.split('.')
-      if (roomName && this.creep.pos.roomName != roomName) {
+      const [, , roomName] = this.creep.name.split('.')
+      if (roomName && this.creep.pos.roomName !== roomName) {
         this.push('moveToRoom', new RoomPosition(25, 25, roomName))
         return this.runStack()
       }
       if (room.controller.level > 1) {
         const spawn = room.spawns[0]
-        const cont = room.controller.level >= 4 && room.storage || (spawn && spawn.pos.findClosestByRange(room.containers))
+        const cont = (room.controller.level >= 4 && room.storage) || (spawn && spawn.pos.findClosestByRange(room.containers))
         if (cont && cont.store.energy) {
           this.push('moveNear', cont.id)
-          this.push('withdraw', cont.id, RESOURCE_ENERGY)
+          this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
           return this.runStack()
         }
       }
-      const creeps = this.creep.room.find(FIND_MY_CREEPS)
+      const creeps = this.creep.room.find(C.FIND_MY_CREEPS)
         .filter(c => c.memory.role === 'miningWorker' && c.carry.energy > 30)
       if (creeps.length) {
         const creep = this.creep.pos.findClosestByRange(creeps)
         this.push('moveNear', creep.pos)
         this.push('say', 'take miner')
-        this.push('revTransfer', creep.id, RESOURCE_ENERGY)
+        this.push('revTransfer', creep.id, C.RESOURCE_ENERGY)
         return this.runStack()
       }
-      const srcs = this.creep.room.find(FIND_SOURCES)
+      const srcs = this.creep.room.find(C.FIND_SOURCES)
       const sn = Math.floor(Math.random() * srcs.length)
       const src = srcs[sn]
       if (!src) return this.creep.suicide()
@@ -60,10 +60,11 @@ module.exports = {
       const RCL_LIMIT = 8
       let upgradeMode = false
       if (controller) {
-        const csites = this.creep.room.find(FIND_MY_CONSTRUCTION_SITES) || []
+        const csites = this.creep.room.find(C.FIND_MY_CONSTRUCTION_SITES) || []
+        upgradeMode |= controller.level === 1
         upgradeMode |= controller.ticksToDowngrade < 5000
         upgradeMode |= controller.level < RCL_LIMIT && hasAllWorkers && !s.length && (!csites.length || controller.level === 1)
-        upgradeMode &= !s.filter(s => s.structureType === STRUCTURE_TOWER).length
+        upgradeMode &= !s.filter(s => s.structureType === C.STRUCTURE_TOWER).length
       }
       if (upgradeMode) {
         const upCnt = Math.ceil(this.creep.carry.energy / cache.work)
@@ -72,11 +73,11 @@ module.exports = {
         return this.runStack()
       }
       if (s.length) {
-        const towers = s.filter(s => s.structureType === STRUCTURE_TOWER)
+        const towers = s.filter(s => s.structureType === C.STRUCTURE_TOWER)
         const closest = this.creep.pos.findClosestByRange(towers.length ? towers : s)
         const vis = this.creep.room.visual
         vis.line(this.creep.pos, closest.pos, { stroke: 'red' })
-        this.push('transfer', closest.id, RESOURCE_ENERGY)
+        this.push('transfer', closest.id, C.RESOURCE_ENERGY)
         this.push('moveNear', closest.id)
         return this.runStack()
       } else {
