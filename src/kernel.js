@@ -1,4 +1,6 @@
 import { Logger, LogLevel } from './log'
+import shuffle from 'lodash/shuffle'
+import stats from './stats'
 
 const log = new Logger('[Kernel]')
 
@@ -27,6 +29,11 @@ export class Kernel {
       // log.info(`tick ${val}`)
       cnt++
     }
+    stats.addStat('kernel', {}, {
+      cpuLimit: limit,
+      threads: this.threads.size,
+      iterations: cnt
+    })
     log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
     log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Ran ${this.threads.size} threads with a total of ${cnt} iterations`)
   }
@@ -92,36 +99,47 @@ class Thread {
   [Symbol.iterator] () { return this }
 }
 
-function * calcCPUPID () {
-  const Kp = 0.025
-  const Ki = 0.03
-  const Kd = 0
-  const Mi = 500
-  const Se = 0.5
+function * PID (Kp, Ki, Kd, Mi, statName) {
   let e = 0
   let i = 0
+  let v = 0
   while (true) {
     const le = e
-    e = Se * (Game.cpu.bucket - 9500)
+    e = yield v
     i = i + e
     i = Math.min(Math.max(i, -Mi), Mi)
-
     const Up = (Kp * e)
     const Ui = (Ki * i)
     const Ud = Kd * (e / le) * e
+    v = Up + Ui + Ud
+    if (statName) {
+      stats.addStat(statName, {}, {
+        Kp, Ki, Kd, Mi, e, i, v, Up, Ui, Ud
+      })
+    }
+  }
+}
 
-    const output = Up + Ui + Ud
+function * calcCPUPID () {
+  const Kp = 0.020
+  const Ki = 0.01
+  const Kd = 0
+  const Mi = 1000
+  const Se = 0.5
+  const pid = PID(Kp, Ki, Kd, Mi, 'pidb')
+  while (true) {
+    const { value: output } = pid.next(Se * (Game.cpu.bucket - 9500))
 
-    const minLimit = Math.max(10, Game.cpu.limit * 0.2)
+    const minLimit = Math.max(15, Game.cpu.limit * 0.2)
     const limit = Math.max(Game.cpu.limit + output - Game.cpu.getUsed(), minLimit)
     log.info(`[PID] limit: ${limit} out: ${output} min: ${minLimit}`)
     // console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
-    yield limit || 0
+    yield limit || minLimit
   }
 }
 
 function * loopScheduler (threads, limit, state = {}) {
-  const queue = Array.from(threads.entries())
+  const queue = shuffle(Array.from(threads.entries()))
   const counts = {}
   const cpu = {}
   const logger = log.withPrefix(log.prefix + '[LoopScheduler]')

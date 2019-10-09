@@ -1,6 +1,6 @@
 const log = require('/log')
-const intel = require('/Intel')
-const { sayings, psayings, shooting } = require('/sayings')
+
+const size = require('lodash/size')
 
 const C = require('/constants')
 const SIGN_MSG = `Territory of ZeSwarm - ${C.USER}`
@@ -12,7 +12,7 @@ module.exports = {
       this.push('moveToRoom', roomName)
       return this.runStack()
     }
-    const park = this.creep.room.controller && this.creep.room.controller.pos || new RoomPosition(25, 25, roomName)
+    const park = (this.creep.room.controller && this.creep.room.controller.pos) || new RoomPosition(25, 25, roomName)
     if (!this.creep.pos.inRangeTo(park, 3)) {
       this.push('moveInRange', park, 3)
       return this.runStack()
@@ -20,7 +20,7 @@ module.exports = {
     this.creep.say('👁️', true)
   },
   scout (state = {}) {
-    const debug = this.creep.name === 'scout_13651666_najb'
+    // const debug = this.creep.name === 'scout_13651666_najb'
     if (!state.z) state.z = this.creep.notifyWhenAttacked(false)
     if (!state.work) {
       state.work = this.creep.getActiveBodyparts(C.WORK)
@@ -32,13 +32,13 @@ module.exports = {
     const { room, pos, room: { controller } } = this.creep
     this.status = pos.toString()
 
-    const target = intel.outdated && intel.outdated.length && intel.outdated[Math.floor(Math.random() * intel.outdated.length)]
-    if (target && false) {
-      console.log(target)
-      this.push('moveToRoom', new RoomPosition(25, 25, target), { preferHighway: true })
-    }
+    // const target = intel.outdated && intel.outdated.length && intel.outdated[Math.floor(Math.random() * intel.outdated.length)]
+    // if (target && false) {
+    //   console.log(target)
+    //   this.push('moveToRoom', new RoomPosition(25, 25, target), { preferHighway: true })
+    // }
 
-    const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
+    // const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
     const friend = controller && controller.my
     const hostile = !friend && controller && controller.level > 0 && !controller.my
 
@@ -52,11 +52,11 @@ module.exports = {
 
     const exits = Game.map.describeExits(room.name)
     let dir = 0
-    while (!exits[dir] || (dir === lastdir && _.size(exits) > 1)) {
+    while (!exits[dir] || (dir === lastdir && size(exits) > 1)) {
       dir = Math.ceil(Math.random() * 8)
     }
 
-    const csites = this.creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
+    const csites = this.creep.room.find(C.FIND_HOSTILE_CONSTRUCTION_SITES)
     if (csites.length) {
       this.push('travelTo', csites[0].pos, { visualizePathStyle: { opacity: 1 }, range: 0 })
       return this.runStack()
@@ -64,7 +64,7 @@ module.exports = {
 
     const roomCallback = `r => r === '${room.name}' ? undefined : false`
     const exit = pos.findClosestByRange(dir)
-    const msg = controller && controller.my && SIGN_MY_MSG || SIGN_MSG
+    const msg = (controller && controller.my && SIGN_MY_MSG) || SIGN_MSG
     if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
       this.creep.say('Signing')
       this.push('signController', controller.id, msg)

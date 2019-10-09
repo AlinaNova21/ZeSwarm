@@ -18,7 +18,8 @@ function * creepIDThread () {
     scout: '👁️',
     reserver: '🏴',
     claimer: '🏁',
-    cleaningCrew: '🧹'
+    cleaningCrew: '🧹',
+    feeder: '📦'
   }
   while (true) {
     while (Game.cpu.bucket < 5000) yield

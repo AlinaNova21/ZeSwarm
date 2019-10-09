@@ -12,7 +12,7 @@ const config2 = {
 }
 const config3 = {
   server: 'botarena',
-  rooms: [['E4S7', 30, 35]]
+  rooms: [['E2S7', 27, 39]]
 }
 const config4 = {
   server: 'splus2',
@@ -48,7 +48,7 @@ const config10 = {
   server: 'prtest',
   rooms: [['W3N7', 30, 20]]
 }
-// const config = config1
+const config = config1
 // const config = config2
 // const config = config3
 // const config = config4
@@ -57,11 +57,11 @@ const config10 = {
 // const config = config7
 // const config = config8
 // const config = config9
-const config = config10
+// const config = config10
 const BRANCH = 'ZeSwarm_v1.1'
 // const BRANCH='default'
-ScreepsAPI.fromConfig(config.server).then(async api => {
-  const ret = await api.raw.user.badge({ "type": 24, "color1": "#ff0000", "color2": "#ffb400", "color3": "#ff6a27", "param": 0, "flip": false })
+ScreepsAPI.fromConfig(process.argv[2] || config.server).then(async api => {
+  const ret = await api.raw.user.badge({ type: 24, color1: '#ff0000', color2: '#ffb400', color3: '#ff6a27', param: 0, flip: false })
   if (ret.ok) console.log('Badge Set')
   const modules = {}
   const ps = []
@@ -88,12 +88,12 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
     await api.raw.user.setActiveBranch(BRANCH, 'activeWorld')
     console.log(`Active branch set to ${BRANCH}`)
   }
-  
+
   console.log('Code Pushed')
   const { status } = await api.raw.user.worldStatus()
   // const rooms = [['E4S7', 30, 35]]
   if (status === 'empty') {
-    while(true) {
+    while (true) {
       try {
         console.log('Not Spawned, attempting spawn from room list...')
         const ret = await api.raw.game.placeSpawn(...config.rooms[0], 'Spawn1')
@@ -103,7 +103,7 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
         } else {
           console.log('Error placing spawn:', ret.error)
         }
-      } catch(err) {
+      } catch (err) {
         console.log('Error placing spawn:', err)
       }
       await sleep(10000)
@@ -112,6 +112,6 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
   console.log('ZeSwarm v1.1 ready.')
 })
 
-async function sleep(ms) {
+async function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }

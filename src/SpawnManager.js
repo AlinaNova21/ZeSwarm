@@ -18,9 +18,13 @@ def format:
 }
 */
 
-kernel.createThread('spawnManagerSpawnThread', restartThread(spawnManagerSpawnThreadV2))
+kernel.createThread('spawnManagerSpawnThread', restartThread(spawnManagerSpawnThread))
 
 export function createTicket (name, def) {
+  if (def.parent && !tree.nodes[def.parent]) {
+    log.warn(`Invalid Ticket ${name}: Parent ${def.parent} doesn't exist`)
+    return
+  }
   tickets.set(name, def)
   def.cost = def.cost || (def.body && def.body.reduce((val, part) => val + C.BODYPART_COST[part], 0)) || 0
   def.group = def.group || name
@@ -44,13 +48,13 @@ function UID () {
   return ('C' + Game.time.toString(36).slice(-6) + Math.random().toString(36).slice(-3)).toUpperCase()
 }
 
-function * spawnManagerSpawnThreadV2 () {
+function * spawnManagerSpawnThread () {
   while (true) {
     yield * gatherCensus()
-    log.info(JSON.stringify(tree))
-    for (const node of Object.values(tree.nodes)) {
-      log.info(`${node.treeWeight} ${node.id} ${node.parent}`)
-    }
+    // log.info(JSON.stringify(tree))
+    // for (const node of Object.values(tree.nodes)) {
+    // log.info(`${node.treeWeight} ${node.id} ${node.parent}`)
+    // }
     for (const room of Object.values(Game.rooms)) {
       if (!room.controller || !room.controller.my) continue
       createTicket(`room_${room.name}`, { needed: 0, cost: 0, parent: 'root' })
@@ -99,58 +103,6 @@ function * spawnManagerSpawnThreadV2 () {
     }
     yield
   }
-}
-
-function * spawnManagerSpawnThreadV1 () {
-  while (true) {
-    const needed = []
-    yield * gatherCensus()
-    for (const [name, ticket] of tickets.entries()) {
-      const have = (census[name] || []).length
-      if (have < ticket.count) {
-        needed.push(ticket)
-      }
-    }
-    log.info(`Tickets needing creeps: ${needed.length}`)
-    // log.info(`Tickets needing creeps: ${needed.length} ${needed.map(t => t.group)}`)
-    const spawns = {}
-    for (const room of Object.values(Game.rooms)) {
-      if (!room.controller || !room.controller.my) continue
-      for (const spawn of room.spawns) {
-        if (spawn.spawning) continue
-        spawns[room.name] = spawns[room.name] || []
-        spawns[room.name].push(spawn)
-      }
-    }
-    for (const ticket of needed) {
-      const { body, cost, memory, valid } = ticket
-      if (typeof valid === 'function' && !valid()) {
-        log.info(`Deleting invalid ticket ${ticket.group}`)
-        tickets.delete(ticket.group)
-        continue
-      }
-      const spawn = findSpawn(ticket.memory.room, spawns)
-      if (!spawn) continue
-      if (spawn.room.energyAvailable < cost) {
-        spawns[spawn.room.name].push(spawn)
-        log.info(`Not enough energy to spawn ${ticket.group}. Needed: ${cost} Have: ${spawn.room.energyAvailable} in ${spawn.room.name}`)
-        continue
-      }
-      memory.group = memory.group || ticket.group
-      const id = UID()
-      if (body.length > 50) {
-        log.alert(`${spawn.room.name} body too long! ${body.length} ${id} ${memory.group}`)
-      }
-      log.info(`${spawn.room.name} Spawning ${id} ${memory.group}`)
-      spawn.spawnCreep(body.slice(0, 50), id, { memory })
-    }
-    yield
-  }
-}
-
-function findSpawn (tgtRoom, spawns) {
-  if (!tgtRoom) tgtRoom = Object.keys(spawns)[0]
-  return spawns[tgtRoom] && spawns[tgtRoom].pop()
 }
 
 function * gatherCensus () {

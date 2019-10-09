@@ -6,7 +6,8 @@ const otherStates = [
   require('./state.builder'),
   require('./state.claimer'),
   require('./state.raiders'),
-  require('./state.miner')
+  require('./state.miner'),
+  require('./state.feeder')
 ]
 const states = ({
   get log () {

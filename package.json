@@ -7,16 +7,17 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "gulp",
-    "push:botarena": "rollup -c && yarn run push --server botarena",
-    "push:local": "rollup -c && yarn run push --server local",
-    "push:test": "rollup -c && yarn run push --server test",
-    "push:splus1": "rollup -c && yarn run push --server splus",
-    "push:splus2": "rollup -c && yarn run push --server splus2",
-    "push:fordo": "rollup -c && yarn run push --server fordo",
-    "push:prtest": "rollup -c && yarn run push --server prtest",
-    "push:all": "rollup -c && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server fordo",
+    "test": "standard src/**/*.js",
+    "build": "rollup -c",
+    "push:mmo": "screeps-api download -d tmp && yarn build && cp dist/main.js tmp/zeswarm.js && screeps-api upload tmp/*.js",
+    "push:botarena": "yarn build && yarn run push --server botarena",
+    "push:local": "yarn build && yarn run push --server local",
+    "push:test": "yarn build && yarn run push --server test",
+    "push:splus1": "yarn build && yarn run push --server splus",
+    "push:splus2": "yarn build && yarn run push --server splus2",
+    "push:fordo": "yarn build && yarn run push --server fordo",
+    "push:prtest": "yarn build && yarn run push --server prtest",
+    "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server fordo",
     "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js"
   },
   "repository": {

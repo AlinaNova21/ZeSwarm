@@ -116,7 +116,8 @@ export class InfluxDB {
     this.addStat('time', {}, {
       tick: Game.time,
       timestamp: Date.now(),
-      duration: Memory.lastDur
+      duration: Memory.lastDur,
+      globalUptime: Game.time - this.startTick
     })
     this.addStat('gcl', {}, {
       level: Game.gcl.level,

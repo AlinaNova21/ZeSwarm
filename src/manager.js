@@ -30,15 +30,18 @@ function * managerThread () {
           census[creep.memory.group]++
           census[creep.memory.room || room.name][creep.memory.group] = census[creep.memory.room || room.name][creep.memory.group] || 0
           census[creep.memory.room || room.name][creep.memory.group]++
-          
         }
         if (creep.memory.role) {
           census[creep.memory.role] = census[creep.memory.role] || 0
           census[creep.memory.role]++
           census[creep.memory.room || room.name][creep.memory.role] = census[creep.memory.room || room.name][creep.memory.role] || 0
           census[creep.memory.room || room.name][creep.memory.role]++
-          
         }
+      }
+      const hostileCreeps = room.find(C.FIND_HOSTILE_CREEPS).filter(c => c.owner.username !== 'Invader')
+      if (room.controller && hostileCreeps.length && room.controller.level === 1 && !room.spawns.length) {
+        room.controller.unclaim()
+        continue
       }
       if (!room.controller || room.controller.level < 2) continue
       if (room.controller.owner.username !== C.USER) continue
@@ -103,7 +106,7 @@ function * managerThread () {
       }
       createTicket(group, {
         // count: room.controller.level >= 4 ? 10 : 6,
-        parent: `room_${room.name}`,
+        parent: `room_${room.memory.donor || room.name}`,
         weight: (!census[room.name][group] || census[room.name][group] < 2) ? 100 : 20,
         count: workers,
         body,
@@ -113,13 +116,26 @@ function * managerThread () {
           room: room.memory.donor || room.name
         }
       })
+      if (room.controller.level > 1) {
+        createTicket(`feeder_${room.name}`, {
+          parent: `room_${room.memory.donor || room.name}`,
+          weight: 10,
+          count: Math.ceil(room.controller.level / 3),
+          body: expandBody([3, C.MOVE, 3, C.CARRY]),
+          memory: {
+            role: 'feeder',
+            homeRoom: room.name,
+            room: room.memory.donor || room.name
+          }
+        })
+      }
       if (room.controller.level >= 3 && room.energyAvailable >= 550) {
         createTicket(`scouts_${room.name}`, {
           valid: () => Game.rooms[room.name].controller.level >= 3,
           parent: `room_${room.name}`,
           body: [C.TOUGH, C.MOVE],
           memory: {
-            role: 'scout',
+            role: 'scout'
           },
           count: 5 + Math.min(intel.outdated.length, 10)
         })
@@ -138,7 +154,7 @@ function * miningManager (homeRoomName, roomName) {
   const nodeName = `miningManager_${homeRoomName}`
   createTicket(`miningManager_${homeRoomName}`, {
     parent: `room_${homeRoomName}`,
-    weight: 20,
+    weight: remote ? 1 : 20
   })
   while (true) {
     const homeRoom = Game.rooms[homeRoomName]
@@ -223,18 +239,19 @@ function * miningManager (homeRoomName, roomName) {
         yield
         continue
       }
-      const { controller: { id, pos } = {} } = Game.rooms[roomName]
+      const { controller: { id, pos, level } = {} } = Game.rooms[roomName]
       if (id) {
+        const dual = level < 4
         createTicket(rgroup, {
           valid: () => Game.time < timeout,
           parent: nodeName,
           weight: 3,
-          count: 1,
-          body: expandBody([2, C.MOVE, 2, C.CLAIM]),
+          count: dual ? 2 : 1,
+          body: expandBody([dual ? 1 : 2, C.MOVE, dual ? 1 : 2, C.CLAIM]),
           memory: {
             role: 'reserver',
             room: homeRoomName,
-            stack: [['repeat', 1500, 'reserveController', id], ['moveNear', pos]]
+            stack: [['repeat', 1500, 'reserveController', id], ['moveNear', id], ['moveToRoom', roomName]]
           }
         })
       }

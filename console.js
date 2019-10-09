@@ -10,7 +10,7 @@ const configs = [
 
 configs.forEach(runConsole)
 function runConsole (config) {
-  ScreepsAPI.fromConfig(config.server).then(async api => {
+  ScreepsAPI.fromConfig(process.argv[2] || config.server).then(async api => {
     await api.socket.connect()
     api.socket.on('console', (e) => {
       const { data: { shard, messages: { log: logs = [] } = {}, error = '' } } = e

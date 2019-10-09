@@ -53,9 +53,12 @@ export default {
       }
       const s = [
         ...(homeRoom.towers || []),
-        ...(homeRoom.spawns || []),
-        ...(homeRoom.extensions || [])
+        ...(homeRoom.spawns || [])
       ].filter(s => s.energy < s.energyCapacity)
+      const feeder = room.spawns.length && room.spawns[0].pos.findInRange(C.FIND_MY_CREEPS, 7, { filter: c => c.memory.role === 'feeder' }).find(Boolean)
+      if (!feeder && homeRoom.extensions) {
+        s.push(...homeRoom.extensions)
+      }
       const { controller } = room
       const RCL_LIMIT = 8
       let upgradeMode = false
