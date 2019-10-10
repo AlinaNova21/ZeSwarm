@@ -21,7 +21,12 @@ export default {
         }
         return this.pop()
       }
-      sites = sortBy(sites, site => -site.progress / site.progressTotal)
+      const priority = {
+        [C.STRUCTURE_EXTENSION]: -2,
+        [C.STRUCTURE_TOWER]: -3,
+        [C.STRUCTURE_SPAWN]: -5
+      }
+      sites = sortBy(sites, site => (priority[site.structureType] || 1) * -site.progress / site.progressTotal)
       const site = first(sites) // pos.findClosestByRange(sites)
       if (this.creep.pos.isEqualTo(site.pos)) {
         this.creep.move(Math.ceil(Math.random() * 7))

@@ -4,9 +4,43 @@ import stats from './stats'
 
 const log = new Logger('[Kernel]')
 
+function ProcessContext (kernel, processName, fn, args = []) {
+  const ctx = Object.freeze({
+    processName,
+    memory: {},
+    threads: new Set(),
+    log: new Logger(`[${processName}]`),
+    createThread (name, fn, ...args) {
+      const fullName = `${this.processName}:${name}`
+      const threadCtx = Object.assign({ name: fullName }, this)
+      Object.freeze(threadCtx)
+      const gen = fn.apply(threadCtx, args)
+      kernel.threadCtx.set(gen, threadCtx)
+      this.threads.add(name)
+      return kernel.createThread(fullName, gen)
+    },
+    destroyThread (name) {
+      this.threads.delete(name)
+      return kernel.destroyThread(`${this.processName}:${name}`)
+    },
+    hasThread (name) {
+      return kernel.hasThread(`${this.processName}:${name}`)
+    },
+    kill () {
+      for (const name of this.threads) {
+        this.destroyThread(name)
+      }
+    }
+  })
+  ctx.createThread('main', fn, ...args)
+  return ctx
+}
+
 export class Kernel {
   constructor () {
     this.threads = new Map()
+    this.processes = new Map()
+    this.threadCtx = new WeakMap()
     log.info(`Kernel Created`)
     this.pidGen = calcCPUPID()
   }
@@ -61,6 +95,20 @@ export class Kernel {
   destroyThread (name) {
     return this.threads.delete(name)
   }
+
+  hasProcess (name) {
+    return this.processes.has(name)
+  }
+
+  createProcess (name, fn, ...args) {
+    this.processes.set(name, new ProcessContext(this, name, fn, args))
+  }
+
+  destroyProcess (name) {
+    const proc = this.processes.get(name)
+    proc.kill()
+    return this.processes.delete(name)
+  }
 }
 
 export const kernel = new Kernel()
@@ -70,6 +118,7 @@ function * kernelBase (kernel) {
   const baseThreads = [
     // ['kTest', kTest]
   ]
+  kernel.createProcess('kTest', kTest)
   while (true) {
     for (const [name, fn, ...args] of baseThreads) {
       if (!kernel.threads.has(name)) {
@@ -79,6 +128,26 @@ function * kernelBase (kernel) {
     }
     yield
   }
+}
+
+function * kTest () {
+  this.createThread('gameTimeEcho', gameTimeEcho)
+  this.createThread('killAfter', killAfter, 5)
+  while (true) {
+    log.info(`${this.name}: kTest loop`)
+    yield
+  }
+}
+function * gameTimeEcho () {
+  while (true) {
+    log.info(`${this.name}: ${Game.time}`)
+    yield
+  }
+}
+function * killAfter (ticks) {
+  yield * sleep(ticks)
+  log.alert(`${this.name} Killing self`)
+  this.kill()
 }
 
 class Thread {
@@ -187,11 +256,11 @@ export function * sleep (ticks) {
   while (Game.time < end) yield
 }
 
-export function * restartThread (fn) {
+export function * restartThread (fn, ...args) {
   const name = kernel.scheduler.current
   while (true) {
     try {
-      yield * fn()
+      yield * fn.apply(this, args)
     } catch (err) {
       log.error(`Thread '${name}' exited with error: ${err.stack || err.message || err}`)
     }

@@ -1,4 +1,4 @@
-import { kernel, restartThread } from './kernel'
+import { kernel, restartThread, sleep } from './kernel'
 import segments from './MemoryManager'
 import C from './constants'
 import { Logger } from './log'
@@ -12,9 +12,34 @@ const FORMAT_VERSION = 1
 
 export class Intel {
   constructor () {
-    kernel.createThread('intelCollect', restartThread(() => this.collectThread()))
-    this.outdated = []
-    this.rooms = {}
+    kernel.createProcess('Intel', restartThread, this.main, this)
+    // kernel.createThread('intelCollect', restartThread(() => this.collectThread()))
+    // this.outdated = []
+    // this.rooms = {}
+    this.memory = {}
+  }
+
+  get outdated () {
+    return this.memory.outdated || []
+  }
+
+  get rooms () {
+    return this.memory.rooms || {}
+  }
+
+  * main (intel) {
+    intel.memory = this.memory
+    this.memory.intel = intel
+    this.memory.outdated = []
+    segments.activate(C.SEGMENTS.INTEL)
+    yield
+    this.memory.rooms = segments.load(C.SEGMENTS.INTEL)
+    while (true) {
+      if (!this.hasThread('collect')) {
+        this.createThread('collect', intel.collectThread)
+      }
+      yield * sleep(20)
+    }
   }
 
   findTarget () {
@@ -31,63 +56,68 @@ export class Intel {
     return sorted[0]
   }
 
-  collect () {}
+  * collect (roomName) {
+    const room = Game.rooms[roomName]
+    if (!room) return
+    const mem = segments.load(C.SEGMENTS.INTEL) || {}
+    const hr = mem.rooms = mem.rooms || {}
+    const {
+      name,
+      controller: {
+        id,
+        level,
+        pos: { x, y } = {},
+        my,
+        safeMode,
+        owner: { username: owner } = {},
+        reservation: { username: reserver } = {}
+      } = {}
+    } = room
+    if (hr[name] && hr[name].ts > Game.time - 10) return // Don't recollect immediately
+    const [mineral] = room.find(C.FIND_MINERALS)
+    const { mineralType } = mineral || {}
+    const smap = ({ id, pos: { x, y } }) => ({ id, pos: [x, y] })
+    const cmap = ({ id, pos: { x, y }, body, hits, hitsMax, my, owner: { username } }) => {
+      const parts = groupBy(body, 'type')
+      body = {}
+      for (const [type, items] of Object.entries(parts)) {
+        body[type] = items.length
+      }
+      return { id, pos: [x, y], body, hits, hitsMax, my: my || undefined, username, hostile: !my || undefined }
+    }
+    hr[room.name] = {
+      hostile: (level && !my) || undefined,
+      name,
+      level: level || undefined,
+      owner,
+      reserver,
+      spawns: room.spawns.length || undefined,
+      towers: room.towers.length || undefined,
+      drained: room.towers.reduce((l, v) => l + (v.energy / v.energyCapacity), 0) < (room.towers.length / 2) || undefined,
+      walls: room.constructedWalls.length || undefined,
+      ramparts: room.ramparts.length || undefined,
+      creeps: room.find(C.FIND_HOSTILE_CREEPS).map(cmap),
+      safemode: safeMode || undefined,
+      controller: id && { id, pos: [x, y] },
+      sources: room.find(C.FIND_SOURCES).map(smap),
+      mineral: mineralType,
+      ts: Game.time,
+      v: FORMAT_VERSION
+    }
+    segments.save(C.SEGMENTS.INTEL, mem)
+  }
 
   * collectThread () {
     segments.activate(C.SEGMENTS.INTEL)
     while (true) {
       const mem = segments.load(C.SEGMENTS.INTEL) || {}
-      this.rooms = mem.rooms || {}
+      this.memory.rooms = mem.rooms || {}
       const rooms = Object.keys(Game.rooms)
-      log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.outdated.length}/${Object.keys(this.rooms).length}`)
+      log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.memory.outdated.length}/${Object.keys(this.memory.rooms).length}`)
       for (const key in Game.rooms) {
-        const room = Game.rooms[key]
-        if (!room) continue
-        const hr = mem.rooms = mem.rooms || {}
-        const {
-          name,
-          controller: {
-            id,
-            level,
-            pos: { x, y } = {},
-            my,
-            safeMode,
-            owner: { username: owner } = {},
-            reservation: { username: reserver } = {}
-          } = {}
-        } = room
-        if (hr[name] && hr[name].ts > Game.time - 10) continue // Don't recollect immediately
-        const [mineral] = room.find(C.FIND_MINERALS)
-        const { mineralType } = mineral || {}
-        const smap = ({ id, pos: { x, y } }) => ({ id, pos: [x, y] })
-        const cmap = ({ id, pos: { x, y }, body, hits, hitsMax, my, owner: { username } }) => {
-          const parts = groupBy(body, 'type')
-          body = {}
-          for (const [type, items] of Object.entries(parts)) {
-            body[type] = items.length
-          }
-          return { id, pos: [x, y], body, hits, hitsMax, my: my || undefined, username, hostile: !my || undefined }
+        if (!this.hasThread(key)) {
+          this.createThread(key, this.memory.intel.collect, key)
         }
-        hr[room.name] = {
-          hostile: (level && !my) || undefined,
-          name,
-          level: level || undefined,
-          owner,
-          reserver,
-          spawns: room.spawns.length || undefined,
-          towers: room.towers.length || undefined,
-          drained: room.towers.reduce((l, v) => l + (v.energy / v.energyCapacity), 0) < (room.towers.length / 2) || undefined,
-          walls: room.constructedWalls.length || undefined,
-          ramparts: room.ramparts.length || undefined,
-          creeps: room.find(C.FIND_HOSTILE_CREEPS).map(cmap),
-          safemode: safeMode || undefined,
-          controller: id && { id, pos: [x, y] },
-          sources: room.find(C.FIND_SOURCES).map(smap),
-          mineral: mineralType,
-          ts: Game.time,
-          v: FORMAT_VERSION
-        }
-        yield true
       }
       const outdated = []
       for (const key in mem.rooms) {
@@ -100,7 +130,7 @@ export class Intel {
         }
         yield true
       }
-      this.outdated = outdated
+      this.memory.outdated = outdated
       segments.save(C.SEGMENTS.INTEL, mem)
       yield
     }

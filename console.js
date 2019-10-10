@@ -10,11 +10,13 @@ const configs = [
 
 configs.forEach(runConsole)
 function runConsole (config) {
-  ScreepsAPI.fromConfig(process.argv[2] || config.server).then(async api => {
+  config.server = process.argv[2] || config.server
+  config.shard = process.argv[3] || config.shard
+  ScreepsAPI.fromConfig(config.server).then(async api => {
     await api.socket.connect()
     api.socket.on('console', (e) => {
       const { data: { shard, messages: { log: logs = [] } = {}, error = '' } } = e
-      if (config.shard && config.shard !== shard) return
+      if (shard && config.shard && config.shard !== shard) return
       console.log(`==== ${shard || config.server} =====`)
       for (const log of logs) {
         if (log.startsWith('STATS;')) continue

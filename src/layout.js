@@ -2,7 +2,6 @@
 import C from './constants'
 import { distanceTransform, blockablePixelsForRoom, invertMatrix, multMatrix } from './DistanceTransform'
 import { kernel, restartThread } from '/kernel'
-import { Logger } from './log'
 import { sleep } from './kernel'
 import minCut from './lib/mincut'
 
@@ -11,12 +10,29 @@ import mapValues from 'lodash/mapValues'
 import pick from 'lodash/pick'
 import size from 'lodash/size'
 
-const log = new Logger('[LayoutManager]')
-
 export const census = {}
 
-kernel.createThread('csiteVisualizer', restartThread(() => csiteVisualizer()))
-kernel.createThread('layoutThread', restartThread(() => layoutThread()))
+// kernel.createThread('csiteVisualizer', restartThread(() => csiteVisualizer()))
+// kernel.createThread('layoutThread', restartThread(() => layoutThread()))
+
+kernel.createProcess('LayoutManager', restartThread, layoutManager)
+
+function * layoutManager () {
+  while (true) {
+    if (!this.hasThread('csiteVisualizer')) {
+      this.createThread('csiteVisualizer', csiteVisualizer)
+    }
+    for (const roomName in Game.rooms) {
+      const room = Game.rooms[roomName]
+      if (room && room.controller && room.controller.my) {
+        if (!this.hasThread(roomName)) {
+          this.createThread(roomName, layoutRoom, room)
+        }
+      }
+    }
+    yield sleep(100)
+  }
+}
 
 function * csiteVisualizer () {
   while (true) {
@@ -28,24 +44,20 @@ function * csiteVisualizer () {
   }
 }
 
-export function * layoutThread () {
+function * layoutRoom (roomName) {
   while (true) {
     yield true
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
-      if (room && room.controller && room.controller.my) {
-        yield * flex(room)
-        if (room.controller.level >= 4) {
-          yield * walls(room)
-        }
-      }
-      yield true
+    const room = Game.rooms[roomName]
+    if (!room || !room.controller || !room.controller.my) return
+    yield * flex(room)
+    if (room.controller.level >= 4) {
+      yield * walls(room)
     }
-    yield * sleep(10)
+    yield * sleep(20)
   }
 }
 
-export function * walls (room) {
+function * walls (room) {
   let cpu = Game.cpu.getUsed()
   // Rectangle Array, the Rectangles will be protected by the returned tiles
   let [x1, y1, x2, y2] = [50, 50, 0, 0]
@@ -75,25 +87,19 @@ export function * walls (room) {
   try {
     const positions = minCut.GetCutTiles(room.name, rectArray, bounds) // Positions is an array where to build walls/ramparts
     // Test output
-    log.info('Positions returned', positions.length)
+    this.log.info('Positions returned', positions.length)
     cpu = Game.cpu.getUsed() - cpu
-    log.info('Needed', cpu, ' cpu time')
+    this.log.info('Needed', cpu, ' cpu time')
     for (const { x, y } of positions) {
       room.createConstructionSite(x, y, C.STRUCTURE_RAMPART)
       yield
     }
   } catch (err) {
-    log.error(err.stack)
+    this.log.error(err.stack)
   }
 }
 
-export function * rampartThemAll (room) {
-  // const positions = new Set()
-  // const structures = room.structures.all
-  // TODO
-}
-
-export function * flex (room) {
+function * flex (room) {
   if (size(Game.constructionSites) >= 75) return
   const { controller: { level } } = room
   const offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
@@ -136,11 +142,11 @@ export function * flex (room) {
       ...room.find(C.FIND_EXIT),
       ...room.find(C.FIND_SOURCES)
     ].map(getRange)
-    log.info(`Want ${amount} of ${type}`)
+    this.log.info(`Want ${amount} of ${type}`)
     if (type === C.STRUCTURE_SPAWN && !have[C.STRUCTURE_SPAWN] && memSrc) {
       const ret = room.createConstructionSite(memSrc, C.STRUCTURE_SPAWN)
       if (ret !== C.OK) {
-        log.info(`Couldn't create spawn at ${memSrc}: ${ret}`)
+        this.log.info(`Couldn't create spawn at ${memSrc}: ${ret}`)
       } else {
         return
       }
@@ -150,7 +156,7 @@ export function * flex (room) {
       room.createConstructionSite(pos, type)
       return
     } else {
-      log.info(`Couldn't find position for ${type} with src ${src} and memSrc ${memSrc} pos is ${typeof pos}`)
+      this.log.info(`Couldn't find position for ${type} with src ${src} and memSrc ${memSrc} pos is ${typeof pos}`)
     }
     yield true
   }
@@ -175,7 +181,7 @@ function getRange (s) {
   return { pos, range }
 }
 function findPos (origin, avoid, invert = false, cmBase = false) {
-  log.info('findPos', invert, origin)
+  this.log.info('findPos', invert, origin)
   const { visual } = Game.rooms[origin.roomName]
   avoid.forEach(a => visual.circle(a.pos.x, a.pos.y, { radius: a.range, fill: 'red' }))
   // const ind = avoid.findIndex(a => a.pos.x === origin.x && a.pos.y === origin.y)
@@ -212,7 +218,7 @@ function findPos (origin, avoid, invert = false, cmBase = false) {
     vis.poly(result.path.map(({ x, y }) => [x, y]), { stroke: 'red' })
     return result.path.slice(-1)[0]
   } else {
-    log.alert(`Layout path failed ${JSON.stringify(result)}`)
+    this.log.alert(`Layout path failed ${JSON.stringify(result)}`)
   }
 }
 // eslint-disable-next-line no-unused-vars

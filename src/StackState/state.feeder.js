@@ -1,5 +1,5 @@
 import C from '/constants'
-import log from '/log'
+// import log from '/log'
 
 export default {
   feeder (cache = {}) {
@@ -21,8 +21,8 @@ export default {
       this.push('moveNear', target.id)
     } else {
       const spawn = room.spawns[0]
-      const cont = room.controller.level >= 4 && room.storage || spawn.pos.findClosestByRange(room.containers)
-      log.alert(cont.id)
+      const cont = (room.controller.level >= 4 && room.storage) || spawn.pos.findClosestByRange(room.containers)
+      if (!cont) return
       this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
       this.push('moveNear', cont.id)
     }

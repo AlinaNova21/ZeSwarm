@@ -1,14 +1,30 @@
 import StackState from './StackState'
 import { kernel, sleep, restartThread } from './kernel'
 import { sayings, psayings } from '/sayings'
-import { Logger } from './log'
 
-const log = new Logger('[CreepThreadManager]')
+kernel.createProcess('CreepManager', restartThread, creepManager)
 
-kernel.createThread('creepMemoryCleanup', restartThread(creepMemoryCleanup))
-kernel.createThread('creepThreadManager', restartThread(creepThreadManager))
-kernel.createThread('creepSaysThread', restartThread(creepSaysThread))
-kernel.createThread('creepIDThread', restartThread(creepIDThread))
+function * creepManager () {
+  const maintain = [
+    ['memoryCleanup', creepMemoryCleanup],
+    ['threadManager', creepThreadManager],
+    ['saysThread', creepSaysThread],
+    ['idThread', creepIDThread]
+  ]
+  while (true) {
+    for (const [name, fn, ...args] of maintain) {
+      if (!this.hasThread(name)) {
+        this.createThread(name, fn, ...args)
+      }
+    }
+    yield * sleep(20)
+  }
+}
+
+// kernel.createThread('creepMemoryCleanup', restartThread(creepMemoryCleanup))
+// kernel.createThread('creepThreadManager', restartThread(creepThreadManager))
+// kernel.createThread('creepSaysThread', restartThread(creepSaysThread))
+// kernel.createThread('creepIDThread', restartThread(creepIDThread))
 
 function * creepIDThread () {
   const roles = {
@@ -66,12 +82,12 @@ function * creepSaysThread () {
         continue
       }
       if (Game.time === start) {
-        kernel.createThread(`creepSay_${creep.name}`, creepSayWords(creep.name, startPhrase))
+        this.createThread(`creepSay_${creep.name}`, creepSayWords, creep.name, startPhrase)
         continue
       }
       if (Math.random() < 0.001) {
         const startPhrase = random[Math.floor(Math.random() * random.length)].split('|')
-        kernel.createThread(`creepSay_${creep.name}`, creepSayWords(creep.name, startPhrase))
+        this.createThread(`creepSay_${creep.name}`, creepSayWords, creep.name, startPhrase)
         continue
       }
       if (creep.memory.role === 'scout' && Math.random() > 0.6) {
@@ -87,7 +103,7 @@ function * creepSaysThread () {
           txt = txt.replace(/USER/, user)
         }
         const words = txt.split('|')
-        kernel.createThread(`creepSay_${creep.name}`, creepSayWords(creep.name, words))
+        this.createThread(`creepSay_${creep.name}`, creepSayWords, creep.name, words)
       }
     }
     yield
@@ -103,7 +119,6 @@ function * creepSayWords (creepName, parts, pub = true) {
 }
 
 function * creepThreadManager () {
-  const threads = kernel.threads
   const prefix = 'stackState_'
   while (true) {
     let created = 0
@@ -111,24 +126,23 @@ function * creepThreadManager () {
     for (const creepName in Game.creeps) {
       if (!Game.creeps[creepName]) continue
       const key = `${prefix}${creepName}`
-      if (!threads.has(key)) {
-        const thread = newStackStateThread(creepName)
-        thread.creepName = creepName
+      if (!this.hasThread(key)) {
+        this.createThread(key, newStackStateThread, creepName)
         created++
-        threads.set(key, thread)
       }
       yield true
     }
-    for (const [key, thread] of threads.entries()) {
+    for (const key of this.threads) {
       if (!key.startsWith(prefix)) continue
-      if (!Game.creeps[thread.creepName]) {
+      const creepName = key.slice(prefix.length)
+      if (!Game.creeps[creepName]) {
         cleanup++
-        threads.delete(key)
+        this.destroyThread(key)
       }
       yield true
     }
-    log.info(`Created: ${created}, cleaned up: ${cleanup}`)
-    yield
+    this.log.info(`Created: ${created}, cleaned up: ${cleanup}`)
+    yield * sleep(3)
   }
 }
 
@@ -140,7 +154,7 @@ function * newStackStateThread (creepName) {
       // log.info(`[StackState] ${creepName}`)
       StackState.runCreep(creep)
     } catch (err) {
-      log.error(`Creep ${creep} failed to run ${err.stack}`)
+      this.log.error(`Creep ${creep} failed to run ${err.stack}`)
     }
     const end = Game.cpu.getUsed()
     const dur = end - start
