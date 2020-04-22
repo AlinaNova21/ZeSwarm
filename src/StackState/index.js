@@ -18,8 +18,9 @@ const states = ({
   },
   runCreep (creep, baseState = ['scout']) {
     if (creep.name.startsWith('settler_')) {
-      if (!creep.room.find(C.FIND_MY_SPAWNS).length) return
+      if (!creep.room.find(C.FIND_MY_SPAWNS).length || (creep.room.controller && !creep.room.controller.my)) return
       baseState = ['worker']
+      // return
     }
     creep.memory.stack = creep.memory.stack || [creep.memory.role || baseState]
     this.creep = creep
@@ -113,6 +114,14 @@ const states = ({
       this.runStack()
     } else {
       this.creep.travelTo(tgt, opts)
+      
+      if (opts.returnData.nextPos) {
+        const terrain = this.creep.room.getTerrain()
+        const pos = opts.returnData.nextPos
+        if (terrain.get(pos.x, pos.y) & 1) {
+          return this.pop()
+        }
+      }
       if (opts.returnData.pathfinderReturn && opts.returnData.pathfinderReturn.incomplete) {
         this.pop()
       }

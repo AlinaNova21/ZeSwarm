@@ -2,12 +2,14 @@ import { kernel } from '/kernel'
 import C from './constants'
 import { Logger } from './log'
 import { sleep, restartThread } from './kernel'
-import { createTicket, destroyTicket } from './SpawnManager'
+import { createTicket, destroyTicket, expandBody } from './SpawnManager'
 import intel from './Intel'
+import { __, add, clamp, compose, divide, either, max, multiply, subtract } from 'ramda'
 
 export let census = {}
 const log = new Logger('[Manager]')
-kernel.createThread('managerThread', restartThread(managerThread))
+kernel.createProcess('RoomManager', restartThread, managerThread)
+// kernel.createThread('managerThread', restartThread(managerThread))
 
 function * managerThread () {
   while (true) {
@@ -17,6 +19,7 @@ function * managerThread () {
     let srcCount = 0
     for (const room of rooms) {
       if (!Game.rooms[room.name]) continue
+      this.log.info(`Checking room ${room.name}`)
       spawnQueue[room.name] = []
       census[room.name] = {}
       if (room.spawns.length && room.memory.donor) {
@@ -44,10 +47,14 @@ function * managerThread () {
         continue
       }
       if (!room.controller || room.controller.level < 2) continue
-      if (room.controller.owner.username !== C.USER) continue
-      const key = `mining_${room.name}`
-      if (!kernel.hasThread(key)) {
-        kernel.createThread(key, miningManager(room.name, room.name))
+      if (room.controller.owner.username !== C.USER) {
+        this.log.info(`[${room.name}] Not Mine (${C.USER})`)
+        continue
+      }
+      const key = `R${room.name}`
+      if (!this.hasThread(key)) {
+        this.log.info(`[${room.name}] Creating mining manager`)
+        this.createThread(key, miningManager, room.name, room.name)
       }
       // Don't remote mine if not enough capacity to spawn full harvesters
       // 1C3M6W = 800
@@ -59,27 +66,26 @@ function * managerThread () {
         if (!int) continue
         if (int.sources.length <= 2) {
           const valid = !int.hostile && !int.creeps.find(c => c.hostile)
-          const key = `mining_${neighbor}`
+          const key = `r${neighbor}`
           if (valid) srcCount += int.sources.length
-          if (kernel.hasThread(key) && !valid) {
+          if (this.hasThread(key) && !valid) {
             log.info(`Revoking remote: ${neighbor}`)
-            kernel.destroyThread(key)
+            this.destroyThread(key)
           }
-          if (!kernel.hasThread(key) && valid) {
+          if (!this.hasThread(key) && valid) {
             log.info(`Authorizing remote: ${neighbor}`)
-            kernel.createThread(key, miningManager(room.name, neighbor))
+            this.createThread(key, miningManager, room.name, neighbor)
           }
         }
-        yield true
       }
-      yield true
+      // yield true
     }
     for (const room of rooms) {
       if (!Game.rooms[room.name]) continue
       if (!room.controller || room.controller.level === 0) continue
       if (room.controller && !room.controller.my) continue
       const group = `workers_${room.name}`
-      const reps = Math.max(1, Math.min(24, Math.floor((room.energyAvailable - 100) / 150)))
+      const reps = compose(clamp(1, 24), Math.floor, divide(__, 150), subtract(__, 100))(room.energyAvailable)
       const body = [C.MOVE, C.CARRY]
       for (let i = 0; i < reps; i++) {
         if (room.level >= 2 && i % 2 === 1) {
@@ -99,7 +105,7 @@ function * managerThread () {
         workers += Math.floor(srcCount / 2)
       }
       if (room.storage && room.storage.store.energy < 20000) {
-        workers = room.energyAvailable > 400 ? 2 : workers + 4
+        workers = room.energyAvailable > 400 ? 2 : 4
       }
       if (room.storage && room.storage.store.energy > 100000) {
         workers += 4
@@ -117,10 +123,11 @@ function * managerThread () {
         }
       })
       if (room.controller.level > 1) {
+        const lowEnergy = room.storage && room.storage.store.energy < 10000
         createTicket(`feeder_${room.name}`, {
           parent: `room_${room.memory.donor || room.name}`,
           weight: 10,
-          count: Math.ceil(room.controller.level / 3),
+          count: Math.min(lowEnergy ? 1 : 3, Math.ceil(room.controller.level / 3)),
           body: expandBody([3, C.MOVE, 3, C.CARRY]),
           memory: {
             role: 'feeder',
@@ -137,12 +144,12 @@ function * managerThread () {
           memory: {
             role: 'scout'
           },
-          count: 5 + Math.min(intel.outdated.length, 10)
+          count: 5 // + Math.min(intel.outdated.length, 10)
         })
       }
-      yield true
+      // yield true
     }
-    yield * sleep(20)
+    // yield * sleep(20)
     yield
   }
 }
@@ -167,8 +174,8 @@ function * miningManager (homeRoomName, roomName) {
       log.alert(`No intel for ${homeRoomName}`)
       return
     }
-    const maxParts = Math.min(25, Math.floor(((homeRoom.energyCapacityAvailable / 50) * 0.8) / 2))
-    const timeout = Game.time + 10
+    const maxParts = compose(clamp(1, 25), Math.floor, divide(__, 2), multiply(0.8), divide(__, 50))(homeRoom.energyCapacityAvailable)
+    const timeout = add(Game.time, 10)
     for (const { id, pos: [x, y] } of int.sources) {
       const spos = { x, y, roomName }
       if (!paths[id] || !paths[id].length) {
@@ -191,18 +198,18 @@ function * miningManager (homeRoomName, roomName) {
         yield true
         continue
       }
-      const capacity = source.energyCapacity || C.SOURCE_ENERGY_NEUTRAL_CAPACITY
-      const energyPerTick = capacity / C.ENERGY_REGEN_TIME
-      const roundTrip = dist * 2
-      const energyRoundTrip = energyPerTick * roundTrip
-      const carryRoundTrip = Math.ceil(energyRoundTrip / 50)
+      const maxEnergy = (homeRoom.storage && homeRoom.storage.store.energy < 1000 && Math.max(300, homeRoom.energyAvailable)) || homeRoom.energyCapacityAvailable
+      const energyPerTick = divide(either(source.energyCapacity, C.SOURCE_ENERGY_NEUTRAL_CAPACITY), C.ENERGY_REGEN_TIME)
+      const roundTrip = multiply(dist, 2)
+      const energyRoundTrip = multiply(energyPerTick, roundTrip)
+      const carryRoundTrip = Math.ceil(divide(energyRoundTrip, 50))
       // log.info(`${id} ${energyPerTick} ${roundTrip} ${energyRoundTrip} ${carryRoundTrip}`)
-      const neededCarry = Math.max(2, carryRoundTrip) + 2
-      const wantedCarry = (homeRoom.energyCapacityAvailable ? Math.ceil(neededCarry / maxParts) : 0)
-      const neededWork = Math.min(maxWork, Math.floor((homeRoom.energyCapacityAvailable - 100) / (remote ? 150 : 100)))
+      const neededCarry = add(2, max(2, carryRoundTrip))
+      const wantedCarry = (maxEnergy ? Math.ceil(neededCarry / maxParts) : 0)
+      const neededWork = clamp(1, maxWork, Math.floor((maxEnergy - 100) / (remote ? 150 : 100)))
       // const neededWork = energyPerTick / C.HARVEST_POWER
       // const maxWorkParts = (homeRoom.energyCapacityAvailable - 50)
-      const wantedWork = remote ? 1 : (homeRoom.energyCapacityAvailable ? Math.ceil(maxWork / neededWork) : 0)
+      const wantedWork = remote ? 1 : (maxEnergy ? Math.ceil(maxWork / neededWork) : 0)
       const cbody = expandBody([maxParts, C.CARRY, maxParts, C.MOVE])
       const wbody = expandBody([1, C.CARRY, remote ? 3 : 1, C.MOVE, remote ? 6 : neededWork, C.WORK])
       const cgroup = `${id}c`
@@ -239,7 +246,7 @@ function * miningManager (homeRoomName, roomName) {
         yield
         continue
       }
-      const { controller: { id, pos, level } = {} } = Game.rooms[roomName]
+      const { controller: { id, level } = {} } = Game.rooms[roomName]
       if (id) {
         const dual = level < 4
         createTicket(rgroup, {
@@ -283,20 +290,4 @@ function * getVision (roomName, timeout = 5000) {
 
 export default {
   census
-}
-
-function expandBody (body) {
-  let cnt = 1
-  const ret = []
-  for (const i in body) {
-    const t = body[i]
-    if (typeof t === 'number') {
-      cnt = t
-    } else {
-      for (let ii = 0; ii < cnt; ii++) {
-        ret.push(t)
-      }
-    }
-  }
-  return ret
 }

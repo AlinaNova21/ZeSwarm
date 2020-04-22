@@ -15,12 +15,15 @@ function runConsole (config) {
   ScreepsAPI.fromConfig(config.server).then(async api => {
     await api.socket.connect()
     api.socket.on('console', (e) => {
-      const { data: { shard, messages: { log: logs = [] } = {}, error = '' } } = e
+      const { data: { shard, messages: { log: logs = [], results = [] } = {}, error = '' } } = e
       if (shard && config.shard && config.shard !== shard) return
       console.log(`==== ${shard || config.server} =====`)
       for (const log of logs) {
         if (log.startsWith('STATS;')) continue
         console.log(colorize(log))
+      }
+      for (const line of results) {
+        console.log(line)
       }
       if (error) {
         console.log(error)
@@ -35,7 +38,7 @@ function runConsole (config) {
 // }
 
 function colorize (text) {
-  const [, tag, style] = text.match(/<([\w-]+) .*?style="(.+?)".*?>/) || []
+  const [, tag, style] = text.match(/<([\w-]+) .*?(:?color|style)="(.+?)".*?>/) || []
   if (!tag) return text
   const raw = text.replace(/<.+?>/g, '')
   const styles = style.split(';').map(s => s.split(':').map(v => v.trim()))

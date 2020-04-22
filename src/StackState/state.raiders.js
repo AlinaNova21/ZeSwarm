@@ -1,6 +1,34 @@
 const C = require('/constants')
 
 module.exports = {
+  defender (cache) {
+    if (!cache) {
+      this.pop()
+      this.push('defender', {})
+    }
+    if (!cache.attack) {
+      cache.attack = this.creep.getActiveBodyparts(C.ATTACK)
+      cache.ranged = this.creep.getActiveBodyparts(C.RANGED_ATTACK)
+      cache.heal = this.creep.getActiveBodyparts(C.HEAL)
+    }
+    const { room } = this.creep
+    const hostiles = room.find(C.FIND_HOSTILE_CREEPS)
+    const tgt = this.creep.pos.findClosestByRange(hostiles)
+    if (!tgt) return
+    room.visual.line(this.creep.pos, tgt.pos, { color: 'red' })
+    this.creep.pull(tgt)
+    this.creep.moveTo(tgt)
+    if (cache.heal) {
+      if (this.creep.hits < this.creep.hitsMax) {
+        this.creep.heal(this.creep)
+      }
+    }
+    if (cache.ranged) {
+      this.creep.rangedAttack(tgt)
+    } else {
+      this.creep.attack(tgt)
+    }
+  },
   cleaningCrew (roomName) {
     const { room } = this.creep
     const log = this.log.withPrefix(`[CleaningCrew]`)

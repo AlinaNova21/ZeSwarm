@@ -1,6 +1,11 @@
 const C = {}
 
-C.USER = C.USERNAME = Game.spawns.Spawn1 && Game.spawns.Spawn1.owner.username || 'ZeSwarm'
+const findStructOwner = () => {
+  const s = Object.values(Game.structures).find(Boolean)
+  return s && s.owner.username
+}
+
+C.USER = C.USERNAME = (Game.spawns.Spawn1 && Game.spawns.Spawn1.owner.username) || findStructOwner() || 'ZeSwarm'
 
 // Import global constants
 Object.keys(global)
@@ -10,8 +15,8 @@ Object.keys(global)
   })
 
 C.RECIPES = {}
-for (let a in REACTIONS) {
-  for (let b in C.REACTIONS[a]) {
+for (const a in REACTIONS) {
+  for (const b in C.REACTIONS[a]) {
     C.RECIPES[C.REACTIONS[a][b]] = [a, b]
   }
 }

@@ -4,18 +4,21 @@ import './prototypes.room'
 import './Traveler'
 import './RoomVisual'
 import { kernel } from './kernel'
-import './layout'
 import './Intel'
 import './manager'
 import './CreepManager'
 import './DefenseManager'
-import './SpawnManager'
-import './RaidManager'
 import './ExpansionPlanner'
+import './LayoutManager'
+import './RaidManager'
+import './SpawnManager'
+import './ui'
+import './Test'
 import memoryManager from './MemoryManager'
 import log from '/log'
 import size from 'lodash/size'
 import groupBy from 'lodash/groupBy'
+import C from './constants'
 
 if (!Memory.lastTick) {
   Memory.lastTick = Date.now()
@@ -40,6 +43,7 @@ export function loop () {
 
   console.log(`Tick Timing ${(t / 1000).toFixed(3)}s`)
   console.log(`Avg ${(avg / 1000).toFixed(3)}s`)
+  console.log(`User: ${C.USER}`)
 
   const vis = new RoomVisual()
   vis.text(`Tick Timing ${(t / 1000).toFixed(3)}s`, 25, 3, { size: 3 })

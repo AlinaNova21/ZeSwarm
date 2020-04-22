@@ -3,6 +3,11 @@ import { Logger } from '/log'
 import C from '/constants'
 import { Tree } from '/lib/Tree'
 import sortedIndexBy from 'lodash/sortedIndexBy'
+import { add, apply, chain, flip, map, reduce, repeat, pipe, splitEvery } from 'ramda'
+
+export const bodyPartCost = a => C.BODYPART_COST[a]
+export const expandBody = pipe(splitEvery(2), chain(apply(flip(repeat))))
+export const bodyCost = pipe(map(bodyPartCost), reduce(add, 0))
 
 const log = new Logger('[SpawnManager]')
 
@@ -26,7 +31,7 @@ export function createTicket (name, def) {
     return
   }
   tickets.set(name, def)
-  def.cost = def.cost || (def.body && def.body.reduce((val, part) => val + C.BODYPART_COST[part], 0)) || 0
+  def.cost = def.cost || (def.body && bodyCost(def.body)) || 0
   def.group = def.group || name
   const node = tree.nodes[name] || tree.newNode(name, def.parent || 'root')
   node.weight = def.weight || 0

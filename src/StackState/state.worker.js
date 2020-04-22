@@ -51,22 +51,28 @@ export default {
         this.push('moveToRoom', new RoomPosition(25, 25, homeRoom.name))
         return this.runStack()
       }
+      const { controller, storage } = room
+      const controllerCritical = controller.level === 1 || controller.ticksToDowngrade < 5000
+      const storageLow = !controllerCritical && storage && (storage.store.energy || 0) < 20000
+      const storageCritical = storageLow && (storage.store.energy || 0) < 10000
+
       const s = [
         ...(homeRoom.towers || []),
         ...(homeRoom.spawns || [])
       ].filter(s => s.energy < s.energyCapacity)
       const feeder = room.spawns.length && room.spawns[0].pos.findInRange(C.FIND_MY_CREEPS, 7, { filter: c => c.memory.role === 'feeder' }).find(Boolean)
-      if (!feeder && homeRoom.extensions) {
+      if ((!feeder || storageCritical) && homeRoom.extensions) {
         s.push(...homeRoom.extensions.filter(s => s.energy < s.energyCapacity))
       }
-      const { controller } = room
+      if (storageCritical) {
+        s.push(homeRoom.storage)
+      }
       const RCL_LIMIT = 8
       let upgradeMode = false
       if (controller) {
         const csites = this.creep.room.find(C.FIND_MY_CONSTRUCTION_SITES) || []
-        upgradeMode |= controller.level === 1
-        upgradeMode |= controller.ticksToDowngrade < 5000
-        upgradeMode |= controller.level < RCL_LIMIT && hasAllWorkers && !s.length && (!csites.length || controller.level === 1)
+        upgradeMode |= controllerCritical
+        upgradeMode |= controller.level < RCL_LIMIT && hasAllWorkers && !s.length && (!csites.length || controller.level === 1) && !storageLow
         upgradeMode &= !s.filter(s => s.structureType === C.STRUCTURE_TOWER).length
       }
       if (upgradeMode) {

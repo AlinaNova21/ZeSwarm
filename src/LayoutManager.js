@@ -1,9 +1,11 @@
 /* global StructureController */
 import C from './constants'
-import { distanceTransform, blockablePixelsForRoom, invertMatrix, multMatrix } from './DistanceTransform'
+import { distanceTransform, walkablePixelsForRoom, blockablePixelsForRoom, invertMatrix, multMatrix, getIndexed } from './DistanceTransform'
 import { kernel, restartThread } from '/kernel'
 import { sleep } from './kernel'
 import minCut from './lib/mincut'
+
+import { core } from './layouts/core'
 
 import groupBy from 'lodash/groupBy'
 import mapValues from 'lodash/mapValues'
@@ -25,13 +27,67 @@ function * layoutManager () {
     for (const roomName in Game.rooms) {
       const room = Game.rooms[roomName]
       if (room && room.controller && room.controller.my) {
-        if (!this.hasThread(roomName)) {
-          this.createThread(roomName, layoutRoom, room)
+        if (!this.hasThread(`layout:${roomName}`)) {
+          this.log.warn(`Starting layout thread for ${roomName}`)
+          this.createThread(`layout:${roomName}`, layoutRoom, roomName)
         }
       }
     }
     yield sleep(100)
   }
+}
+
+function blockEdgeMatrix(matrix) {
+  for (let i = 0; i < 50; i++) {
+    matrix.set(0, i, 0)
+    matrix.set(1, i, 0)
+    matrix.set(i, 0, 0)
+    matrix.set(i, 1, 0)
+    matrix.set(49, i, 0)
+    matrix.set(48, i, 0)
+    matrix.set(i, 49, 0)
+    matrix.set(i, 48, 0)
+  }
+}
+
+function * templatedLayout (roomName) {
+  const room = Game.rooms[roomName]
+  const walkable = walkablePixelsForRoom(roomName)
+  blockEdgeMatrix(walkable)
+  const distance = distanceTransform(walkable)
+  const spaces = getIndexed(distance)
+  const level = room.controller.level
+  const sources = room.find(FIND_SOURCES)
+  const sx = Math.floor(sources.reduce((l, s) => l + s.pos.x, 0) / sources.length)
+  const sy = Math.floor(sources.reduce((l, s) => l + s.pos.y, 0) / sources.length)
+  this.log.info(`sp: ${sx},${sy},${roomName}`);
+  const spos = new RoomPosition(sx, sy, roomName)
+  const coreSpaces = (spaces[4] || spaces[5] || spaces[6] || []).map(p => new RoomPosition(p.x, p.y, roomName))
+  if (coreSpaces.length == 0) {
+    this.log.error(`Not enough room for core in ${roomName}`)
+    while(true) yield
+  }
+  const center = spos.findClosestByRange(coreSpaces)
+  this.log.info(`lvl: ${level} ${core.structures.length}`)
+  return {
+    blockAreas: [{
+      x: center.x - 3,
+      y: center.y - 3,
+      width: 7,
+      height: 7
+    }],
+    structures: core.structures.map(s => Object.assign({}, s, { x: center.x + s.x, y: center.y + s.y }))
+  }
+
+  // while (true) {
+  //   const vis = new RoomVisual(roomName)
+  //   drawCostMatrix(distance, null, vis)
+  //   for (const { structure, x, y, minLevel = 1 } of core.structures) {
+  //     if (level < minLevel) continue
+  //     vis.structure(center.x + x, center.y + y, structure)
+  //   }
+  //   yield
+  // }
 }
 
 function * csiteVisualizer () {
@@ -45,13 +101,28 @@ function * csiteVisualizer () {
 }
 
 function * layoutRoom (roomName) {
+  const templated = yield * templatedLayout.call(this, roomName)
+  const blockAreas = []
+  blockAreas.push(...templated.blockAreas)
   while (true) {
     yield true
     const room = Game.rooms[roomName]
-    if (!room || !room.controller || !room.controller.my) return
-    yield * flex(room)
+    if (!room || !room.controller || !room.controller.my) {
+      this.log.warn(`Room ${roomName} not valid, aborting. (${!!room} ${!!(room && room.controller)} ${!!(room && room.controller && room.controller.my)})`)
+      return
+    }
+    for (const { structure, x, y, minLevel } of templated.structures) {
+      if (minLevel > room.controller.level) continue
+      const structures = room.lookForAt(LOOK_STRUCTURES, x, y)
+      if (structures.find(s => s.structureType === structure)) continue
+      const csites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y)
+      if (csites.find(s => s.structureType === structure)) continue
+      room.createConstructionSite(x, y, structure)
+      yield true
+    }
+    yield * flex.call(this, room, blockAreas)
     if (room.controller.level >= 4) {
-      yield * walls(room)
+      // yield * walls.call(this, room)
     }
     yield * sleep(20)
   }
@@ -99,11 +170,11 @@ function * walls (room) {
   }
 }
 
-function * flex (room) {
+function * flex (room, blockAreas = []) {
   if (size(Game.constructionSites) >= 75) return
   const { controller: { level } } = room
   const offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
-  const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_CONTAINER, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL]
+  const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_CONTAINER, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL, C.STRUCTURE_POWER_SPAWN]
   const want = mapValues(pick(C.CONTROLLER_STRUCTURES, wanted), level)
   const allSites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
   const sites = groupBy(allSites, 'structureType')
@@ -123,6 +194,13 @@ function * flex (room) {
   // }
   if (!Object.keys(want).length) return
   const walkable = blockablePixelsForRoom(room.name)
+  for (const area of blockAreas) {
+    for(let y = 0; y < area.height; y++) {
+      for(let x = 0; x < area.width; x++) {
+        walkable.set(area.x + x, area.y + y, 0)
+      }
+    }
+  }
   const distance = multMatrix(invertMatrix(distanceTransform(walkable), 8), 3)
   // if (room.name === 'W8S6') drawCostMatrix(distance)
   const memSrc = room.memory.layoutStart && new RoomPosition(room.memory.layoutStart[0], room.memory.layoutStart[1], room.name)
@@ -151,7 +229,7 @@ function * flex (room) {
         return
       }
     }
-    const pos = findPos(memSrc || src.pos, positions, offGrid.includes(type), distance)
+    const pos = findPos.call(this, memSrc || src.pos, positions, offGrid.includes(type), distance)
     if (pos) {
       room.createConstructionSite(pos, type)
       return
@@ -182,6 +260,7 @@ function getRange (s) {
 }
 function findPos (origin, avoid, invert = false, cmBase = false) {
   this.log.info('findPos', invert, origin)
+  avoid.push({ pos: origin, range: 4 })
   const { visual } = Game.rooms[origin.roomName]
   avoid.forEach(a => visual.circle(a.pos.x, a.pos.y, { radius: a.range, fill: 'red' }))
   // const ind = avoid.findIndex(a => a.pos.x === origin.x && a.pos.y === origin.y)

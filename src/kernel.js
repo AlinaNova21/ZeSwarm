@@ -51,7 +51,7 @@ export class Kernel {
       log.info('Starting kBase')
       this.threads.set('kBase', kernelBase(this))
     }
-    log.info(`threads: ${[...this.threads.keys()]}`)
+    // log.info(`threads: ${[...this.threads.keys()]}`)
     let cnt = 0
     const { value: limit } = this.pidGen.next()
     this.scheduler = {}

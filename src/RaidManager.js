@@ -3,12 +3,13 @@ import { kernel, restartThread, sleep } from './kernel'
 import { Logger } from './log'
 import { createTicket /*, destroyTicket */ } from './SpawnManager'
 import C from './constants'
+import { raids } from './config'
 
 const log = new Logger('[RaidPlanner]')
 
-const ENABLE_RAIDING = false
-
-kernel.createThread('RaidPlanner', restartThread(raidPlanner))
+if (raids.enabled) {
+  kernel.createThread('RaidPlanner', restartThread(raidPlanner))
+}
 const routeCache = new Map()
 
 function findRoute (src, dst, opts = {}) {
@@ -31,12 +32,7 @@ function * raidPlanner () {
       yield
       continue
     }
-    if (!ENABLE_RAIDING) {
-      yield
-      continue
-    }
-
-    log.info(JSON.stringify(intel.rooms.E12N38))
+    
     const roomIntel = Object.values(intel.rooms) // .filter(r => r.hostile)
     for (const int of roomIntel) {
       if (int.ts < Game.time - 10000) {

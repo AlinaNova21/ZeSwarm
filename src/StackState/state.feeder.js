@@ -21,10 +21,20 @@ export default {
       this.push('moveNear', target.id)
     } else {
       const spawn = room.spawns[0]
+      const term = room.terminal
+      if (term && term.store.energy > 10000) {
+        this.push('withdraw', term.id, C.RESOURCE_ENERGY)
+        this.push('moveNear', term.id)
+        return
+      }
       const cont = (room.controller.level >= 4 && room.storage) || spawn.pos.findClosestByRange(room.containers)
-      if (!cont) return
-      this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
-      this.push('moveNear', cont.id)
+      if (!cont) return this.creep.say('No Cont')
+      if (cont.store.energy) {
+        this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
+        this.push('moveNear', cont.id)
+      } else {
+        this.push('flee', [{ pos: cont.pos, range: 3 }])
+      }      
     }
     return this.runStack()
   }

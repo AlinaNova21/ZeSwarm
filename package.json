@@ -31,6 +31,8 @@
   },
   "homepage": "https://github.com/ags131/screeps#readme",
   "dependencies": {
+    "buckets-js": "^1.98.2",
+    "ramda": "^0.26.1",
     "rollup": "^1.17.0",
     "rollup-plugin-commonjs": "^10.0.1",
     "rollup-plugin-node-resolve": "^5.2.0",

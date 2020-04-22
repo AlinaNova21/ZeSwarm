@@ -24,7 +24,20 @@ such as roomName, sectorName, etc, low overall spread.
 
 */
 const config = {
-  driver: 'Graphite', // Graphite, InfluxDB
+  output: [
+    {
+      driver: 'Prometheus',
+      types: ['segment'],
+      segment: 98
+    },
+    {
+      driver: 'Graphite', // Graphite, InfluxDB
+      format: 'plain',
+      segment: 99, 
+      types: ['memory', 'segment'],
+      key: '__stats',
+    }
+  ],
   format: 'plain', // Or JSON, only applies to Graphite driver
   types: ['memory', 'segment', 'console'], // memory, segment, console (the agent limits memory and segment to 15 second poll intervals)
   key: '__stats',
@@ -34,6 +47,12 @@ const config = {
   usermap: { // use module.user in console to get userID for mapping. Defaults to username of Spawn1 if not defined
     // '577bc02e47c3ef7031adb268': 'ags131',
   }
+}
+
+const DRIVER_DEF = {
+  driver: 'Graphite',
+  types: ['memory'], // memory, segment, console
+  key: '__stats'
 }
 
 const CONFIG = {
@@ -176,33 +195,54 @@ export class InfluxDB {
     })
   }
 
-  commit () {
+  commit (opts) {
+    if (!opts) {
+      if (this.opts.baseStats) this.addBaseStats()
+      if (this.opts.output) {
+        for (const conf of this.opts.output) {
+          this.commit(Object.assign({}, DRIVER_DEF, conf))
+        }
+        return
+      }
+      return this.commit(this.opts)
+    }
+    console.log(opts.driver)
     const start = Game.cpu.getUsed()
-    if (this.opts.baseStats) this.addBaseStats()
-    let stats = `text/${this.opts.driver.toLowerCase()}\n`
+    let stats = `text/${opts.driver.toLowerCase()}\n`
     stats += `${Game.time}\n`
     stats += `${Date.now()}\n`
-    const format = this[`format${this.opts.driver}`].bind(this)
+    const format = this[`format${opts.driver}`].bind(this)
     _.each(this.stats, (v, k) => {
       stats += format(v)
     })
     const end = Game.cpu.getUsed()
     stats += format({ name: 'stats', tags: {}, values: { count: this.stats.length, size: stats.length, cpu: end - start } })
-    if (this.opts.types.includes('segment')) {
-      RawMemory.segments[this.opts.segment] = stats
+    if (opts.types.includes('segment')) {
+      RawMemory.segments[opts.segment] = stats
     }
-    if (this.opts.types.includes('memory')) {
-      Memory[this.opts.key] = stats
+    if (opts.types.includes('memory')) {
+      Memory[opts.key] = stats
     }
-    if (this.opts.types.includes('console')) {
+    if (opts.types.includes('console')) {
       console.log('STATS;' + stats.replace(/\n/g, ';'))
     }
   }
 
   formatInfluxDB (stat) {
     const { name, tags, values } = stat
-    Object.assign(tags, { user: this.user, shard: this.shard })
-    return `${name},${this.kv(tags)} ${this.kv(values)}\n`
+    const ltags = Object.assign({}, tags, { user: this.user, shard: this.shard })
+    return `${name},${this.kv(ltags)} ${this.kv(values)}\n`
+  }
+  
+  formatPrometheus (stat) {
+    const { name, tags, values } = stat
+    const ltags = Object.assign({}, tags, { user: this.user, shard: this.shard })
+    let out = ''
+    const ts = Date.now()
+    return _.map(values, (v, k) => [`${name}_${k}`.replace(/\./g, '_').replace(/([a-z])([A-Z])/g, (_, a, b) => `${a}_${b}`).toLowerCase(), v])
+      .filter(([,v]) => !isNaN(v))
+      .map(([k,v]) => `${k}{${this.kvQuoted(ltags).join(',')}} ${v} ${ts}\n`)
+      .join('')
   }
 
   formatGraphite (stat) {
@@ -216,6 +256,10 @@ export class InfluxDB {
 
   kv (obj, sep = '=') {
     return _.map(obj, (v, k) => `${k}${sep}${v}`)
+  }
+  
+  kvQuoted (obj, sep = '=') {
+    return _.map(obj, (v, k) => `${k}${sep}"${v}"`)
   }
 }
 

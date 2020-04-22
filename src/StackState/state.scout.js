@@ -5,6 +5,7 @@ const size = require('lodash/size')
 const C = require('/constants')
 const SIGN_MSG = `Territory of ZeSwarm - ${C.USER}`
 const SIGN_MY_MSG = `ZeSwarm - https://github.com/ags131/ZeSwarm`
+const SIGN_COOLDOWN = 50
 
 module.exports = {
   scoutVision (roomName) {
@@ -19,7 +20,12 @@ module.exports = {
     }
     this.creep.say('👁️', true)
   },
-  scout (state = {}) {
+  scout (state = false) {
+    if (state === false) {
+      this.pop()
+      this.push('scout', {})
+      return this.runStack()
+    }
     // const debug = this.creep.name === 'scout_13651666_najb'
     if (!state.z) state.z = this.creep.notifyWhenAttacked(false)
     if (!state.work) {
@@ -56,22 +62,47 @@ module.exports = {
       dir = Math.ceil(Math.random() * 8)
     }
 
-    const csites = this.creep.room.find(C.FIND_HOSTILE_CONSTRUCTION_SITES)
+    const csites = this.creep.room.find(C.FIND_HOSTILE_CONSTRUCTION_SITES).filter(c => !(c.room.getTerrain().get(c.pos.x, c.pos.y) & 1))
     if (csites.length) {
-      this.push('travelTo', csites[0].pos, { visualizePathStyle: { opacity: 1 }, range: 0 })
+      const csite = csites[Math.floor(Math.random() * csites.length)]
+      this.push('travelTo', csite.pos, { visualizePathStyle: { opacity: 1 }, range: 0 })
       return this.runStack()
     }
 
     const roomCallback = `r => r === '${room.name}' ? undefined : false`
     const exit = pos.findClosestByRange(dir)
     const msg = (controller && controller.my && SIGN_MY_MSG) || SIGN_MSG
-    if (!hostile && controller && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
+    const { lastSigned = 0 } = state
+    if (!hostile && controller && (controller.sign && controller.sign.username !== C.SYSTEM_USERNAME) && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg) && lastSigned < Game.time - SIGN_COOLDOWN) {
+      state.lastSigned = Game.time
       this.creep.say('Signing')
       this.push('signController', controller.id, msg)
       this.push('moveNear', controller.pos, { roomCallback })
       return this.runStack()
     }
+    state.lastSigned = 0
     if (exit) {
+      const { incomplete } = PathFinder.search(this.creep.pos, exit.pos, {
+        range: 0,
+        maxRooms: 1,
+        roomCallback (roomName) {
+          const cm = new PathFinder.CostMatrix()
+          const room = Game.rooms[roomName]
+          if (!room) return false
+          const walls = room.constructedWalls
+          const ramparts = room.ramparts
+          for (const wall of walls) {
+            cm.set(wall.pos.x, wall.pos.y, 0xff)
+          }
+          for (const rampart of ramparts) {
+            cm.set(rampart.pos.x, rampart.pos.y, rampart.my || rampart.public ? 1 : 0xff)
+          }
+          return cm
+        }
+      })
+      if (incomplete) {
+        return this.runStack()
+      }
       this.push('moveOntoExit', dir)
       this.push('moveNear', exit, { roomCallback })
       this.runStack()

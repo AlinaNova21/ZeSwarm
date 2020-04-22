@@ -11,7 +11,7 @@ const config2 = {
   rooms: [['W8N3', 31, 16]]
 }
 const config3 = {
-  server: 'botarena',
+  server: 'swc',
   rooms: [['E2S7', 27, 39]]
 }
 const config4 = {
@@ -48,10 +48,10 @@ const config10 = {
   server: 'prtest',
   rooms: [['W3N7', 30, 20]]
 }
-const config = config1
+// const config = config1
 // const config = config2
 // const config = config3
-// const config = config4
+const config = config4
 // const config = config5
 // const config = config6
 // const config = config7
@@ -96,7 +96,7 @@ ScreepsAPI.fromConfig(process.argv[2] || config.server).then(async api => {
     while (true) {
       try {
         console.log('Not Spawned, attempting spawn from room list...')
-        const ret = await api.raw.game.placeSpawn(...config.rooms[0], 'Spawn1')
+        const ret = await api.raw.game.placeSpawn(...config.rooms[0], 'auto')
         if (ret.ok) {
           console.log('Placed Spawn')
           break
