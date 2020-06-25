@@ -1,7 +1,6 @@
 
 const ALLIES_DEFAULT = []
 const ALLOW_PASSAGE_DEFAULT = []
-
 const RAIDS_DEFAULT = {
   enabled: false
 }
@@ -27,5 +26,5 @@ export const {
     allies = ALLIES_DEFAULT,
     allowPassage = ALLOW_PASSAGE_DEFAULT,
     raids = RAIDS_DEFAULT
-  } 
+  } = {}
 } = shards

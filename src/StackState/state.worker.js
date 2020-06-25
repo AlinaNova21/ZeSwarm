@@ -17,6 +17,7 @@ export default {
         this.push('moveToRoom', new RoomPosition(25, 25, roomName))
         return this.runStack()
       }
+      
       if (room.controller.level > 1) {
         const spawn = room.spawns[0]
         const cont = (room.controller.level >= 4 && room.storage) || (spawn && spawn.pos.findClosestByRange(room.containers))
@@ -25,6 +26,20 @@ export default {
           this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
           return this.runStack()
         }
+      }
+      const [resource] = this.creep.pos.findInRange(FIND_DROPPED_RESOURCES, 4)
+        .filter(r => r.resourceType === C.RESOURCE_ENERGY)
+      if (resource) {
+        this.push('pickup', resource.id)
+        this.push('moveNear', resource.id)
+        return this.runStack()
+      }
+      const remote = this.creep.memory.room !== this.creep.room.name
+      const tombstone = this.creep.pos.findInRange(FIND_TOMBSTONES, 3).find(o => o.store[C.RESOURCE_ENERGY])
+      if (tombstone) {
+        this.push('withdraw', tombstone.id, C.RESOURCE_ENERGY)
+        this.push('moveNear', tombstone.pos)
+        return this.runStack()
       }
       const creeps = this.creep.room.find(C.FIND_MY_CREEPS)
         .filter(c => c.memory.role === 'miningWorker' && c.carry.energy > 30)
@@ -35,6 +50,7 @@ export default {
         this.push('revTransfer', creep.id, C.RESOURCE_ENERGY)
         return this.runStack()
       }
+      
       const srcs = this.creep.room.find(C.FIND_SOURCES)
       const sn = Math.floor(Math.random() * srcs.length)
       const src = srcs[sn]
@@ -51,21 +67,22 @@ export default {
         this.push('moveToRoom', new RoomPosition(25, 25, homeRoom.name))
         return this.runStack()
       }
+      // room.spawns[0].pos.findClosestByRange(room.containers)
       const { controller, storage } = room
       const controllerCritical = controller.level === 1 || controller.ticksToDowngrade < 5000
-      const storageLow = !controllerCritical && storage && (storage.store.energy || 0) < 20000
-      const storageCritical = storageLow && (storage.store.energy || 0) < 10000
+      const storageLow = !controllerCritical && storage && (storage.store.energy || 0) < (storage.storeCapacity * 0.2)
+      const storageCritical = storageLow && (storage.store.energy || 0) < (storage.storeCapacity * 0.1)
 
       const s = [
         ...(homeRoom.towers || []),
         ...(homeRoom.spawns || [])
       ].filter(s => s.energy < s.energyCapacity)
       const feeder = room.spawns.length && room.spawns[0].pos.findInRange(C.FIND_MY_CREEPS, 7, { filter: c => c.memory.role === 'feeder' }).find(Boolean)
-      if ((!feeder || storageCritical) && homeRoom.extensions) {
+      if ((!feeder || storageCritical || !storage) && homeRoom.extensions) {
         s.push(...homeRoom.extensions.filter(s => s.energy < s.energyCapacity))
       }
       if (storageCritical) {
-        s.push(homeRoom.storage)
+        s.push(storage)
       }
       const RCL_LIMIT = 8
       let upgradeMode = false

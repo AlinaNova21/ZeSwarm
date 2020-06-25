@@ -41,23 +41,28 @@ const config8 = {
   rooms: [['W8N8', 25, 25]]
 }
 const config9 = {
-  server: 'fordo',
-  rooms: [['W3N7', 30, 20]]
+  server: 'atanner',
+  rooms: ['W2N2']
 }
 const config10 = {
   server: 'prtest',
   rooms: [['W3N7', 30, 20]]
 }
+const config11 = {
+  server: 'botarena',
+  rooms: ['E4S11', 'E8S3', 'E4S17', 'E1S14']
+}
 // const config = config1
 // const config = config2
 // const config = config3
-const config = config4
+// const config = config4
 // const config = config5
 // const config = config6
 // const config = config7
 // const config = config8
-// const config = config9
+const config = config9
 // const config = config10
+// const config = config11
 const BRANCH = 'ZeSwarm_v1.1'
 // const BRANCH='default'
 ScreepsAPI.fromConfig(process.argv[2] || config.server).then(async api => {
@@ -96,7 +101,7 @@ ScreepsAPI.fromConfig(process.argv[2] || config.server).then(async api => {
     while (true) {
       try {
         console.log('Not Spawned, attempting spawn from room list...')
-        const ret = await api.raw.game.placeSpawn(...config.rooms[0], 'auto')
+        const ret = await api.raw.game.placeSpawn(config.rooms[0], 25, 25, 'auto')
         if (ret.ok) {
           console.log('Placed Spawn')
           break

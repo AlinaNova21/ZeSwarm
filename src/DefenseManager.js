@@ -50,7 +50,7 @@ function * defenseManagerTowersThread () {
         })
         if (!room.towers.length || needDefenders) {
           const neededBody = [C.TOUGH, C.TOUGH, C.ATTACK, C.ATTACK, C.ATTACK, C.MOVE, C.MOVE, C.MOVE, C.MOVE, C.MOVE, C.MOVE, C.HEAL]
-          const invaderBody = [C.TOUGH, C.ATTACK, C.ATTACK, C.MOVE, C.MOVE]
+          const invaderBody = [C.TOUGH, C.ATTACK, C.ATTACK, C.MOVE, C.MOVE, C.MOVE]
           const body = needDefenders ? neededBody : invaderBody
           this.log.alert(`No towers in ${roomName}, requesting defenders`)
           createTicket(`defender`, {

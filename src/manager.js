@@ -58,7 +58,7 @@ function * managerThread () {
       }
       // Don't remote mine if not enough capacity to spawn full harvesters
       // 1C3M6W = 800
-      if (room.energyCapacityAvailable < 800) continue
+      if (room.energyCapacityAvailable < 550) continue
       const neighbors = Object.values(Game.map.describeExits(room.name))
       log.info(`[${room.name}] Found neighbors ${neighbors}`)
       for (const neighbor of neighbors) {
@@ -136,9 +136,9 @@ function * managerThread () {
           }
         })
       }
-      if (room.controller.level >= 3 && room.energyAvailable >= 550) {
+      if (room.controller.level >= 2 && room.energyAvailable >= 500) {
         createTicket(`scouts_${room.name}`, {
-          valid: () => Game.rooms[room.name].controller.level >= 3,
+          valid: () => Game.rooms[room.name].controller.level >= 2,
           parent: `room_${room.name}`,
           body: [C.TOUGH, C.MOVE],
           memory: {
@@ -246,7 +246,7 @@ function * miningManager (homeRoomName, roomName) {
         yield
         continue
       }
-      const { controller: { id, level } = {} } = Game.rooms[roomName]
+      const { controller: { id, level, pos } = {} } = Game.rooms[roomName]
       if (id) {
         const dual = level < 4
         createTicket(rgroup, {
@@ -258,7 +258,7 @@ function * miningManager (homeRoomName, roomName) {
           memory: {
             role: 'reserver',
             room: homeRoomName,
-            stack: [['repeat', 1500, 'reserveController', id], ['moveNear', id], ['moveToRoom', roomName]]
+            stack: [['repeat', 1500, 'reserveController', id], ['moveNear', pos], ['moveToRoom', roomName]]
           }
         })
       }

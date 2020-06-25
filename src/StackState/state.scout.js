@@ -73,8 +73,9 @@ module.exports = {
     const exit = pos.findClosestByRange(dir)
     const msg = (controller && controller.my && SIGN_MY_MSG) || SIGN_MSG
     const { lastSigned = 0 } = state
-    if (!hostile && controller && (controller.sign && controller.sign.username !== C.SYSTEM_USERNAME) && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg) && lastSigned < Game.time - SIGN_COOLDOWN) {
-      state.lastSigned = Game.time
+    //  && (lastSigned < (Game.time - SIGN_COOLDOWN))
+    if (!hostile && controller && (controller.sign && controller.sign.username !== C.SYSTEM_USERNAME) && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
+      // state.lastSigned = Game.time
       this.creep.say('Signing')
       this.push('signController', controller.id, msg)
       this.push('moveNear', controller.pos, { roomCallback })

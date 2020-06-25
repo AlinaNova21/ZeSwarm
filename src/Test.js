@@ -4,6 +4,10 @@ import { pathfind, MapGraph } from './lib/Pathfind'
 kernel.createProcess('Test', Test)
 
 function * Test () {
+  while (true) {
+    Game.notify("This is a test")
+    yield
+  }
   return
   // while (true) {
   const start = Game.cpu.getUsed()

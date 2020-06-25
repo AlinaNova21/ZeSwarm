@@ -9,7 +9,9 @@ import './manager'
 import './CreepManager'
 import './DefenseManager'
 import './ExpansionPlanner'
+import './InterShardRPC'
 import './LayoutManager'
+import './PixelGen'
 import './RaidManager'
 import './SpawnManager'
 import './ui'
@@ -19,6 +21,7 @@ import log from '/log'
 import size from 'lodash/size'
 import groupBy from 'lodash/groupBy'
 import C from './constants'
+import InterShardSegment from './InterShardSegment'
 
 if (!Memory.lastTick) {
   Memory.lastTick = Date.now()
@@ -41,33 +44,28 @@ export function loop () {
   Memory.avg = avg
   Memory.avgCnt = n
 
-  console.log(`Tick Timing ${(t / 1000).toFixed(3)}s`)
-  console.log(`Avg ${(avg / 1000).toFixed(3)}s`)
-  console.log(`User: ${C.USER}`)
+  log.info(`Tick Timing ${(t / 1000).toFixed(3)}s`)
+  log.info(`Avg ${(avg / 1000).toFixed(3)}s`)
+  log.info(`User: ${C.USER}`)
 
   const vis = new RoomVisual()
   vis.text(`Tick Timing ${(t / 1000).toFixed(3)}s`, 25, 3, { size: 3 })
   vis.text(`Avg ${(avg / 1000).toFixed(3)}s`, 25, 6, { size: 3 })
 
-  const ccnt = size(Game.creeps)
-  vis.text(`${ccnt} alive`, 25, 8, { size: 1 })
-
   const roles = groupBy(Game.creeps, c => c.memory.role || (c.memory.stack && c.memory.stack[0][0]) || 'unknown')
-  console.log(`${ccnt} alive`)
-  let off = 0
-  for (const role in roles) {
-    const cnt = (' '.repeat(3) + roles[role].length).slice(-3)
-    vis.text(`${cnt} ${role}`, 25, 9 + off++, { size: 1 })
-  }
+
   kernel.tick()
   memoryManager.posttick()
+  InterShardSegment.commit()
   stats.commit()
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })
+  log.info(`CPU: Used: ${Game.cpu.getUsed().toFixed(3)} Limit: ${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
+  log.info(`MEMORY: Used: ${(RawMemory.get().length/1024).toFixed(3)}KB`)
   try {
     // eslint-disable-next-line camelcase
     const { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
     const MB = (v) => ((v / 1024) / 1024).toFixed(3)
-    log.warn(`HEAP: Used: ${MB(used_heap_size)}MB Available: ${MB(total_available_size)}MB Limit: ${MB(heap_size_limit)}MB`)
+    log.info(`HEAP: Used: ${MB(used_heap_size)}MB Available: ${MB(total_available_size)}MB Limit: ${MB(heap_size_limit)}MB`)
   } catch (e) {
     log.warn('HEAP: Unavailable')
   }

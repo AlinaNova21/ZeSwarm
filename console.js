@@ -3,9 +3,9 @@ const chalk = require('chalk')
 
 const configs = [
   // { server: 'splus1' },
-  // { server: 'splus2' },
+  { server: 'splus2' },
   // { server: 'test' },
-  { server: 'main', shard: 'shard3' }
+  // { server: 'main', shard: 'shard3' }
 ]
 
 configs.forEach(runConsole)
@@ -38,12 +38,13 @@ function runConsole (config) {
 // }
 
 function colorize (text) {
-  const [, tag, style] = text.match(/<([\w-]+) .*?(:?color|style)="(.+?)".*?>/) || []
+  const [, tag, style] = text.match(/<([\w-]+) .*?(?:color|style)="(.+?)".*?>/) || []
   if (!tag) return text
   const raw = text.replace(/<.+?>/g, '')
   const styles = style.split(';').map(s => s.split(':').map(v => v.trim()))
   let fn = chalk
   for (const [name, value] of styles) {
+    if (!value) continue
     if (name === 'color') {
       if (value.startsWith('#')) {
         fn = chalk.hex(value)

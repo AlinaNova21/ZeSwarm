@@ -146,11 +146,6 @@ bl@^1.0.0:
     readable-stream "^2.3.5"
     safe-buffer "^5.1.1"
 
-bluebird@^3.5.0:
-  version "3.7.0"
-  resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.0.tgz#56a6a886e03f6ae577cffedeb524f8f2450293cf"
-  integrity sha512-aBQ1FxIa7kSWCcmKHlcHFlT2jt6J/l4FzC7KcPELkOJOsPOb/bccdhmIrKDfXhwFrmc7vDoDrrepFvGqjyXGJg==
-
 brace-expansion@^1.1.7:
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
@@ -1595,13 +1590,12 @@ safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
-screeps-api@^1.9.0:
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/screeps-api/-/screeps-api-1.9.0.tgz#5795bd4bfa9158e72626aae93752b228a04189a4"
-  integrity sha512-mH0rFvHOEIaSuwVYeCDgkRkygdsXBKc3XhNVy+MQ+enNuVGvMS++/QPhVD29qomdQR+FMeA3tj2YSUjNcEKGig==
+screeps-api@^1.12.1:
+  version "1.12.1"
+  resolved "https://registry.yarnpkg.com/screeps-api/-/screeps-api-1.12.1.tgz#72f53915b6d5b2e45a36a4b1e65cdcf5a5024781"
+  integrity sha512-zYXOc4CfP9IecRJ2xk3pXxs44vbEOzWjlxIOIj1NeH1NmczAfKeiePplOgM6CxLWGL2yGfKiolHo0cJOzmV37w==
   dependencies:
     axios "^0.18.0"
-    bluebird "^3.5.0"
     commander "^2.15.1"
     debug "^4.1.1"
     ws "^5.2.0"

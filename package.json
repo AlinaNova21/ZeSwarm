@@ -15,9 +15,8 @@
     "push:test": "yarn build && yarn run push --server test",
     "push:splus1": "yarn build && yarn run push --server splus",
     "push:splus2": "yarn build && yarn run push --server splus2",
-    "push:fordo": "yarn build && yarn run push --server fordo",
-    "push:prtest": "yarn build && yarn run push --server prtest",
-    "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server fordo",
+    "push:atanner": "yarn build && yarn run push --server atanner",
+    "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server atanner",
     "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js"
   },
   "repository": {
@@ -41,7 +40,7 @@
   "screeps_bot": true,
   "devDependencies": {
     "chalk": "^2.4.2",
-    "screeps-api": "^1.9.0",
+    "screeps-api": "^1.12.1",
     "standard": "^13.0.2"
   },
   "standard": {

@@ -206,7 +206,7 @@ export class InfluxDB {
       }
       return this.commit(this.opts)
     }
-    console.log(opts.driver)
+    // console.log(opts.driver)
     const start = Game.cpu.getUsed()
     let stats = `text/${opts.driver.toLowerCase()}\n`
     stats += `${Game.time}\n`
