@@ -1,4 +1,4 @@
-const { ScreepsAPI } = require('screeps=api')
+const { ScreepsAPI } = require('screeps-api')
 
 const RARITY_TO_KEEP = 4
 const PIXELS_TO_RESERVE = 0
