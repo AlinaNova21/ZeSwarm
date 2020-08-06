@@ -32,6 +32,7 @@ function * expansionPlanner () {
       if (!kernel.hasThread(key)) {
         log.info(`Creating nest thread for ${dest}`)
         kernel.createThread(key, createNest(src, dest, timeout))
+        yield * sleep(timeout)
       }
       yield true
     }

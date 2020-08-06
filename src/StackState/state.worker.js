@@ -17,16 +17,6 @@ export default {
         this.push('moveToRoom', new RoomPosition(25, 25, roomName))
         return this.runStack()
       }
-      
-      if (room.controller.level > 1) {
-        const spawn = room.spawns[0]
-        const cont = (room.controller.level >= 4 && room.storage) || (spawn && spawn.pos.findClosestByRange(room.containers))
-        if (cont && cont.store.energy) {
-          this.push('moveNear', cont.id)
-          this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
-          return this.runStack()
-        }
-      }
       const [resource] = this.creep.pos.findInRange(FIND_DROPPED_RESOURCES, 4)
         .filter(r => r.resourceType === C.RESOURCE_ENERGY)
       if (resource) {
@@ -40,6 +30,16 @@ export default {
         this.push('withdraw', tombstone.id, C.RESOURCE_ENERGY)
         this.push('moveNear', tombstone.pos)
         return this.runStack()
+      }
+
+      if (room.controller.level > 1) {
+        const spawn = room.spawns[0]
+        const cont = room.storage && room.storage.store.energy ? room.storage : (spawn && spawn.pos.findClosestByRange(room.containers))
+        if (cont && cont.store.energy) {
+          this.push('moveNear', cont.id)
+          this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
+          return this.runStack()
+        }
       }
       const creeps = this.creep.room.find(C.FIND_MY_CREEPS)
         .filter(c => c.memory.role === 'miningWorker' && c.carry.energy > 30)
@@ -82,7 +82,7 @@ export default {
         s.push(...homeRoom.extensions.filter(s => s.energy < s.energyCapacity))
       }
       if (storageCritical) {
-        s.push(storage)
+        // s.push(storage)
       }
       const RCL_LIMIT = 8
       let upgradeMode = false

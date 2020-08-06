@@ -1,7 +1,7 @@
 import { kernel, restartThread } from '/kernel'
 import C from '/constants'
 import { createTicket } from './SpawnManager'
-import { allowPassage } from './config'
+import config from './config'
 
 
 kernel.createProcess('defenseManager', restartThread, defenseManagerTowersThread)
@@ -98,5 +98,5 @@ function * defenseManagerTowersThread () {
 function allowed (creep) {
   const struct = creep.pos.findInRange(creep.room.structures.all, 5)
   const atEdge = creep.pos.x <= DIST || creep.pos.x >= 49 - DIST || creep.pos.y <= DIST || creep.pos.y >= 49 - DIST
-  return !atEdge && (!allowPassage.includes(creep.owner.username) || struct)
+  return !atEdge && (!config.allowPassage.includes(creep.owner.username) || struct)
 }

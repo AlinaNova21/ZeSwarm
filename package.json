@@ -9,7 +9,7 @@
   "scripts": {
     "test": "standard src/**/*.js",
     "build": "rollup -c",
-    "push:mmo": "screeps-api download -d tmp && yarn build && cp dist/main.js tmp/zeswarm.js && screeps-api upload tmp/*.js",
+    "push:mmo": "screeps-api download -d tmp && rm -f tmp/zeswarm* && yarn build --configMulti --output.dir tmp && screeps-api upload tmp/*.js",
     "push:botarena": "yarn build && yarn run push --server botarena",
     "push:local": "yarn build && yarn run push --server local",
     "push:test": "yarn build && yarn run push --server test",
@@ -17,7 +17,9 @@
     "push:splus2": "yarn build && yarn run push --server splus2",
     "push:atanner": "yarn build && yarn run push --server atanner",
     "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server atanner",
-    "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js"
+    "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js",
+    "console": "node tools/console.js",
+    "deploy": "node tools/deploy.js"
   },
   "repository": {
     "type": "git",
@@ -30,12 +32,13 @@
   },
   "homepage": "https://github.com/ags131/screeps#readme",
   "dependencies": {
+    "@types/screeps": "^3.1.3",
     "buckets-js": "^1.98.2",
     "ramda": "^0.26.1",
-    "rollup": "^1.17.0",
+    "rollup": "^2.23.0",
     "rollup-plugin-commonjs": "^10.0.1",
     "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-root-import": "^0.2.4"
+    "rollup-plugin-root-import": "^1.0.0"
   },
   "screeps_bot": true,
   "devDependencies": {

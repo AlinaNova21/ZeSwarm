@@ -91,7 +91,7 @@ export class InfluxDB {
     global.influxdb = this
     this.reset()
     this.startTick = Game.time
-    this.shard = (Game.shard && Game.shard.name) || 'shard0'
+    this.shard = (Game.shard && Game.shard.name) || 'unknown'
     this.user = C.USER // _.find(Game.spawns, v => v).owner.username
   }
 

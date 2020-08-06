@@ -30,7 +30,7 @@ export class Logger {
 
   constructor (prefix = '') {
     this.prefix = prefix ? prefix + ' ' : ''
-    this.level = Memory.loglevel ? Memory.loglevel.default : LogLevel.INFO
+    this.level = LogLevel.INFO
     this._log = console.log // This allows for console hooking
   }
 

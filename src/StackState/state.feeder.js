@@ -10,7 +10,7 @@ export default {
     }
     const room = Game.rooms[this.creep.memory.room]
     if (this.creep.carry[C.RESOURCE_ENERGY]) {
-      const targets = [...room.spawns, ...room.extensions].filter(e => e.energy < e.energyCapacity)
+      const targets = [...room.spawns, ...room.extensions, ...room.towers].filter(e => e.energy < e.energyCapacity)
       if (!targets.length) {
         // this.push('sleep', 5)
         // return this.runStack()
@@ -27,7 +27,7 @@ export default {
         this.push('moveNear', term.id)
         return
       }
-      const cont = (room.controller.level >= 4 && room.storage) || spawn.pos.findClosestByRange(room.containers)
+      const cont = room.storage && room.storage.store.energy ? room.storage : spawn.pos.findClosestByRange(room.containers)
       if (!cont) return this.creep.say('No Cont')
       if (cont.store.energy) {
         this.push('withdraw', cont.id, C.RESOURCE_ENERGY)

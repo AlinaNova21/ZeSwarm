@@ -99,10 +99,10 @@ function * managerThread () {
         workers = 4
       }
       if (room.level === 2) {
-        workers += 10
+        workers += 4
       }
       if (room.level === 3) {
-        workers += Math.floor(srcCount / 2)
+        // workers += Math.floor(srcCount / 2)
       }
       if (room.storage && room.storage.store.energy < 20000) {
         workers = room.energyAvailable > 400 ? 2 : 4
@@ -128,7 +128,7 @@ function * managerThread () {
           parent: `room_${room.memory.donor || room.name}`,
           weight: 10,
           count: Math.min(lowEnergy ? 1 : 3, Math.ceil(room.controller.level / 3)),
-          body: expandBody([3, C.MOVE, 3, C.CARRY]),
+          body: expandBody([2, C.MOVE, 4, C.CARRY]),
           memory: {
             role: 'feeder',
             homeRoom: room.name,

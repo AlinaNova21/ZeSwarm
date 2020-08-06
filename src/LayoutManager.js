@@ -174,7 +174,7 @@ function * flex (room, blockAreas = []) {
   if (size(Game.constructionSites) >= 75) return
   const { controller: { level } } = room
   const offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
-  const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_CONTAINER, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL, C.STRUCTURE_POWER_SPAWN]
+  const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL, C.STRUCTURE_POWER_SPAWN]
   const want = mapValues(pick(C.CONTROLLER_STRUCTURES, wanted), level)
   const allSites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
   const sites = groupBy(allSites, 'structureType')
@@ -182,12 +182,12 @@ function * flex (room, blockAreas = []) {
 
   // if (allSites.length) return
 
-  if (level > 1) {
-    want[C.STRUCTURE_CONTAINER] = 1 // Math.min(level, C.CONTROLLER_STRUCTURES[C.STRUCTURE_CONTAINER][level])
-  }
-  if (level <= 1 || level >= 4) {
-    want[C.STRUCTURE_CONTAINER] = 0
-  }
+  // if (level > 1) {
+  //   want[C.STRUCTURE_CONTAINER] = 1 // Math.min(level, C.CONTROLLER_STRUCTURES[C.STRUCTURE_CONTAINER][level])
+  // }
+  // if (level <= 1 || level >= 4) {
+  //   want[C.STRUCTURE_CONTAINER] = 0
+  // }
   // if (level < 3) {
   //   want[C.STRUCTURE_EXTENSION] = 0
   //   want[C.STRUCTURE_CONTAINER] = 0

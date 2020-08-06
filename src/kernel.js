@@ -72,17 +72,12 @@ export class Kernel {
     log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Ran ${this.threads.size} threads with a total of ${cnt} iterations`)
   }
 
-  next (val) {
-    if (val === true) {
-      const { value } = this.pidGen.next()
-      this.scheduler = loopScheduler(this.threads, value)
-      return { done: false, value: false }
+  * [Symbol.iterator] () {
+    while (true) {
+      this.tick()
+      yield
     }
-    const { done } = this.scheduler.next()
-    return { done: false, value: !done }
   }
-
-  [Symbol.iterator] () { return this }
 
   hasThread (name) {
     return this.threads.has(name)

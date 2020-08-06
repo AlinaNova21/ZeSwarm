@@ -3,11 +3,11 @@ import { kernel, restartThread, sleep } from './kernel'
 import { Logger } from './log'
 import { createTicket /*, destroyTicket */ } from './SpawnManager'
 import C from './constants'
-import { raids } from './config'
+import config from './config'
 
 const log = new Logger('[RaidPlanner]')
 
-if (raids.enabled) {
+if (config.raids.enabled) {
   kernel.createThread('RaidPlanner', restartThread(raidPlanner))
 }
 const routeCache = new Map()

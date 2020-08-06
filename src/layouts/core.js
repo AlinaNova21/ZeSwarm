@@ -36,8 +36,8 @@ p(2, 0, C.STRUCTURE_CONTAINER, 3)
 p(0, 0, C.STRUCTURE_LINK, 5)
 
 for (let i = -2; i <= 2; i++) {
-  p(i, -3, C.STRUCTURE_ROAD, 3)
-  p(i, 3, C.STRUCTURE_ROAD, 3)
-  p(-3, i, C.STRUCTURE_ROAD, 3)
-  p(3, i, C.STRUCTURE_ROAD, 3)
+  p(i, -3, C.STRUCTURE_ROAD, 4)
+  p(i, 3, C.STRUCTURE_ROAD, 4)
+  p(-3, i, C.STRUCTURE_ROAD, 4)
+  p(3, i, C.STRUCTURE_ROAD, 4)
 }

@@ -103,7 +103,7 @@ function * respond (id, [shard, method, args]) {
   try {
     const fn = methods.get(method)
     if (!fn) throw new Error(`Invalid Method: '${method}'`)
-    const result = yield * fn(...args)
+    const result = yield * fn.apply(this, args)
     const mem = getLocalMemory()
     mem.res[id] = { shard, result }
   } catch (e) {
@@ -134,13 +134,13 @@ function * cleanup () {
 
 
 function getLocalMemory() {
-  const mem = global.InterShardSegment && InterShardSegment.local || {}
+  const mem = InterShardSegment.local
   mem.rpc = mem.rpc || { req: {}, res: {} }
   return mem.rpc
 }
 
 function getRemoteMemory(shard) {
-  const mem = global.InterShardSegment && InterShardSegment.shardData(shard) || {}
+  const mem = InterShardSegment.shardData(shard)
   mem.rpc = mem.rpc || { req: {}, res: {} }
   return mem.rpc
 }

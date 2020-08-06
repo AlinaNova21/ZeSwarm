@@ -7,7 +7,8 @@ const otherStates = [
   require('./state.claimer'),
   require('./state.raiders'),
   require('./state.miner'),
-  require('./state.feeder')
+  require('./state.feeder'),
+  require('./state.testing')
 ]
 const states = ({
   get log () {
@@ -22,6 +23,7 @@ const states = ({
       baseState = ['worker']
       // return
     }
+    if (creep.memory.stack && !creep.memory.stack.length) delete creep.memory.stack
     creep.memory.stack = creep.memory.stack || [creep.memory.role || baseState]
     this.creep = creep
     this.runStack()

@@ -28,16 +28,17 @@ export class Tree {
   }
 
   walk (cb) {
-    this.walkNode('root', cb)
+    return this.walkNode('root', cb)
   }
 
   walkNode (name, cb) {
     const node = this.nodes[name]
     if (!node) return
     for (const child of node.children) {
-      this.walkNode(child, cb)
+      const v = this.walkNode(child, cb)
+      if (v) return v
     }
-    cb(node)
+    return cb(node)
   }
 }
 

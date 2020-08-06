@@ -6,6 +6,9 @@ const RAIDS_DEFAULT = {
 }
 
 const shards = {
+  shard0: {
+    sellExcessPixels: true
+  },
   screepsplus1: {
     allies: [],
     allowPassage: ['Saruss'],
@@ -21,10 +24,13 @@ const shards = {
   }
 }
 
-export const { 
+const {
   [Game.shard.name]: {
+    sellExcessPixels = false,
     allies = ALLIES_DEFAULT,
     allowPassage = ALLOW_PASSAGE_DEFAULT,
     raids = RAIDS_DEFAULT
   } = {}
 } = shards
+
+export default { sellExcessPixels, allies, allowPassage, raids }

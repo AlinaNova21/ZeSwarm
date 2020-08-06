@@ -95,7 +95,7 @@ function * spawnManagerSpawnThread () {
         }
         const memory = t.memory
         memory.group = memory.group || t.group
-        const id = UID()
+        const id = UID() + (memory.role || '')
         if (t.body.length > 50) {
           log.alert(`${room.name} body too long! ${t.body.length} ${id} ${t.memory.group}`)
         }
