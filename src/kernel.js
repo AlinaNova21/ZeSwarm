@@ -163,7 +163,7 @@ class Thread {
   [Symbol.iterator] () { return this }
 }
 
-function * PID (Kp, Ki, Kd, Mi, statName) {
+export function * PID (Kp, Ki, Kd, Mi, statName) {
   let e = 0
   let i = 0
   let v = 0
@@ -189,7 +189,7 @@ function * calcCPUPID () {
   const Ki = 0.01
   const Kd = 0
   const Mi = 1000
-  const Se = 0.5
+  const Se = 0.01
   const pid = PID(Kp, Ki, Kd, Mi, 'pidb')
   while (true) {
     const { value: output } = pid.next(Se * (Game.cpu.bucket - 9500))
