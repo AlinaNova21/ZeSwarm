@@ -9,7 +9,7 @@ export default class SafeObject {
         if (target.tick !== Game.time) {
           target.object = getObjectById(id)
         }
-        return target[object][name]
+        return target.object[name]
       }
     })
   }
