@@ -12,6 +12,15 @@ const shards = _.reduce(Game.cpu.shardLimits, (ret, shard, limit) => {
 const loaders = {
   generic,
   overmind,
+  *zeswarm() {
+    const code = require('zeswarm')
+    console.log('ZeSwarm main loaded')
+    while (true) {
+      console.log('ZeSwarm main loop')
+      code.loop()
+      yield
+    }
+  },
   *noop() {
     while(true) yield
   },
@@ -37,6 +46,7 @@ const plugins = {
 }
 
 export default function Loader ({ name, kernel = {}, plugins: enabledPlugins = [] }) {
+  console.log('Loader', name, kernel, enabledPlugins)
   if(!loaders[name]) {
     loaders[name] = function* () {
       const { loop } = require(name)
@@ -49,6 +59,7 @@ export default function Loader ({ name, kernel = {}, plugins: enabledPlugins = [
     }
   }
   const loader = loaders[name]
+  const code = require(name)
   return {
     run: loader(),
     loop() {
@@ -56,14 +67,15 @@ export default function Loader ({ name, kernel = {}, plugins: enabledPlugins = [
         if (!plugins[p]) continue
         plugins[p].preLoop()
       }
-      try {
-        const { done } = this.run.next()
-        if (done) {
-          this.run = loader()
-        }
-      } catch(e) {
-        this.run = loader()
-      }
+      code.loop()
+      // try {
+      //   const { done } = this.run.next()
+      //   if (done) {
+      //     this.run = loader()
+      //   }
+      // } catch(e) {
+      //   this.run = loader()
+      // }
       for (const p of enabledPlugins) {
         if (!plugins[p]) continue
         plugins[p].postLoop()

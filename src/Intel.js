@@ -38,7 +38,30 @@ export class Intel {
       if (!this.hasThread('collect')) {
         this.createThread('collect', intel.collectThread)
       }
+      if (!this.hasThread('visual')) {
+        this.createThread('visual', intel.visual)
+      }
       yield * sleep(20)
+    }
+  }
+
+  * visual () {
+    yield
+    yield
+    while (true) {
+      const rooms = Object.values(segments.load(C.SEGMENTS.INTEL).rooms || {})
+      this.log.info(`Rendering ${rooms.length} rooms`)
+      const fontStyle = {
+        color: '#FFFFFF',
+        fontSize: 5,
+        align: 'left'
+      }
+      for (const room of rooms) {
+        Game.map.visual.text(`S: ${room.sources.length}`, new RoomPosition(0, 0, room.name), fontStyle)
+        Game.map.visual.text(`T: ${room.towers || 0}`, new RoomPosition(0, 5, room.name), fontStyle)
+      }
+      this.log.warn(Game.map.visual.getSize())
+      yield
     }
   }
 

@@ -6,9 +6,6 @@ const RAIDS_DEFAULT = {
 }
 
 const shards = {
-  shard0: {
-    sellExcessPixels: true
-  },
   screepsplus1: {
     allies: [],
     allowPassage: ['Saruss'],

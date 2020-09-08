@@ -7,7 +7,7 @@ if (Game.cpu.generatePixel) {
 
 function * PixelGen () {
   while (true) {
-    if (Game.cpu.bucket === 10000) {
+    if (Game.cpu.bucket >= 9000) {
       Game.cpu.generatePixel()
     }
     if (config.sellExcessPixels) {

@@ -7,6 +7,7 @@ import size from 'lodash/size'
 import C from './constants'
 import InterShardSegment from './InterShardSegment'
 
+import SafeObject from './lib/SafeObject'
 import './prototypes.room'
 import './Traveler'
 import './RoomVisual'
@@ -15,6 +16,8 @@ import './processes'
 
 import './ui'
 import './Test'
+
+SafeObject.attachPrototype()
 
 if (!Memory.lastTick) {
   Memory.lastTick = Date.now()

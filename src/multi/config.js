@@ -8,7 +8,7 @@ const shards = {
   },
   shard0: {
     name: 'zeswarm',
-    gclLimit: 4
+    gclLimit: 5
   },
   shard1: {
     name: 'bonzai',
