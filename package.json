@@ -17,7 +17,7 @@
     "push:splus2": "yarn build && yarn run push --server splus2",
     "push:atanner": "yarn build && yarn run push --server atanner",
     "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server atanner",
-    "push": "screeps-api -b ZeSwarm_v1.1 upload dist/main.js",
+    "push": "screeps-api -b ZeSwarm_v1.1 upload dist/*.js",
     "console": "node tools/console.js",
     "deploy": "node tools/deploy.js"
   },

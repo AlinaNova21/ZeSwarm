@@ -6,7 +6,7 @@ import C from './constants'
 
 const log = new Logger('[ExpansionPlanner]')
 
-kernel.createThread('expansionPlanner', restartThread(expansionPlanner))
+kernel.createProcess('expansionPlanner', restartThread, expansionPlanner)
 
 function * expansionPlanner () {
   while (true) {
@@ -23,15 +23,15 @@ function * expansionPlanner () {
       const [src, dest, expire] = target
       const key = `createNest_${dest}`
       if (Game.time >= expire || (Game.rooms[dest] && Game.rooms[dest].controller.my && Game.rooms[dest].spawn)) {
-        if (kernel.hasThread(key)) {
-          kernel.destroyThread(key)
+        if (this.hasThread(key)) {
+          this.destroyThread(key)
         }
         targets.delete(target)
         Memory.targets = Array.from(targets)
       }
-      if (!kernel.hasThread(key)) {
+      if (!this.hasThread(key)) {
         log.info(`Creating nest thread for ${dest}`)
-        kernel.createThread(key, createNest(src, dest, timeout))
+        this.createThread(key, createNest(src, dest, timeout))
         yield * sleep(timeout)
       }
       yield true

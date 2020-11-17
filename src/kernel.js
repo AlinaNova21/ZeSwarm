@@ -43,15 +43,16 @@ export class Kernel {
     this.threadCtx = new WeakMap()
     log.info(`Kernel Created`)
     this.pidGen = calcCPUPID()
+    this.startTick = Game.time
   }
 
   tick () {
     if (Game.cpu.bucket < 1000) return
+    const uptime = Game.time - this.startTick
     if (!this.threads.has('kBase')) {
       log.info('Starting kBase')
       this.threads.set('kBase', kernelBase(this))
     }
-    // log.info(`threads: ${[...this.threads.keys()]}`)
     let cnt = 0
     const { value: limit } = this.pidGen.next()
     this.scheduler = {}
@@ -60,16 +61,17 @@ export class Kernel {
       if (typeof val === 'string') {
         this.threads.delete(val)
       }
-      // log.info(`tick ${val}`)
       cnt++
     }
     stats.addStat('kernel', {}, {
       cpuLimit: limit,
       threads: this.threads.size,
-      iterations: cnt
+      iterations: cnt,
+      uptime
     })
-    log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
-    log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Ran ${this.threads.size} threads with a total of ${cnt} iterations`)
+    log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit}  Bucket: ${Game.cpu.bucket}`)
+    log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Uptime: ${uptime}  Threads: ${this.threads.size}  Iterations: ${cnt}`)
+    // log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Ran ${this.threads. size} threads with a total of ${cnt} iterations`)
   }
 
   * [Symbol.iterator] () {

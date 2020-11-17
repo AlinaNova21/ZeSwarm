@@ -53,7 +53,7 @@ function * creepIDThread () {
 
 function * creepMemoryCleanup () {
   while (true) {
-    for (const name of Object.keys(Memory.creeps)) {
+    for (const name of Object.keys(Memory.creeps || {})) {
       if (!Game.creeps[name]) {
         delete Memory.creeps[name]
       }
