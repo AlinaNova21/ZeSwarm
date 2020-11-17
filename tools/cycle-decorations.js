@@ -17,7 +17,7 @@ async function run() {
     console.log(`Pixels: ${pixels}`)
     pixels -= PIXELS_TO_RESERVE
     pixels = Math.max(0, pixels)
-    const countToPixelize = Math.floor(pixels / 500)
+    const countToPixelize = Math.min(20, Math.floor(pixels / 500))
     if (countToPixelize === 0) {
       console.log('Not enough pixels')
       break
