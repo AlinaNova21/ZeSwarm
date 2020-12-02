@@ -10,6 +10,7 @@
     "test": "standard src/**/*.js",
     "build": "rollup -c",
     "push:mmo": "screeps-api download -d tmp && rm -f tmp/zeswarm* && yarn build --configMulti --output.dir tmp && screeps-api upload tmp/*.js",
+    "push:seasonal": "yarn build && yarn run push --server seasonal",
     "push:botarena": "yarn build && yarn run push --server botarena",
     "push:local": "yarn build && yarn run push --server local",
     "push:test": "yarn build && yarn run push --server test",
@@ -44,7 +45,7 @@
   "devDependencies": {
     "chalk": "^2.4.2",
     "promises-aplus-tests": "^2.1.2",
-    "screeps-api": "^1.12.1",
+    "screeps-api": "^1.13.0",
     "standard": "^13.0.2"
   },
   "standard": {
