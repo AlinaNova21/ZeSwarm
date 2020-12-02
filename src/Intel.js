@@ -1,4 +1,4 @@
-import { kernel, restartThread, sleep } from './kernel'
+import { kernel, restartThread, sleep, Process } from './kernel'
 import segments from './MemoryManager'
 import C from './constants'
 import { Logger } from './log'
@@ -10,13 +10,13 @@ const log = new Logger('[Intel]')
 
 const FORMAT_VERSION = 1
 
-export class Intel {
+export class Intel extends Process {
   constructor () {
-    kernel.createProcess('Intel', restartThread, this.main, this)
-    // kernel.createThread('intelCollect', restartThread(() => this.collectThread()))
+    super(kernel, 'Intel')
+    kernel.addProcess('Intel', this)
     // this.outdated = []
     // this.rooms = {}
-    this.memory = {}
+    this.createThread('main', this.main)
   }
 
   get outdated () {
@@ -27,19 +27,17 @@ export class Intel {
     return this.memory.rooms || {}
   }
 
-  * main (intel) {
-    intel.memory = this.memory
-    this.memory.intel = intel
+  * main () {
     this.memory.outdated = []
     segments.activate(C.SEGMENTS.INTEL)
     yield
     this.memory.rooms = segments.load(C.SEGMENTS.INTEL)
     while (true) {
       if (!this.hasThread('collect')) {
-        this.createThread('collect', intel.collectThread)
+        this.createThread('collect', this.process.collectThread)
       }
       if (!this.hasThread('visual')) {
-        this.createThread('visual', intel.visual)
+        this.createThread('visual', this.process.visual)
       }
       yield * sleep(20)
     }
@@ -57,8 +55,17 @@ export class Intel {
         align: 'left'
       }
       for (const room of rooms) {
-        Game.map.visual.text(`S: ${room.sources.length}`, new RoomPosition(0, 0, room.name), fontStyle)
-        Game.map.visual.text(`T: ${room.towers || 0}`, new RoomPosition(0, 5, room.name), fontStyle)
+        Game.map.visual.text(`S: ${room.sources && room.sources.length || 0}`, new RoomPosition(2, 2, room.name), fontStyle)
+        Game.map.visual.text(`T: ${room.towers || 0}`, new RoomPosition(2, 7, room.name), fontStyle)
+        Game.map.visual.text(`SC: ${room.scoreContainers && room.scoreContainers.length || 0}`, new RoomPosition(2, 12, room.name), fontStyle)
+        // Game.map.visual.text(`SC: ${room.scoreCollectors.length} || 0}`, new RoomPosition(2, 12, room.name), fontStyle)
+      }
+      for (const room in Game.rooms) {
+        Game.map.visual.text('👁️', new RoomPosition(25, 25, room), {
+          color: '#FFFFFF',
+          fontSize: 10,
+          align: 'center'
+        })
       }
       this.log.warn(Game.map.visual.getSize())
       yield
@@ -108,6 +115,13 @@ export class Intel {
       }
       return { id, pos: [x, y], body, hits, hitsMax, my: my || undefined, username, hostile: !my || undefined }
     }
+    const extra = {}
+    if (C.FIND_SCORE_CONTAINERS) {
+      extra.scoreContainers = room.find(C.FIND_SCORE_CONTAINERS).map(({ id, pos: { x, y }, decayTime }) => ({ id, pos: [x, y], decayTime }))
+    }
+    if (C.FIND_SCORE_COLLECTORS) {
+      extra.scoreCollectors = room.find(C.FIND_SCORE_COLLECTORS).map(({ id, pos: { x, y } }) => ({ id, pos: [x, y] }))
+    }
     hr[room.name] = {
       hostile: (level && !my) || undefined,
       name,
@@ -125,7 +139,8 @@ export class Intel {
       sources: room.find(C.FIND_SOURCES).map(smap),
       mineral: mineralType,
       ts: Game.time,
-      v: FORMAT_VERSION
+      v: FORMAT_VERSION,
+      ...extra
     }
     segments.save(C.SEGMENTS.INTEL, mem)
   }
@@ -139,7 +154,7 @@ export class Intel {
       log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.memory.outdated.length}/${Object.keys(this.memory.rooms).length}`)
       for (const key in Game.rooms) {
         if (!this.hasThread(key)) {
-          this.createThread(key, this.memory.intel.collect, key)
+          this.createThread(key, this.process.collect, key)
         }
       }
       const outdated = []

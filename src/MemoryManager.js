@@ -1,5 +1,108 @@
+import { kernel, restartThread, sleep } from './kernel'
+
 const minBy = _.minBy
 const map = _.map
+
+const segments = new Map()
+const activeSegments = new Set()
+
+kernel.createProcess('MemoryManager', restartThread, memoryManager)
+
+function * memoryManager () {
+  const maintain = [
+    ['writer', writer],
+    ['reader', reader],
+    ['cleanup', cleanup]
+  ]
+  while (true) {
+    for (const [name, fn, ...args] of maintain) {
+      if (!this.hasThread(name)) {
+        this.createThread(name, fn, ...args)
+      }
+    }
+    yield* sleep(10)
+  }
+}
+
+export function activateSegment (id) {
+  activeSegments.add(id)
+}
+
+export function deactivateSegment (id) {
+  activeSegments.delete(id)
+}
+
+export function * getSegment (id, { keepActive = false } = {}) {
+  if (!segments.has(id)) {
+    yield * activateSegment(id)
+    while (!segments.has(id)) yield
+    if (!keepActive) {
+      yield * deactivateSegment(id)
+    }
+  }
+  return segments.get(id).proxy
+}
+
+function * reader () {
+  while (true) {
+    for (const id in RawMemory.segments) {
+      const raw = RawMemory.segments[id]
+      if (!segments.has(id)) {
+        const instance = {
+          id,
+          dirty: false,
+          stale: false,
+          raw,
+          ts: Game.time,
+          save () {
+            this.dirty = true
+          }
+        }
+        instance.proxy = new Proxy(instance, {
+          get (target, name) {
+            if (name === 'save') return target[name]
+            return target.data[name]
+          },
+          set (target, name, value) {
+            target.data[name] = value
+            target.dirty = true
+          }
+        })
+        segments.set(id, instance)
+      }
+      const seg = segments.get(id)
+      if (seg.raw !== raw && !seg.dirty) {
+        seg.raw = raw
+        seg.data = JSON.parse(raw)
+      }
+    }
+    yield
+  }
+}
+
+function * writer () {
+  while (true) {
+    let cnt = 0
+    for (const seg of segments.values()) {
+      if (cnt === 10) break
+      if (seg.dirty) {
+        seg.raw = JSON.stringify(seg.data)
+        seg.dirty = false
+        if (seg.raw.length > 100 * 1024) {
+          this.log.warn(`Segment ${seg.id} too long ${Math.floor(seg.raw.length / 1024)}kb, not writing`)
+          continue
+        }
+        RawMemory.segments[seg.id] = seg.raw
+        cnt++
+      }
+    }
+    yield
+  }
+}
+
+function * cleanup () {
+  while (true) yield
+}
 
 class MemoryManager {
   get mem () {
@@ -171,4 +274,4 @@ interface SegmentExtension {
 interface SegmentValue {}
 
 */
-module.exports = new MemoryManager()
+export default new MemoryManager()

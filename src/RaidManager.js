@@ -5,10 +5,8 @@ import { createTicket /*, destroyTicket */ } from './SpawnManager'
 import C from './constants'
 import config from './config'
 
-const log = new Logger('[RaidPlanner]')
-
 if (config.raids.enabled) {
-  kernel.createThread('RaidPlanner', restartThread(raidPlanner))
+  kernel.createProcess('RaidPlanner', restartThread, raidPlanner)
 }
 const routeCache = new Map()
 
@@ -36,7 +34,7 @@ function * raidPlanner () {
     const roomIntel = Object.values(intel.rooms) // .filter(r => r.hostile)
     for (const int of roomIntel) {
       if (int.ts < Game.time - 10000) {
-        log.info(`Skipping room ${int.name}, intel too old.`)
+        this.log.info(`Skipping room ${int.name}, intel too old.`)
         yield true
         continue
       }
@@ -47,7 +45,7 @@ function * raidPlanner () {
         .filter(r => r[1] && r[1].length < 15)
         .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
       if (!closestRoom) {
-        log.alert(`No available room to raid ${int.name}`)
+        this.log.alert(`No available room to raid ${int.name}`)
         yield true
         continue
       }
@@ -60,16 +58,16 @@ function * raidPlanner () {
       if (needsClean && raiding.size === 0) {
         const key = `cleaningCrew_${int.name}`
         raiding.add(int.name)
-        if (!kernel.hasThread(key)) {
-          log.warn(`Creating cleaning crew: ${closestRoom.name} => ${int.name}`)
-          kernel.createThread(key, cleaningCrew(closestRoom.name, int.name))
+        if (!this.hasThread(key)) {
+          this.log.warn(`Creating cleaning crew: ${closestRoom.name} => ${int.name}`)
+          this.createThread(key, cleaningCrew, closestRoom.name, int.name)
         }
       } else {
         raiding.delete(int.name)
       }
       yield true
     }
-    log.info(`Active`)
+    this.log.info(`Active`)
     yield * sleep(20)
     yield
   }
@@ -78,11 +76,11 @@ function * raidPlanner () {
 function * cleaningCrew (srcRoom, tgtRoom) {
   const timeout = Game.time + 2000
   while (true) {
-    log.alert(`Cleaning crew active: ${srcRoom} => ${tgtRoom}`)
+    this.log.alert(`Cleaning crew active: ${srcRoom} => ${tgtRoom}`)
     if (Game.time > timeout) return
     const room = Game.rooms[tgtRoom]
     if (room && !room.spawns.length && !room.extensions.length && !room.towers.length) {
-      return log.alert(`Cleaning crew work done. ${tgtRoom}`)
+      return this.log.alert(`Cleaning crew work done. ${tgtRoom}`)
     }
     const ts = Game.time + 100
     createTicket(`cleaningCrew_${srcRoom}_${tgtRoom}`, {

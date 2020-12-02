@@ -9,8 +9,6 @@ export const bodyPartCost = a => C.BODYPART_COST[a]
 export const expandBody = pipe(splitEvery(2), chain(apply(flip(repeat))))
 export const bodyCost = pipe(map(bodyPartCost), reduce(add, 0))
 
-const log = new Logger('[SpawnManager]')
-
 const tickets = new Map()
 export let census = {}
 const tree = new Tree()
@@ -23,11 +21,11 @@ def format:
 }
 */
 
-kernel.createThread('spawnManagerSpawnThread', restartThread(spawnManagerSpawnThread))
+kernel.createProcess('spawnManagerSpawnThread', restartThread, spawnManagerSpawnThread)
 
 export function createTicket (name, def) {
   if (def.parent && !tree.nodes[def.parent]) {
-    log.warn(`Invalid Ticket ${name}: Parent ${def.parent} doesn't exist`)
+    // log.warn(`Invalid Ticket ${name}: Parent ${def.parent} doesn't exist`)
     return
   }
   tickets.set(name, def)
@@ -72,7 +70,7 @@ function * spawnManagerSpawnThread () {
       tree.walkNode(`room_${room.name}`, node => {
         const t = tickets.get(node.id)
         if (typeof t.valid === 'function' && !t.valid()) {
-          log.info(`Deleting invalid ticket ${t.group}`)
+          this.log.info(`Deleting invalid ticket ${t.group}`)
           destroyTicket(t.group)
           // tickets.delete(t.group)
           return
@@ -90,16 +88,16 @@ function * spawnManagerSpawnThread () {
         const n = needed.pop()
         const t = tickets.get(n.id)
         if (room.energyAvailable < t.cost) {
-          log.info(`Not enough energy to spawn ${t.group}. Needed: ${t.cost} Have: ${room.energyAvailable} in ${room.name}`)
+          this.log.info(`Not enough energy to spawn ${t.group}. Needed: ${t.cost} Have: ${room.energyAvailable} in ${room.name}`)
           break
         }
         const memory = t.memory
         memory.group = memory.group || t.group
         const id = UID() + (memory.role || '')
         if (t.body.length > 50) {
-          log.alert(`${room.name} body too long! ${t.body.length} ${id} ${t.memory.group}`)
+          this.log.alert(`${room.name} body too long! ${t.body.length} ${id} ${t.memory.group}`)
         }
-        log.info(`${room.name} Spawning ${id} ${memory.group}`)
+        this.log.info(`${room.name} Spawning ${id} ${memory.group}`)
         const ret = spawn.spawnCreep(t.body.slice(0, 50), id, { memory })
         if (ret === C.OK) {
           room.energyAvailable -= t.cost

@@ -6,6 +6,7 @@ export default class SafeObject {
       object: getObjectById(id)
     }, {
       get (target, name) {
+        if (name === 'safe') return () => this
         if (target.tick !== Game.time) {
           target.object = getObjectById(id)
         }
@@ -16,6 +17,9 @@ export default class SafeObject {
   static attachPrototype() {
     RoomObject.prototype.safe = function () {
       return new SafeObject(this.id)
+    }
+    Room.prototype.safeFind = function (...args) {
+      return this.find(...args).map(o => new SafeObject(o.id))
     }
   }
 }

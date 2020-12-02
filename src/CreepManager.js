@@ -21,11 +21,6 @@ function * creepManager () {
   }
 }
 
-// kernel.createThread('creepMemoryCleanup', restartThread(creepMemoryCleanup))
-// kernel.createThread('creepThreadManager', restartThread(creepThreadManager))
-// kernel.createThread('creepSaysThread', restartThread(creepSaysThread))
-// kernel.createThread('creepIDThread', restartThread(creepIDThread))
-
 function * creepIDThread () {
   const roles = {
     miningCollector: '🚚',
@@ -133,7 +128,7 @@ function * creepThreadManager () {
       }
       yield true
     }
-    for (const key of this.threads) {
+    for (const key of this.process.threads) {
       if (!key.startsWith(prefix)) continue
       const creepName = key.slice(prefix.length)
       if (!Game.creeps[creepName]) {

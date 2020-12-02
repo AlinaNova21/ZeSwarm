@@ -14,9 +14,6 @@ import size from 'lodash/size'
 
 export const census = {}
 
-// kernel.createThread('csiteVisualizer', restartThread(() => csiteVisualizer()))
-// kernel.createThread('layoutThread', restartThread(() => layoutThread()))
-
 kernel.createProcess('LayoutManager', restartThread, layoutManager)
 
 function * layoutManager () {

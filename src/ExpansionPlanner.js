@@ -4,8 +4,6 @@ import { Logger } from './log'
 import { createTicket } from './SpawnManager'
 import C from './constants'
 
-const log = new Logger('[ExpansionPlanner]')
-
 kernel.createProcess('expansionPlanner', restartThread, expansionPlanner)
 
 function * expansionPlanner () {
@@ -17,7 +15,7 @@ function * expansionPlanner () {
     yield * sleep(100)
     const targets = new Set(Memory.targets || [])
     const rooms = Object.values(Game.rooms).filter(r => r.controller && r.controller.my)
-    log.info(`Settling: ${targets.size ? Array.from(targets).map(a => a[1]) : 'Nowhere'}`)
+    this.log.info(`Settling: ${targets.size ? Array.from(targets).map(a => a[1]) : 'Nowhere'}`)
     const timeout = Game.time + 1000
     for (const target of targets) {
       const [src, dest, expire] = target
@@ -30,8 +28,8 @@ function * expansionPlanner () {
         Memory.targets = Array.from(targets)
       }
       if (!this.hasThread(key)) {
-        log.info(`Creating nest thread for ${dest}`)
-        this.createThread(key, createNest(src, dest, timeout))
+        this.log.info(`Creating nest thread for ${dest}`)
+        this.createThread(key, createNest, src, dest, timeout)
         yield * sleep(timeout)
       }
       yield true
@@ -55,8 +53,7 @@ function * expansionPlanner () {
       const route = Game.map.findRoute(room.name, int.name, { routeCallback: avoidHostile })
       if (route.length > 12) continue // Avoid settling too far
       if (route.length < 6) continue // Avoid settling too close
-      // kernel.createThread(`settle_${int.name}`, settleRoom(room.name, int.name))
-      log.info(`Found room to settle: ${int.name} ${lRange} ${route.length}`)
+      this.log.info(`Found room to settle: ${int.name} ${lRange} ${route.length}`)
       candidates.add([room.name, int.name, timeout])
       yield true
     }

@@ -7,9 +7,7 @@ import intel from './Intel'
 import { __, add, clamp, compose, divide, either, max, multiply, subtract } from 'ramda'
 
 export let census = {}
-const log = new Logger('[Manager]')
 kernel.createProcess('RoomManager', restartThread, managerThread)
-// kernel.createThread('managerThread', restartThread(managerThread))
 
 function * managerThread () {
   while (true) {
@@ -60,7 +58,7 @@ function * managerThread () {
       // 1C3M6W = 800
       if (room.energyCapacityAvailable < 550) continue
       const neighbors = Object.values(Game.map.describeExits(room.name))
-      log.info(`[${room.name}] Found neighbors ${neighbors}`)
+      this.log.info(`[${room.name}] Found neighbors ${neighbors}`)
       for (const neighbor of neighbors) {
         const int = intel.rooms[neighbor]
         if (!int) continue
@@ -69,11 +67,11 @@ function * managerThread () {
           const key = `r${neighbor}`
           if (valid) srcCount += int.sources.length
           if (this.hasThread(key) && !valid) {
-            log.info(`Revoking remote: ${neighbor}`)
+            this.log.info(`Revoking remote: ${neighbor}`)
             this.destroyThread(key)
           }
           if (!this.hasThread(key) && valid) {
-            log.info(`Authorizing remote: ${neighbor}`)
+            this.log.info(`Authorizing remote: ${neighbor}`)
             this.createThread(key, miningManager, room.name, neighbor)
           }
         }
@@ -99,7 +97,7 @@ function * managerThread () {
         workers = 4
       }
       if (room.level === 2) {
-        workers += 4
+        workers += 8
       }
       if (room.level === 3) {
         // workers += Math.floor(srcCount / 2)
@@ -136,7 +134,7 @@ function * managerThread () {
           }
         })
       }
-      if (room.controller.level >= 2 && room.energyAvailable >= 500) {
+      if (room.controller.level >= 2) {
         createTicket(`scouts_${room.name}`, {
           valid: () => Game.rooms[room.name].controller.level >= 2,
           parent: `room_${room.name}`,
@@ -144,7 +142,8 @@ function * managerThread () {
           memory: {
             role: 'scout'
           },
-          count: 5 // + Math.min(intel.outdated.length, 10)
+          weight: 100,
+          count: room.energyAvailable >= 500 ? 5 : 3 // + Math.min(intel.outdated.length, 10)
         })
       }
       // yield true
@@ -166,12 +165,12 @@ function * miningManager (homeRoomName, roomName) {
   while (true) {
     const homeRoom = Game.rooms[homeRoomName]
     if (!homeRoom || !homeRoom.controller.my) {
-      log.alert(`No vision in ${homeRoomName}`)
+      this.log.alert(`No vision in ${homeRoomName}`)
       return
     }
     const int = intel.rooms[roomName]
     if (!int) {
-      log.alert(`No intel for ${homeRoomName}`)
+      this.log.alert(`No intel for ${homeRoomName}`)
       return
     }
     const maxParts = compose(clamp(1, 25), Math.floor, divide(__, 2), multiply(0.8), divide(__, 50))(homeRoom.energyCapacityAvailable)
@@ -184,7 +183,7 @@ function * miningManager (homeRoomName, roomName) {
           swampCost: 2
         })
         if (incomplete) {
-          log.alert(`Path incomplete to source ${spos.x},${spos.y} ${spos.roomName} ops: ${ops} cost: ${cost} path: ${JSON.stringify(path)}`)
+          this.log.alert(`Path incomplete to source ${spos.x},${spos.y} ${spos.roomName} ops: ${ops} cost: ${cost} path: ${JSON.stringify(path)}`)
           yield true
           continue
         }
@@ -194,7 +193,7 @@ function * miningManager (homeRoomName, roomName) {
       if (!Game.rooms[roomName]) yield * getVision(roomName, 100)
       const source = Game.getObjectById(id)
       if (!source) {
-        log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName] ? 'T' : 'F'}`)
+        this.log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName] ? 'T' : 'F'}`)
         yield true
         continue
       }
