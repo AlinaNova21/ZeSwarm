@@ -4,8 +4,12 @@ const ALLOW_PASSAGE_DEFAULT = []
 const RAIDS_DEFAULT = {
   enabled: false
 }
+const NO_SIGN_DEFAULT = []
 
 const shards = {
+  shardSeason: {
+    noSign: ['psy372']
+  },
   screepsplus1: {
     allies: [],
     allowPassage: ['Saruss'],
@@ -26,8 +30,9 @@ const {
     sellExcessPixels = false,
     allies = ALLIES_DEFAULT,
     allowPassage = ALLOW_PASSAGE_DEFAULT,
+    noSign = NO_SIGN_DEFAULT,
     raids = RAIDS_DEFAULT
   } = {}
 } = shards
 
-export default { sellExcessPixels, allies, allowPassage, raids }
+export default { sellExcessPixels, allies, allowPassage, noSign, raids }

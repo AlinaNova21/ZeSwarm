@@ -1,8 +1,9 @@
 const log = require('/log')
-
+const intel = require('/Intel')
 const size = require('lodash/size')
 
 const C = require('/constants')
+const { allies, noSign } = require('/config')
 const SIGN_MSG = `Territory of ZeSwarm - ${C.USER}`
 const SIGN_MY_MSG = `ZeSwarm - https://github.com/ags131/ZeSwarm`
 const SIGN_COOLDOWN = 50
@@ -44,9 +45,10 @@ module.exports = {
     //   this.push('moveToRoom', new RoomPosition(25, 25, target), { preferHighway: true })
     // }
 
-    // const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
-    const friend = controller && controller.my
-    const hostile = !friend && controller && controller.level > 0 && !controller.my
+    const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
+    const mine = controller && controller.my
+    const friend = !mine && user && (noSign.includes(user) || allies.includes(user))
+    const hostile = !mine && !friend && controller && controller.level > 0 && !controller.my
 
     if (hostile) return log.warn(`${room.name} is hostile!`)
 
@@ -57,7 +59,27 @@ module.exports = {
     if (pos.x === 49) lastdir = C.RIGHT
 
     const exits = Game.map.describeExits(room.name)
-    let dir = 0
+    const portals = room.find(FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_PORTAL } }).filter(p => !p.destination.shard || p.destination.shard === Game.shard.name)
+    const choices = [C.TOP,C.BOTTOM,C.LEFT,C.RIGHT].filter(d => d !== lastdir && exits[d])
+    const rooms = new Set()
+    portals.forEach(p => rooms.add(p.destination.room))
+    let ri = 100
+    for(const room of rooms) {
+      const i = ri++
+      exits[i] = room
+      choices.push(i)
+    }
+    if (choices.length === 0) {
+      choices.push(lastdir)
+    }
+    const oldest = choices.reduce((l,dir) => {
+      const int = intel.rooms[exits[dir]]
+      const age = int ? Game.time - int.ts : 1e10
+      return age > l.age ? { age, dir } : l
+    }, { age: 0, dir: 0 })
+    
+    const scouts = room.find(FIND_MY_CREEPS).filter(c => c.memory.role === 'scout')
+    let dir = scouts.length > 1 ? 0 : oldest.dir
     while (!exits[dir] || (dir === lastdir && size(exits) > 1)) {
       dir = Math.ceil(Math.random() * 8)
     }
@@ -70,11 +92,11 @@ module.exports = {
     }
 
     const roomCallback = `r => r === '${room.name}' ? undefined : false`
-    const exit = pos.findClosestByRange(dir)
+    const exit = pos.findClosestByRange(dir >= 100 ? portals.filter(p => p.destination.room === exits[dir]) : dir)
     const msg = (controller && controller.my && SIGN_MY_MSG) || SIGN_MSG
     const { lastSigned = 0 } = state
     //  && (lastSigned < (Game.time - SIGN_COOLDOWN))
-    if (!hostile && controller && (controller.sign && controller.sign.username !== C.SYSTEM_USERNAME) && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
+    if (!hostile && !friend && controller && (controller.sign && controller.sign.username !== C.SYSTEM_USERNAME) && (!controller.sign || controller.sign.username !== C.USER || controller.sign.text !== msg)) {
       // state.lastSigned = Game.time
       this.creep.say('Signing')
       this.push('signController', controller.id, msg)
@@ -83,7 +105,7 @@ module.exports = {
     }
     state.lastSigned = 0
     if (exit) {
-      const { incomplete } = PathFinder.search(this.creep.pos, exit.pos, {
+      const { incomplete, path } = PathFinder.search(this.creep.pos, exit.pos, {
         range: 0,
         maxRooms: 1,
         roomCallback (roomName) {
@@ -104,8 +126,13 @@ module.exports = {
       if (incomplete) {
         return this.runStack()
       }
-      this.push('moveOntoExit', dir)
-      this.push('moveNear', exit, { roomCallback })
+      Game.map.visual.poly(path, { opacity: 1, strokeWidth: 1 })
+      if (exit.structureType === C.STRUCTURE_PORTAL) {
+        this.push('moveTo', exit, { roomCallback })
+      } else {
+        this.push('moveOntoExit', dir)
+        this.push('moveNear', exit, { roomCallback })
+      }
       this.runStack()
     }
   }

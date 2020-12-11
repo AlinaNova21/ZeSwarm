@@ -180,6 +180,83 @@ export class InfluxDB {
           room: room.name
         }, terminal.store)
       }
+      const start = Game.cpu.getUsed()
+      const events = room.getEventLog()
+      const end = Game.cpu.getUsed()
+      const eventStats = {
+        stats: {
+          count: events.length,
+          parseTime: end - start
+        },
+        attack: {
+          all: 0,
+          melee: 0,
+          ranged: 0,
+          rangedMass: 0,
+          dismantle: 0,
+          hitBack: 0,
+          nuke: 0
+        },
+        build: {
+          amount: 0,
+          energySpent: 0
+        },
+        harvest: {
+          amount: 0
+        },
+        heal: {
+          all: 0,
+          melee: 0,
+          ranged: 0
+        },
+        repair: {
+          amount: 0,
+          energySpent: 0
+        },
+        reserveController: {
+          amount: 0
+        },
+        upgradeController: {
+          amount: 0,
+          energySpent: 0
+        }
+      }
+      const etm = ['melee', 'ranged', 'rangedMass', 'dismantle', 'hitBack', 'nuke' ]
+      for (const { event, objectId, data } of events) {
+        switch (event) {
+          case C.EVENT_ATTACK:
+            eventStats.attack.all += data.amount
+            eventStats.attack[etm[data.attackType - 1]] += data.amount
+            break
+          case C.EVENT_BUILD:
+            eventStats.build.amount += data.amount
+            eventStats.build.energySpent += data.energySpent
+            break
+          case C.EVENT_HARVEST:
+            eventStats.harvest.amount += data.amount
+            break
+          case C.EVENT_HEAL:
+            eventStats.heal.all += data.amount
+            eventStats.heal[etm[data.healType - 1]] += data.amount
+            break
+          case C.EVENT_REPAIR:
+            eventStats.repair.amount += data.amount
+            eventStats.repair.energySpent += data.energySpent
+            break
+          case C.EVENT_RESERVE_CONTROLLER:
+            eventStats.reserveController.amount += data.amount
+            break
+          case C.EVENT_UPGRADE_CONTROLLER:
+            eventStats.upgradeController.amount += data.amount
+            eventStats.upgradeController.energySpent += data.energySpent
+            break
+        }
+      }      
+      for (const [name, values] of Object.entries(eventStats)) {
+        this.addStat(`events.${name}`, {
+          room: room.name
+        }, values)
+      }
     })
     if (typeof Game.cpu.getHeapStatistics === 'function') {
       this.addStat('cpu.heapStatistics', {}, Game.cpu.getHeapStatistics())

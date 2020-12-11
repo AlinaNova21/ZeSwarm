@@ -4,3 +4,9 @@ testserver
 dist
 .screeps.yml
 test
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

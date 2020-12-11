@@ -3,14 +3,21 @@ export default class SafeObject {
     return new Proxy({ 
       id,
       tick: Game.time, 
-      object: getObjectById(id)
+      object: Game.getObjectById(id)
     }, {
       get (target, name) {
         if (name === 'safe') return () => this
         if (target.tick !== Game.time) {
-          target.object = getObjectById(id)
+          target.object = Game.getObjectById(id)
         }
+        if (name === 'direct') return () => target.object
         return target.object[name]
+      },
+      getPrototypeOf (target) {
+        if (target.tick !== Game.time) {
+          target.object = Game.getObjectById(id)
+        }
+        return Object.getPrototypeOf(target.object)
       }
     })
   }

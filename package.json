@@ -45,7 +45,7 @@
   "devDependencies": {
     "chalk": "^2.4.2",
     "promises-aplus-tests": "^2.1.2",
-    "screeps-api": "^1.13.0",
+    "screeps-api": "^1.14.0",
     "standard": "^13.0.2"
   },
   "standard": {

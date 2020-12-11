@@ -4,6 +4,8 @@ const otherStates = [
   require('./state.scout'),
   require('./state.worker'),
   require('./state.builder'),
+  require('./state.upgrader'),
+  require('./state.hauler'),
   require('./state.claimer'),
   require('./state.raiders'),
   require('./state.miner'),

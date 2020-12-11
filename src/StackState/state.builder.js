@@ -30,8 +30,11 @@ export default {
         [C.STRUCTURE_TOWER]: 3,
         [C.STRUCTURE_SPAWN]: 5
       }
+      if (!room.containers.length) {
+        priority[C.STRUCTURE_CONTAINER] = 10
+      }
       const [site] = sites.reduce(([tgt, v1], site) => {
-        const v2 = (priority[site.structureType] || 1) * site.progress / site.progressTotal
+        const v2 = ((priority[site.structureType] || 1) * 10000) + ((site.progress / site.progressTotal) * 100)
         return v1 < v2 ? [site, v2] : [tgt, v1]
       }, [null, -1])
       // sites = sortBy(sites, site => (priority[site.structureType] || 1) * site.progress / site.progressTotal)

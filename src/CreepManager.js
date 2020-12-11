@@ -1,4 +1,5 @@
 import StackState from './StackState'
+import GenState from './GenState'
 import { kernel, sleep, restartThread } from './kernel'
 import { sayings, psayings } from '/sayings'
 
@@ -26,7 +27,10 @@ function * creepIDThread () {
     miningCollector: '🚚',
     miningWorker: '⛏️',
     worker: '👷',
+    upgrader: '⬆️',
+    hauler: '🚛',
     scout: '👁️',
+    scoutVision: '🕵️',
     reserver: '🏴',
     claimer: '🏁',
     cleaningCrew: '🧹',
@@ -35,8 +39,8 @@ function * creepIDThread () {
   }
   while (true) {
     while (Game.cpu.bucket < 5000) yield
-    for (const { room, pos: { x, y }, memory: { role } } of Object.values(Game.creeps)) {
-      const icon = roles[role] || ''
+    for (const { room, pos: { x, y }, memory: { role, run } } of Object.values(Game.creeps)) {
+      const icon = roles[role] || roles[run] || ''
       if (icon) {
         room.visual.text(icon, x, y + 0.1, { size: 0.4 })
       }
@@ -115,7 +119,7 @@ function * creepSayWords (creepName, parts, pub = true) {
 }
 
 function * creepThreadManager () {
-  const prefix = 'stackState_'
+  const prefix = 'creep:'
   while (true) {
     let created = 0
     let cleanup = 0
@@ -123,7 +127,11 @@ function * creepThreadManager () {
       if (!Game.creeps[creepName]) continue
       const key = `${prefix}${creepName}`
       if (!this.hasThread(key)) {
-        this.createThread(key, newStackStateThread, creepName)
+        let gen = newStackStateThread
+        if (Memory.creeps[creepName].run) {
+          gen = GenState.runCreep
+        }
+        this.createThread(key, gen, creepName)
         created++
       }
       yield true

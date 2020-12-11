@@ -1,10 +1,10 @@
 import { kernel, restartThread } from './kernel'
 import config from './config'
 
-// Disable Pixel generation after Dec 7
+// Disable Pixel generation after Dec 10
 // https://screeps.com/forum/topic/3099/game-cpu-generatepixel-change
-const date = new Date()
-if (Game.cpu.generatePixel && date.getFullYear() === 2020 && (date.getMonth() < 11 || date.getDate() < 7)) {
+const date = new Date(2020, 11, 10, 0, 0, 0, 0) // 12/10/2020 00:00:00
+if (Game.cpu.generatePixel && Date.now() < date.getTime()) {
   kernel.createProcess('PixelGen', restartThread, PixelGen)
 }
 

@@ -98,30 +98,32 @@ function * csiteVisualizer () {
 }
 
 function * layoutRoom (roomName) {
-  const templated = yield * templatedLayout.call(this, roomName)
-  const blockAreas = []
-  blockAreas.push(...templated.blockAreas)
   while (true) {
     yield true
+    const blockAreas = []
     const room = Game.rooms[roomName]
     if (!room || !room.controller || !room.controller.my) {
       this.log.warn(`Room ${roomName} not valid, aborting. (${!!room} ${!!(room && room.controller)} ${!!(room && room.controller && room.controller.my)})`)
       return
     }
-    for (const { structure, x, y, minLevel } of templated.structures) {
-      if (minLevel > room.controller.level) continue
-      const structures = room.lookForAt(LOOK_STRUCTURES, x, y)
-      if (structures.find(s => s.structureType === structure)) continue
-      const csites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y)
-      if (csites.find(s => s.structureType === structure)) continue
-      room.createConstructionSite(x, y, structure)
-      yield true
+    if (!room.memory.skipTemplate) {
+      const templated = yield * templatedLayout.call(this, roomName)
+      blockAreas.push(...templated.blockAreas)
+      for (const { structure, x, y, minLevel } of templated.structures) {
+        if (minLevel > room.controller.level) continue
+        const structures = room.lookForAt(LOOK_STRUCTURES, x, y)
+        if (structures.find(s => s.structureType === structure)) continue
+        const csites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y)
+        if (csites.find(s => s.structureType === structure)) continue
+        room.createConstructionSite(x, y, structure)
+        yield true
+      }
     }
     yield * flex.call(this, room, blockAreas)
     if (room.controller.level >= 4) {
       // yield * walls.call(this, room)
     }
-    yield * sleep(20)
+    yield * sleep(5)
   }
 }
 
@@ -203,7 +205,7 @@ function * flex (room, blockAreas = []) {
   const memSrc = room.memory.layoutStart && new RoomPosition(room.memory.layoutStart[0], room.memory.layoutStart[1], room.name)
   const ignore = [C.STRUCTURE_CONTROLLER, C.STRUCTURE_WALL, C.STRUCTURE_RAMPART]
   const src = room.spawns.filter(s => s.my)[0] || room.structures.all.find(s => s.my && ignore.includes(s.structureType)) || room.controller
-  if (!(src instanceof StructureController)) {
+  if (!memSrc && !(src instanceof StructureController)) {
     const { x, y } = src.pos
     room.memory.layoutStart = [x, y]
   }

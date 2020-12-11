@@ -113,7 +113,7 @@ function * gatherCensus () {
   const creeps = Object.values(Game.creeps)
   for (const creep of creeps) {
     const roomName = creep.memory.room || creep.room.name
-    if (creep.ticksToLive < 100) continue
+    if (creep.ticksToLive < (creep.memory.replaceAge || 100)) continue
     census[roomName] = census[roomName] || {}
     if (creep.memory.group) {
       census[creep.memory.group] = census[creep.memory.group] || []

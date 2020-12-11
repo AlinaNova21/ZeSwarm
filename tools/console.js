@@ -1,36 +1,35 @@
 const { ScreepsAPI } = require('screeps-api')
 const chalk = require('chalk')
+const fs = require('fs')
 
-const configs = [
-  // { server: 'splus1' },
-  { server: 'splus2' },
-  // { server: 'test' },
-  // { server: 'main', shard: 'shard3' }
-]
+runConsole({
+  server: process.argv[2],
+  shard: process.argv[3],
+}).catch(console.error)
 
-configs.forEach(runConsole)
-function runConsole (config) {
-  config.server = process.argv[2] || config.server
-  config.shard = process.argv[3] || config.shard
-  ScreepsAPI.fromConfig(config.server).then(async api => {
-    await api.socket.connect()
-    api.socket.on('console', (e) => {
-      const { data: { shard, messages: { log: logs = [], results = [] } = {}, error = '' } } = e
-      if (shard && config.shard && config.shard !== shard) return
-      console.log(`==== ${shard || config.server} =====`)
-      for (const log of logs) {
-        if (log.startsWith('STATS;')) continue
-        console.log(colorize(log))
-      }
-      for (const line of results) {
-        console.log(line)
-      }
-      if (error) {
-        console.log(error)
-      }
-    })
-    api.socket.subscribe('console')
+async function runConsole (config) {
+  const api = await ScreepsAPI.fromConfig(config.server)
+  const str = fs.createWriteStream(`console.${config.server}.log`)
+  await api.socket.connect()
+  api.socket.on('console', e => {
+    const { data: { shard, messages: { log: logs = [], results = [] } = {}, error = '' } } = e
+    if (shard && config.shard && config.shard !== shard) return
+    console.log(`==== ${shard || config.server} =====`)
+    for (const log of logs) {
+      if (log.startsWith('STATS;')) continue
+      console.log(colorize(log))
+      str.write(log + '\n')
+    }
+    for (const line of results) {
+      console.log(line)
+      str.write(line + '\n')
+    }
+    if (error) {
+      console.log(error)
+      str.write(error + '\n')
+    }
   })
+  api.socket.subscribe('console')
 }
 
 // async function sleep (ms) {
