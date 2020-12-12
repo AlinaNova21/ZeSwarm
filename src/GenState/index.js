@@ -15,6 +15,7 @@ export function * runCreep (creepName) {
       if (done) gen = null
     } catch (err) {
       this.log.error(`Creep ${creep} failed to run ${err.stack}`)
+      return
     }
     const end = Game.cpu.getUsed()
     const dur = end - start
