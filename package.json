@@ -13,6 +13,7 @@
     "push:seasonal": "yarn build && yarn run push --server seasonal",
     "push:botarena": "yarn build && yarn run push --server botarena",
     "push:local": "yarn build && yarn run push --server local",
+    "push:localtest": "yarn build --configTest && yarn run push --server local",
     "push:test": "yarn build && yarn run push --server test",
     "push:splus1": "yarn build && yarn run push --server splus",
     "push:splus2": "yarn build && yarn run push --server splus2",
@@ -20,6 +21,7 @@
     "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server atanner",
     "push": "screeps-api -b ZeSwarm_v1.1 upload dist/*.js",
     "console": "node tools/console.js",
+    "autoSpawn": "bash tools/autospawn.sh",
     "deploy": "node tools/deploy.js"
   },
   "repository": {
