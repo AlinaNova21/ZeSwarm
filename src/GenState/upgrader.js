@@ -38,5 +38,6 @@ export function * upgrader (creep) {
         yield * upgradeController(creep, controller)
       }
     }
+    yield 
   }
 }

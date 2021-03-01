@@ -10,8 +10,11 @@ export default args => {
     main: 'src/main.js',
   }
   if (args.configMulti) {
-    input.main = 'src/multi/main.js',
+    input.main = 'src/multi/main.js'
     input.zeswarm = 'src/main.js'
+  }
+  if (args.configTest) {
+    input.main = 'src/main.test.js'
   }
   return {
     input,

@@ -4,7 +4,7 @@ import { Logger } from './log'
 import { sleep, restartThread } from './kernel'
 import { createTicket, destroyTicket, expandBody, census } from './SpawnManager'
 import intel from './Intel'
-import { __, add, clamp, compose, divide, either, max, multiply, subtract } from 'ramda'
+import { __, add, clamp, compose, divide, either, max, multiply, subtract, mathMod } from 'ramda'
 
 kernel.createProcess('RoomManager', restartThread, RoomManager)
 
@@ -179,6 +179,8 @@ function* nestThread(name) {
       })
     }
     if (room.controller.level >= 2) {
+      let surge = 0
+      // if (room.level >= 4 && Math.random() > 0.80) surge = 10
       createTicket(`scouts_${room.name}`, {
         valid: () => Game.rooms[room.name].controller.level >= 2,
         parent: `room_${room.name}`,
@@ -187,8 +189,9 @@ function* nestThread(name) {
           role: 'scout'
         },
         weight: 1,
-        count: room.energyAvailable >= 500 ? 5 : 3 // + Math.min(intel.outdated.length, 10)
+        count: room.energyAvailable >= 500 ? 5 + surge : 3 // + Math.min(intel.outdated.length, 10)
       })
+      if (surge) yield * sleep(30)
     }
     yield
   }

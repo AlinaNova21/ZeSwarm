@@ -128,6 +128,12 @@ export class Intel extends Process {
     if (C.FIND_SCORE_COLLECTORS) {
       extra.scoreCollectors = room.find(C.FIND_SCORE_COLLECTORS).map(({ id, pos: { x, y } }) => ({ id, pos: [x, y] }))
     }
+    if (C.FIND_SYMBOL_CONTAINERS) {
+      extra.symbolContainers = room.find(C.FIND_SYMBOL_CONTAINERS).map(({ id, pos: { x, y }, resourceType, ticksToDecay }) => ({ id, pos: [x, y], resourceType, decayTime: Game.time + ticksToDecay }))
+    }
+    if (C.FIND_SYMBOL_COLLECTORS) {
+      extra.symbolCollectors = room.find(C.FIND_SYMBOL_COLLECTORS).map(({ id, pos: { x, y }, resourceType }) => ({ id, pos: [x, y], resourceType }))
+    }
     hr[room.name] = {
       hostile: (level && !my) || undefined,
       name,
@@ -148,7 +154,7 @@ export class Intel extends Process {
       v: FORMAT_VERSION,
       ...extra
     }
-    segments.save(C.SEGMENTS.INTEL, mem)
+    // segments.save(C.SEGMENTS.INTEL, mem)
     Memory.intel = mem
   }
 

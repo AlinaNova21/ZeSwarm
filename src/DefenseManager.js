@@ -19,7 +19,7 @@ function * defenseManagerTowersThread () {
       if (room.controller && !room.controller.my && room.controller.level !== 0) continue
       if (!room.controller || room.controller.reservation || room.controller.level === 0) continue
       let needDefenders = false
-      const hostiles = room.find(C.FIND_HOSTILE_CREEPS).filter(allowed)
+      const hostiles = room.find(C.FIND_HOSTILE_CREEPS).filter(isHostile)
       if (hostiles.length) {
         for (const c of hostiles) {
           persistentHostiles[c.id] = {
@@ -95,8 +95,10 @@ function * defenseManagerTowersThread () {
   }
 }
 
-function allowed (creep) {
+function isHostile (creep) {
   const struct = creep.pos.findInRange(creep.room.structures.all, 5)
   const atEdge = creep.pos.x <= DIST || creep.pos.x >= 49 - DIST || creep.pos.y <= DIST || creep.pos.y >= 49 - DIST
-  return !atEdge && (!config.allowPassage.includes(creep.owner.username) || struct)
+  const ally = config.allies.includes(creep.owner.username.toLowerCase())
+  const allowPassage = config.allowPassage.includes(creep.owner.username) && !struct
+  return !atEdge && !ally && !allowPassage
 }

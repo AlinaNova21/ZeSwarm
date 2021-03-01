@@ -12,7 +12,7 @@ import './prototypes.room'
 import './Traveler'
 import './RoomVisual'
 
-import './processes'
+import './processes.test'
 
 import './ui'
 

@@ -3,7 +3,7 @@ import find from 'lodash/find'
 import '../Traveler'
 
 if (Game.shard.name === 'shard2') {
-  kernel.createProcess('PowerCreepManager', PowerCreepManager)
+  // kernel.createProcess('PowerCreepManager', PowerCreepManager)
 }
 
 function * PowerCreepManager () {

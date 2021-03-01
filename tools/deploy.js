@@ -46,7 +46,7 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
   // console.log('Code Pushed')
   const { status } = await api.raw.user.worldStatus()
   // const rooms = [['E4S7', 30, 35]]
-  if (status === 'empty') {
+  if (config.room && status === 'empty') {
     while (true) {
       try {
         console.log(`Not Spawned, attempting to spawn in ${config.room}...`)

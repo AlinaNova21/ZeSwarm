@@ -16,6 +16,8 @@ export const census = {}
 
 kernel.createProcess('LayoutManager', restartThread, layoutManager)
 
+const testMode = Game.shard.name.includes('test')
+
 function * layoutManager () {
   while (true) {
     if (!this.hasThread('csiteVisualizer')) {
@@ -123,7 +125,7 @@ function * layoutRoom (roomName) {
     if (room.controller.level >= 4) {
       // yield * walls.call(this, room)
     }
-    yield * sleep(5)
+    yield * sleep(4 + Math.floor(Math.random() * 3))
   }
 }
 
@@ -170,7 +172,7 @@ function * walls (room) {
 }
 
 function * flex (room, blockAreas = []) {
-  if (size(Game.constructionSites) >= 75) return
+  if (size(Game.constructionSites) >= C.MAX_CONSTRUCTION_SITES * 0.75) return
   const { controller: { level } } = room
   const offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
   const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL, C.STRUCTURE_POWER_SPAWN]

@@ -6,6 +6,27 @@ kernel.createProcess('Test', Test)
 
 function * Test () {
   while (true) {
+    for (const [,creep] of Object.entries(Game.creeps)) {
+      if (!creep.memory.run && !creep.memory.role) {
+        creep.memory.role = 'worker'
+      }
+    }
+    const rooms = Object.values(Game.rooms)
+    for(const room of rooms) {
+      createTicket(`room_${room.name}_workers`, {
+        // count: room.controller.level >= 4 ? 10 : 6,
+        parent: `room_${room.name}`,
+        weight: 10,
+        count: 6,
+        body: [MOVE, MOVE, CARRY, WORK],
+        memory: {
+          role: 'worker',
+          homeRoom: room.name,
+          room: room.name
+        }
+      })
+    }
+    
     // Game.notify("This is a test")
     if (false && Game.shard.name === 'screepsplus2' && Game.rooms.E7S6 && Game.rooms.E7S6.controller.my) {
       createTicket('testing', {
@@ -29,7 +50,8 @@ function * Test () {
         }
       })
     }
-    yield * sleep(10)
+    // yield * sleep(10)
+    yield
   }
   return
   // while (true) {

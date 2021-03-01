@@ -18,7 +18,7 @@ function * creepManager () {
         this.createThread(name, fn, ...args)
       }
     }
-    yield * sleep(20)
+    yield * sleep(5)
   }
 }
 

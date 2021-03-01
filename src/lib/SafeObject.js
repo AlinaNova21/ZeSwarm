@@ -6,7 +6,7 @@ export default class SafeObject {
         return Game.getObjectById(target.id)[name]
       },
       getPrototypeOf (target) {
-        return Object.getPrototypeOf(Game.getObjectById(target.id))
+        return Object.getPrototypeOf(Game.getObjectById(target.id) || {})
       }
     })
   }

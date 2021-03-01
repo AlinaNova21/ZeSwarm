@@ -295,7 +295,9 @@ export class InfluxDB {
     const end = Game.cpu.getUsed()
     stats += format({ name: 'stats', tags: {}, values: { count: this.stats.length, size: stats.length, cpu: end - start } })
     if (opts.types.includes('segment')) {
-      RawMemory.segments[opts.segment] = stats
+      if (stats.length < 100 * 1024) {
+        RawMemory.segments[opts.segment] = stats
+      }
     }
     if (opts.types.includes('memory')) {
       Memory[opts.key] = stats
