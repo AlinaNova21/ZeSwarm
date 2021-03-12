@@ -29,10 +29,13 @@ export class Intel extends Process {
 
   * main () {
     this.memory.outdated = []
-    segments.activate(C.SEGMENTS.INTEL)
+    // segments.activate(C.SEGMENTS.INTEL)
     yield
+    // if (!Memory.intel) {
+    //   Memory.intel = segments.load(C.SEGMENTS.INTEL)
+    // }
     if (!Memory.intel) {
-      Memory.intel = segments.load(C.SEGMENTS.INTEL)
+      Memory.intel = {}
     }
     this.memory.rooms = Memory.intel
     while (true) {
@@ -50,7 +53,7 @@ export class Intel extends Process {
     yield
     yield
     while (true) {
-      const rooms = Object.values(segments.load(C.SEGMENTS.INTEL).rooms || {})
+      const rooms = Object.values(Memory.intel.rooms)
       this.log.info(`Rendering ${rooms.length} rooms`)
       const fontStyle = {
         color: '#FFFFFF',
@@ -62,7 +65,7 @@ export class Intel extends Process {
         const line = txt => Game.map.visual.text(txt, new RoomPosition(3, (y++ * fontStyle.fontSize) + (fontStyle.fontSize / 2), room.name), fontStyle)
         line(`S: ${room.sources && room.sources.length || 0}`)
         line(`T: ${room.towers || 0}`)
-        line(`SC: ${room.scoreContainers && room.scoreContainers.length || 0}`)
+        line(`SC: ${room.symbolContainers && room.symbolContainers.length || 0}`)
         line(`A: ${Game.time - room.ts}`)
         // Game.map.visual.text(`SC: ${room.scoreCollectors.length} || 0}`, new RoomPosition(2, 12, room.name), fontStyle)
       }
@@ -73,14 +76,13 @@ export class Intel extends Process {
           align: 'center'
         })
       }
-      this.log.warn(Game.map.visual.getSize())
+      this.log.warn(`VisualSize: ${Game.map.visual.getSize()}`)
       yield
     }
   }
 
   findTarget () {
-    const mem = Memory.intel || segments.load(C.SEGMENTS.INTEL) || {}
-    const sorted = sortBy(mem.rooms, r => {
+    const sorted = sortBy(this.rooms, r => {
       if (r.ts < Game.time - 5000) return 0 // We want rooms with recent intel
       if (r.towers.length) return 0 // Can't fight towers, yet
       if (r.safemode) return 0 // Ignore safemode
@@ -129,10 +131,10 @@ export class Intel extends Process {
       extra.scoreCollectors = room.find(C.FIND_SCORE_COLLECTORS).map(({ id, pos: { x, y } }) => ({ id, pos: [x, y] }))
     }
     if (C.FIND_SYMBOL_CONTAINERS) {
-      extra.symbolContainers = room.find(C.FIND_SYMBOL_CONTAINERS).map(({ id, pos: { x, y }, resourceType, ticksToDecay }) => ({ id, pos: [x, y], resourceType, decayTime: Game.time + ticksToDecay }))
+      extra.symbolContainers = room.find(C.FIND_SYMBOL_CONTAINERS).map(({ id, pos: { x, y }, resourceType, store: { [resourceType]: amount }, ticksToDecay }) => ({ id, pos: [x, y], resourceType, amount, decayTime: Game.time + ticksToDecay }))
     }
-    if (C.FIND_SYMBOL_COLLECTORS) {
-      extra.symbolCollectors = room.find(C.FIND_SYMBOL_COLLECTORS).map(({ id, pos: { x, y }, resourceType }) => ({ id, pos: [x, y], resourceType }))
+    if (C.FIND_SYMBOL_DECODERS) {
+      extra.symbolDecoders = room.find(C.FIND_SYMBOL_DECODERS).map(({ id, pos: { x, y }, resourceType }) => ({ id, pos: [x, y], resourceType }))
     }
     hr[room.name] = {
       hostile: (level && !my) || undefined,
@@ -159,9 +161,8 @@ export class Intel extends Process {
   }
 
   * collectThread () {
-    segments.activate(C.SEGMENTS.INTEL)
     while (true) {
-      const mem = Memory.intel || segments.load(C.SEGMENTS.INTEL) || {}
+      const mem = Memory.intel || {}
       this.memory.rooms = mem.rooms || {}
       const rooms = Object.keys(Game.rooms)
       log.info(`Collecting intel on ${rooms.length} rooms (${rooms}) Outdated Rooms: ${this.memory.outdated.length}/${Object.keys(this.memory.rooms).length}`)
@@ -182,7 +183,7 @@ export class Intel extends Process {
         yield true
       }
       this.memory.outdated = outdated
-      segments.save(C.SEGMENTS.INTEL, mem)
+      // segments.save(C.SEGMENTS.INTEL, mem)
       Memory.intel = mem
       yield
     }

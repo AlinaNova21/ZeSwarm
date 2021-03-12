@@ -72,6 +72,11 @@ module.exports = {
     if (choices.length === 0) {
       choices.push(lastdir)
     }
+    if (state.incomplete) {
+      const ind = choices.indexOf(state.incomplete)
+      choices.splice(ind, 1)
+      delete state.incomplete
+    }
     const oldest = choices.reduce((l,dir) => {
       const int = intel.rooms[exits[dir]]
       const age = int ? Game.time - int.ts : 1e10
@@ -85,7 +90,7 @@ module.exports = {
     }
 
     const csites = this.creep.room.find(C.FIND_HOSTILE_CONSTRUCTION_SITES).filter(c => !(c.room.getTerrain().get(c.pos.x, c.pos.y) & 1))
-    if (csites.length) {
+    if (!friend && csites.length) {
       const csite = csites[Math.floor(Math.random() * csites.length)]
       this.push('travelTo', csite.pos, { visualizePathStyle: { opacity: 1 }, range: 0 })
       return this.runStack()
@@ -105,7 +110,7 @@ module.exports = {
     }
     state.lastSigned = 0
     if (exit) {
-      const { incomplete, path } = PathFinder.search(this.creep.pos, exit.pos, {
+      const { incomplete, path } = PathFinder.search(this.creep.pos, exit, {
         range: 0,
         maxRooms: 1,
         roomCallback (roomName) {
@@ -124,14 +129,16 @@ module.exports = {
         }
       })
       if (incomplete) {
-        return this.runStack()
+        state.incomplete = dir
+        this.creep.say(`Inc ${dir}`)
+        return //this.runStack()
       }
       Game.map.visual.poly(path, { opacity: 1, strokeWidth: 1 })
       if (exit.structureType === C.STRUCTURE_PORTAL) {
         this.push('moveTo', exit, { roomCallback })
       } else {
         this.push('moveOntoExit', dir)
-        this.push('moveNear', exit, { roomCallback })
+        this.push('moveNear', exit, { roomCallback, maxRooms: 1 })
       }
       this.runStack()
     }

@@ -34,7 +34,7 @@ export default {
 
       if (room.controller.level > 1) {
         const spawn = room.spawns[0]
-        const cont = room.storage && room.storage.store.energy ? room.storage : (spawn && spawn.pos.findClosestByRange(room.containers))
+        const cont = room.storage && room.storage.store.energy ? room.storage : (spawn && spawn.pos.findInRange(room.containers, 4)[0])
         if (cont && cont.store.energy) {
           this.push('moveNear', cont.id)
           this.push('withdraw', cont.id, C.RESOURCE_ENERGY)

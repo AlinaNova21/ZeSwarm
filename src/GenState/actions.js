@@ -42,8 +42,8 @@ export function * moveNear (creep, target, opts = {}) {
   }
   opts.returnData = opts.returnData || {}
   const tgt = resolveTarget(target)
-  if (!tgt) return
-  while (!creep.pos.isNearTo(tgt)) {
+  if (!tgt) return  
+  while (isValidTgt(tgt) && !creep.pos.isNearTo(tgt)) {    
     yield * travelTo(creep, tgt, opts)
     if (opts.returnData.pathfinderReturn && opts.returnData.pathfinderReturn.incomplete) {
       return
@@ -53,7 +53,7 @@ export function * moveNear (creep, target, opts = {}) {
 
 export function * moveInRange (creep, target, range, opts = {}) {
   const tgt = resolveTarget(target)
-  while (tgt && !creep.pos.inRangeTo(tgt, range)) {
+  while (isValidTgt(tgt) && !creep.pos.inRangeTo(tgt, range)) {
     yield * travelTo(creep, tgt, opts)
   }
 }
@@ -73,7 +73,11 @@ export function* moveToRoom(creep, target, opts = {}) {
     target.y = y
   }
   const tgt = resolveTarget(target)
-  while (creep.pos.roomName !== tgt.roomName) {
+  while (isValidTgt(tgt) && creep.pos.roomName !== tgt.roomName) {
     yield * travelTo(creep, tgt, opts)
   }
+}
+
+export function isValidTgt(tgt) {
+  return tgt && (tgt instanceof SafeObject ? tgt.valid : true)
 }

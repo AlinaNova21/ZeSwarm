@@ -7,6 +7,7 @@ module.exports = {
       cache.work = this.creep.getActiveBodyparts(C.WORK)
     }
     const remote = this.creep.memory.room !== this.creep.room.name
+    const noCont = this.creep.room.controller && this.creep.room.controller.reservation && this.creep.room.controller.reservation.username != C.USER
     const tgt = this.resolveTarget(target)
     if (!this.creep.pos.isNearTo(tgt)) {
       this.push('moveNear', target)
@@ -24,12 +25,12 @@ module.exports = {
     }
     if (tgt instanceof Source) {
       const cont = remote && this.creep.pos.findInRange(FIND_STRUCTURES, 3).find(o => o.structureType == C.STRUCTURE_CONTAINER)
-      if (remote && !cont) {
+      if (remote && !cont && !noCont) {
         this.creep.say('no cont')
         const [csite] = this.creep.pos.findInRange(FIND_CONSTRUCTION_SITES, 3)
         if (!csite) {
           this.creep.say('no csite')
-          this.creep.room.createConstructionSite(this.creep.pos, STRUCTURE_CONTAINER)
+          const ret = this.creep.room.createConstructionSite(this.creep.pos, STRUCTURE_CONTAINER)
           return
         }
         if (!this.creep.pos.isEqualTo(csite.pos)) {

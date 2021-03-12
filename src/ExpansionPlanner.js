@@ -3,6 +3,7 @@ import { kernel, restartThread, sleep } from './kernel'
 import { Logger } from './log'
 import { createTicket } from './SpawnManager'
 import C from './constants'
+import config from './config'
 
 kernel.createProcess('expansionPlanner', restartThread, expansionPlanner)
 
@@ -13,6 +14,7 @@ function * expansionPlanner () {
       continue
     }
     yield * sleep(100)
+    if (!config.extraConfig.expansion) continue
     const targets = new Set(Memory.targets || [])
     const rooms = Object.values(Game.rooms).filter(r => r.controller && r.controller.my)
     this.log.info(`Settling: ${targets.size ? Array.from(targets).map(a => a[1]) : 'Nowhere'}`)
@@ -74,7 +76,7 @@ function avoidHostile (roomName, fromRoomName) {
   return 1
 }
 
-function * createNest (src, target, expire) {
+export function * createNest (src, target, expire) {
   const log = new Logger(`[Nesting] [${target}]`)
   while (true) {
     if (Game.time >= expire) return

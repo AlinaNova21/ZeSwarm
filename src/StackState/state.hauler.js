@@ -23,6 +23,12 @@ export default {
           this.push('say', 'NoTgt')
           return this.runStack()
         }
+        if (!resourceType) {
+          resourceType = Object.keys(Game.getObjectById(fromId).store)[0]
+          this.pop()
+          this.push('hauler', fromRoom, fromId, toRoom, toId, resourceType, cache)
+          return this.runStack()
+        }
         this.push('withdraw', fromId, resourceType)
         this.push('moveNear', fromId)
       } else {

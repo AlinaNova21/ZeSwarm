@@ -3,14 +3,20 @@ import C from '/constants'
 
 export default {
   feeder (cache = {}) {
-    if (!this.creep.carryCapacity) {
+    if (!this.creep.store.getCapacity()) {
       this.creep.say('No CARRY', true)
       this.push('suicide')
       return this.runStack()
     }
     const room = Game.rooms[this.creep.memory.room]
     if (this.creep.carry[C.RESOURCE_ENERGY]) {
-      const targets = [...room.spawns, ...room.extensions, ...room.towers].filter(e => e.energy < e.energyCapacity)
+      const [upCont] = room.controller.pos.findInRange(C.FIND_STRUCTURES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
+      const targets = [...room.spawns, ...room.extensions, ...room.towers].filter(o => o.store.getFreeCapacity(C.RESOURCE_ENERGY))
+      if (!targets.length && upCont && upCont.store.getFreeCapacity()) {
+        this.log.info(`No targets, using upgrade cont`)
+        this.creep.say('upg')
+        targets.push(upCont)
+      }
       if (!targets.length) {
         // this.push('sleep', 5)
         // return this.runStack()
@@ -31,7 +37,9 @@ export default {
       if (!cont) return this.creep.say('No Cont')
       if (cont.store.energy) {
         this.push('withdraw', cont.id, C.RESOURCE_ENERGY)
-        this.push('moveNear', cont.id)
+        if (!this.creep.pos.isNearTo(cont)) {
+          this.push('moveNear', cont.id)  
+        }
       } else {
         this.push('flee', [{ pos: cont.pos, range: 3 }])
       }      

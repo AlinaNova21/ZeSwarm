@@ -122,6 +122,19 @@ function * layoutRoom (roomName) {
       }
     }
     yield * flex.call(this, room, blockAreas)
+    if (room.controller.level >= 3) {
+      const [upCont] = room.controller.pos.findInRange(C.FIND_STRUCTURES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
+      if (!upCont) {
+        this.log.info('UpCont not found')
+        const [upSite] = room.controller.pos.findInRange(C.FIND_MY_CONSTRUCTION_SITES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
+        if (!upSite) {
+          this.log.info('UpSite not found')
+          const ret = PathFinder.search(room.controller.pos, room.storage || room.spawns[0])
+          const pos = ret.path[1]
+          room.createConstructionSite(pos.x, pos.y, C.STRUCTURE_CONTAINER)
+        }
+      }
+    }
     if (room.controller.level >= 4) {
       // yield * walls.call(this, room)
     }

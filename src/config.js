@@ -8,8 +8,9 @@ const NO_SIGN_DEFAULT = []
 
 const shards = {
   shardSeason: {
-    allies: ['psy372', 'modus'],
-    noSign: ['psy372', 'modus']
+    allies: ['psy372', 'modus', 'gt500'],
+    noSign: ['psy372', 'modus'],
+    expansion: false
   },
   screepsplus1: {
     allies: [],

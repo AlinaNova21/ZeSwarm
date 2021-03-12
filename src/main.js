@@ -48,7 +48,7 @@ export function loop() {
   vis.text(`Avg ${(avg / 1000).toFixed(3)}s`, 25, 6, { size: 3 })
 
   kernel.tick()
-  memoryManager.posttick()
+  // memoryManager.posttick()
   InterShardSegment.commit()
   stats.commit()
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })
@@ -62,4 +62,5 @@ export function loop() {
   } catch (e) {
     log.warn('HEAP: Unavailable')
   }
+  console.log()
 }

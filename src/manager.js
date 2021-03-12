@@ -4,6 +4,7 @@ import { Logger } from './log'
 import { sleep, restartThread } from './kernel'
 import { createTicket, destroyTicket, expandBody, census } from './SpawnManager'
 import intel from './Intel'
+import config from './config'
 import { __, add, clamp, compose, divide, either, max, multiply, subtract, mathMod } from 'ramda'
 
 kernel.createProcess('RoomManager', restartThread, RoomManager)
@@ -41,6 +42,12 @@ function * RoomManager () {
       const key = `nest:${name}`
       if (!this.hasThread(key)) {
         this.createThread(key, nestThread, name)
+      }
+    }
+    for (const [name, parent] of remotes) {
+      const key = `remote:${name}`
+      if (!this.hasThread(key)) {
+        this.createThread(key, remoteThread, name, parent)
       }
     }
     yield
@@ -89,21 +96,28 @@ function* nestThread(name) {
     if (room.energyCapacityAvailable >= 550 && room.controller.level >= 2) {
       const neighbors = Object.values(Game.map.describeExits(room.name))
       log.info(`Found neighbors ${neighbors}`)
+      const candidates = []
       for (const neighbor of neighbors) {
         const int = intel.rooms[neighbor]
         if (!int) continue
         if (int.sources.length <= 2) {
-          const valid = !int.hostile && !int.creeps.find(c => c.hostile)
+          const friend = int.owner && config.allies.includes(int.owner.toLowerCase())
+          const valid = !int.hostile && (!int.reserver || int.reserver == C.USER) && !friend && !int.creeps.find(c => c.hostile)
           // if (valid) srcCount += int.sources.length
           if (remotes.has(neighbor) && !valid) {
             log.info(`Revoking remote: ${neighbor}`)
             remotes.delete(neighbor)
           }
           if (!remotes.has(neighbor) && valid) {
-            log.info(`Authorizing remote: ${neighbor}`)
-            remotes.set(neighbor, room.name)
+            candidates.push([neighbor, int.sources.length])
           }
         }
+      }
+      const limit = room.spawns.length > 1 ? 10 : 2
+      candidates.sort((a,b) => b[1] - a[1])
+      for (const [n,] of candidates.slice(0, limit)) {
+        log.info(`Authorizing remote: ${n}`)
+        remotes.set(n, room.name)
       }
     }
 
@@ -130,7 +144,7 @@ function* nestThread(name) {
     createTicket(group, {
       // count: room.controller.level >= 4 ? 10 : 6,
       parent: `room_${room.memory.donor || room.name}`,
-      weight: (!census[room.name][group] || census[room.name][group] < 2) ? 100 : 20,
+      weight: (!census[room.name] || census[room.name][group] || census[room.name][group] < 2) ? 100 : 20,
       count: workers,
       body,
       memory: {
@@ -141,10 +155,14 @@ function* nestThread(name) {
     })
     if (room.controller.level > 1 && room.energyCapacityAvailable >= 400) {
       const lowEnergy = room.storage && room.storage.store.energy < 10000
+      let count = Math.min(lowEnergy ? 1 : 3, Math.ceil(room.controller.level / 2))
+      if (room.controller.level === 4 && room.storage) {
+        count += 2
+      }
       createTicket(`feeder_${room.name}`, {
         parent: `room_${room.memory.donor || room.name}`,
         weight: 30,
-        count: Math.min(lowEnergy ? 1 : 3, Math.ceil(room.controller.level / 3)),
+        count,
         body: expandBody([4, C.MOVE, 4, C.CARRY]),
         memory: {
           role: 'feeder',
@@ -159,17 +177,21 @@ function* nestThread(name) {
       if (room.controller.level < 4) {
         count = 6
       }
-      if (room.storage && room.storage.store.energy > 100000) {
-        count += 3
+      if (room.storage && room.storage.store.energy > 60000) {
+        count += 2
       }
-      const baseCost = 300 // MMMCCC
-      const costPerRep = 150 // MW
-      const reps = Math.floor((room.energyCapacityAvailable - baseCost) / costPerRep)
+      if (room.storage && room.storage.store.energy > 100000) {
+        count += 1
+      }
+      const creps = room.storage ? 1 : 3
+      const baseCost = creps * 100 // MMMCCC
+      const costPerWRep = 150 // MW
+      const wreps = Math.floor((room.energyCapacityAvailable - baseCost) / costPerWRep)
       createTicket(`upgrader_${room.name}`, {
         parent: `room_${room.memory.donor || room.name}`,
-        weight: 2,
+        weight: 5,
         count,
-        body: expandBody([reps + 3, C.MOVE, 3, C.CARRY, reps, C.WORK]),
+        body: expandBody([wreps + creps, C.MOVE, creps, C.CARRY, wreps, C.WORK]),
         memory: {
           run: 'upgrader',
           role: 'upgrader',
@@ -177,6 +199,21 @@ function* nestThread(name) {
           room: room.memory.donor || room.name
         }
       })
+      const [upCont] = room.controller.pos.findInRange(C.FIND_STRUCTURES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
+      if (room.storage && upCont) {
+        createTicket(`upgrade_hauler_${room.name}`, {
+          parent: `room_${room.name}`,
+          weight: 6,
+          count: 1,
+          body: expandBody([6, C.MOVE, 6, C.CARRY]),
+          memory: {
+            stack: [
+              ['hauler', room.name, room.storage.id, room.name, upCont.id, C.RESOURCE_ENERGY]
+            ]
+          }
+        })
+        // hauler(fromRoom, fromId, toRoom, toId, resourceType = C.RESOURCE_ENERGY, cache = {}) {
+      }
     }
     if (room.controller.level >= 2) {
       let surge = 0
@@ -203,6 +240,7 @@ function * remoteThread (name, parent) {
     if (!remotes.has(name)) return
     const key = `miningManager:${name}`
     if (!this.hasThread(key)) {
+      log.info(`Creating mining manager`)
       this.createThread(key, miningManager, parent, name)
     }
     yield
@@ -301,13 +339,14 @@ function * miningManager (homeRoomName, roomName) {
         yield
         continue
       }
-      const { controller: { id, level, pos } = {} } = Game.rooms[roomName]
+      const { controller: { id, pos } = {} } = Game.rooms[roomName]
+      const { controller: { level } = {} } = Game.rooms[homeRoomName]
       if (id) {
         const dual = level < 4
         createTicket(rgroup, {
           valid: () => Game.time < timeout,
           parent: nodeName,
-          weight: level <= 3 ? 1 : 5,
+          weight: level <= 3 ? 1 : 10,
           count: dual ? 2 : 1,
           body: expandBody([dual ? 1 : 2, C.MOVE, dual ? 1 : 2, C.CLAIM]),
           memory: {

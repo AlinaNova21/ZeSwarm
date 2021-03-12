@@ -3,6 +3,7 @@ export default class SafeObject {
     return new Proxy({ id }, {
       get (target, name) {
         if (name === 'safe') return () => this
+        if (name === 'valid') return !!Game.getObjectById(target.id)
         return Game.getObjectById(target.id)[name]
       },
       getPrototypeOf (target) {
