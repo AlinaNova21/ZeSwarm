@@ -1,0 +1,54 @@
+on:
+  push:
+    branches:
+      - "!*"
+    tags:
+      - 'v*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '12.x'
+        registry-url: 'https://registry.npmjs.org'
+    - run: yarn
+    - run: yarn build
+    - name: Save Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: |
+          dist
+  upload:
+    runs-on: ubuntu-latest
+    name: Push to ${{ matrix.server.host }}
+    strategy:
+      matrix:
+        server:
+        - host: server1.screepspl.us
+          port: 443
+          branch: default
+          username: ags131
+          password: ${{ secrets.SPLUS1_PASSWORD }}
+        - host: server2.screepspl.us
+          port: 443
+          branch: default
+          username: ags131
+          password: ${{ secrets.SPLUS2_PASSWORD }}
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+    - uses: ags131/screeps-upload-action@v1
+      with:
+        files: dist/*
+        host: ${{ matrix.server.host }}
+        port: ${{ matrix.server.port }}
+        branch: ${{ matrix.server.branch }}
+        username: ${{ matrix.server.username }}
+        password: ${{ matrix.server.password }}
