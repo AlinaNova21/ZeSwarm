@@ -25,6 +25,7 @@ jobs:
           dist
   upload:
     runs-on: ubuntu-latest
+    needs: build
     name: Push to ${{ matrix.server.host }}
     strategy:
       matrix:
