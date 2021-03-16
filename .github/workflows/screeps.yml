@@ -30,16 +30,15 @@ jobs:
     strategy:
       matrix:
         server:
+        - name: 'MMO Seasonal'
+          token_secret: MMO_TOKEN
+          path: /season/
         - name: ScreepsPlus1
           host: server1.screepspl.us
-          port: 443
-          branch: default
           username: ags131
           password_secret: SPLUS1_PASSWORD
         - name: ScreepsPlus2
           host: server2.screepspl.us
-          port: 443
-          branch: default
           username: ags131
           password_secret: SPLUS2_PASSWORD
     steps:
@@ -51,8 +50,10 @@ jobs:
     - uses: ags131/screeps-upload-action@v1
       with:
         files: dist/*
-        host: ${{ matrix.server.host }}
-        port: ${{ matrix.server.port }}
-        branch: ${{ matrix.server.branch }}
-        username: ${{ matrix.server.username }}
-        password: ${{ secrets[matrix.server.password_secret] }}
+        host: ${{ matrix.server.host || 'screeps.com' }}
+        port: ${{ matrix.server.port || '443' }}
+        path: ${{ matrix.server.path || '/' }}
+        branch: ${{ matrix.server.branch || 'default' }}
+        username: ${{ matrix.server.username || '' }}
+        password: ${{ secrets[matrix.server.password_secret] || '' }}
+        token: ${{ secrets[matrix.server.token_secret] || '' }}
