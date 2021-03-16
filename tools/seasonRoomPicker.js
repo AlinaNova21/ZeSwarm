@@ -1,5 +1,13 @@
 const fs = require('fs')
 
+const SYMBOLS = [
+  "symbol_aleph", "symbol_beth", "symbol_gimmel", "symbol_daleth", "symbol_he",
+  "symbol_waw", "symbol_zayin", "symbol_heth", "symbol_teth", "symbol_yodh",
+  "symbol_kaph", "symbol_lamedh", "symbol_mem", "symbol_nun", "symbol_samekh",
+  "symbol_ayin", "symbol_pe", "symbol_tsade", "symbol_qoph", "symbol_res",
+  "symbol_sim", "symbol_taw"]
+
+
 async function read(stream) {
   const chunks = [];
   for await (const chunk of stream) chunks.push(chunk);
@@ -14,20 +22,36 @@ async function run() {
     ['W21N24','symbol_gimmel', 'gt500'],
     ['W27N28','symbol_pe', 'gt500'],
     ['W23N28','symbol_sim', 'gt500'],
-    ['W23N21','symbol_lamedh', 'gt500']
+    ['W23N21','symbol_lamedh', 'gt500'],
+    ['W29N22','symbol_taw', 'gt500'],
+    ['W29N26','symbol_nun', 'gt500'],
+    ['W11N12','symbol_kaph', 'Montblanc'],
+    ['W11N17','symbol_nun', 'Montblanc'],
+    ['W14N18','symbol_yodh', 'Montblanc'],
+    ['W18N13','symbol_mem', 'Montblanc'],
+    ['W18N17','symbol_pe', 'Montblanc'],
   ]
-  console.log(`Existing:`)
+  const existing = []
   for (const room of Object.values(data.rooms)) {
     const [dec] = room.symbolDecoders
     if (room.level) {
       owned.add(dec.resourceType)
-      console.log(`  ${room.name} ${room.level} ${dec.resourceType} ${room.owner}`)
+      existing.push([room.name, room.level, dec.resourceType, room.owner])
     }
   }
   for (const [room, sym, user] of external) {
     owned.add(sym)
-    console.log(`  ${room} - ${sym} ${user}`)
+    existing.push([room, 0, sym, user])
   }
+  existing.sort((a,b) => b[1] - a[1])
+  const padr = (v,l) => (v+' '.repeat(l)).slice(0,l)
+  console.log(`Existing:`)
+  for (const [room, level, sym, owner] of existing) {
+    console.log(`  ${room} ${level || '-'} ${padr(sym, 13)} ${owner}`)
+  }
+  console.log('')
+  console.log(`Missing:`)
+  console.log(` ${SYMBOLS.filter(s => !owned.has(s))}`)
   console.log('')
   console.log(`Candidates:`)
   for (const room of Object.values(data.rooms)) {

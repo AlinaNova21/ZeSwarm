@@ -5,6 +5,10 @@ export function * runCreep (creepName) {
   let gen = null
   while (Game.creeps[creepName]) {
     const creep = Game.creeps[creepName]
+    if (creep.spawning) {
+      yield
+      continue
+    }
     if (!gen) {
       gen = genStates[creep.memory.run](creep.safe())
     }

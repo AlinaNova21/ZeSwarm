@@ -5,6 +5,8 @@ import { kernel, restartThread } from '/kernel'
 import { sleep } from './kernel'
 import minCut from './lib/mincut'
 
+import { Pathing } from './lib/pathfinding'
+
 import { core } from './layouts/core'
 
 import groupBy from 'lodash/groupBy'
@@ -89,6 +91,34 @@ function * templatedLayout (roomName) {
   // }
 }
 
+function * feederRoads (roomName) {
+  const ROAD_VERSION = 2
+  const room = Game.rooms[roomName]
+  if (!room) return []
+  if (!room.storage) return []
+  if (!room.memory.roads || room.memory.roads.v !== ROAD_VERSION) {
+    const pos = new Set()
+    for (const ext of room.extensions) {
+      const { path } = Pathing.findPath(room.storage.pos, ext.pos, { maxRooms: 1 })
+      path.forEach(p => pos.add(`${p.x},${p.y}`))
+    }
+    for (const s of room.find(C.FIND_SOURCES)) {
+      const { path } = Pathing.findPath(room.storage.pos, s.pos, { maxRooms: 1 })
+      path.forEach(p => pos.add(`${p.x},${p.y}`))
+    }
+    const { path } = Pathing.findPath(room.storage.pos, room.controller.pos, { maxRooms: 1 })
+    path.forEach(p => pos.add(`${p.x},${p.y}`))
+    room.memory.roads = {
+      v: ROAD_VERSION,
+      data: Array.from(pos).join(';')
+    }
+  }
+  return room.memory.roads.data
+    .split(';')
+    .map(p => p.split(','))
+    .map(([x,y]) => ({ structure: C.STRUCTURE_ROAD, x: +x, y: +y, minLevel: 4 }))
+}
+
 function * csiteVisualizer () {
   while (true) {
     for (const csite of Object.values(Game.constructionSites)) {
@@ -120,6 +150,16 @@ function * layoutRoom (roomName) {
         room.createConstructionSite(x, y, structure)
         yield true
       }
+    }
+    const roads = yield * feederRoads(roomName)
+    for (const { structure, x, y, minLevel } of roads) {
+      if (minLevel > room.controller.level) continue
+      const structures = room.lookForAt(LOOK_STRUCTURES, x, y)
+      if (structures.find(s => s.structureType === structure)) continue
+      const csites = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y)
+      if (csites.find(s => s.structureType === structure)) continue
+      room.createConstructionSite(x, y, structure)
+      yield true
     }
     yield * flex.call(this, room, blockAreas)
     if (room.controller.level >= 3) {

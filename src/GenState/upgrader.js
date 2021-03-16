@@ -36,10 +36,13 @@ export function * upgrader (creep) {
       const [cont] = room.controller.pos.findInRange(C.FIND_STRUCTURES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
       const safeCont = cont && cont.safe()
       const upCnt = Math.ceil(creep.carry.energy / workParts)
-      yield * moveInRange(creep, controller, 3)
+      if (!creep.pos.inRangeTo(controller, 3)) {
+        yield * moveInRange(creep, controller, 3)
+      }
       const [upSite] = room.controller.pos.findInRange(C.FIND_MY_CONSTRUCTION_SITES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
       const safeSite = upSite && upSite.safe()
-      for (let i = 0; i < upCnt; i++) {
+      while (creep.carry.energy) {
+      // for (let i = 0; i < upCnt; i++) {
         if (safeSite && safeSite.valid) {
           yield * build(creep, safeSite)
         } else {

@@ -95,7 +95,7 @@ function * defenseManagerTowersThread () {
   }
 }
 
-function isHostile (creep) {
+export function isHostile (creep) {
   const struct = creep.pos.findInRange(creep.room.structures.all, 5)
   const atEdge = creep.pos.x <= DIST || creep.pos.x >= 49 - DIST || creep.pos.y <= DIST || creep.pos.y >= 49 - DIST
   const ally = config.allies.includes(creep.owner.username.toLowerCase())

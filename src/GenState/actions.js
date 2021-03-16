@@ -1,4 +1,5 @@
 import SafeObject from '../lib/SafeObject'
+import { Pathing } from '../lib/pathfinding'
 import { Traveler } from '../Traveler'
 import { resolveTarget } from './common'
 
@@ -31,8 +32,9 @@ function wrap (funcName) {
 }
 
 export function * travelTo (creep, dest, opts = {}) {
-  const ret = Traveler.travelTo(creep, dest, opts) 
-  yield
+  // const ret = Traveler.travelTo(creep, dest, opts) 
+  const ret = yield * moveTo(creep, dest, opts)
+  // yield
   return ret
 }
 
@@ -54,7 +56,7 @@ export function * moveNear (creep, target, opts = {}) {
 export function * moveInRange (creep, target, range, opts = {}) {
   const tgt = resolveTarget(target)
   while (isValidTgt(tgt) && !creep.pos.inRangeTo(tgt, range)) {
-    yield * travelTo(creep, tgt, opts)
+    yield * travelTo(creep, tgt, { range, ...opts })
   }
 }
 

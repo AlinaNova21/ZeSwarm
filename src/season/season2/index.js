@@ -34,9 +34,19 @@ function * seasonManualClaiming () {
   while (true) {
     const ownedRooms = Object.values(Game.rooms).filter(r => r.controller && r.controller.my)
     if (Game.gcl.level > ownedRooms.length) {
-      const tgt = targets.find(t => !ownedRooms.includes(t))
+      const tgt = targets.find(t => !ownedRooms.find(r => r.name == t))
       if (tgt) {
-        this.createThread(`claim_${tgt}`, createNest, Game.spawns.Spawn1.room.name, tgt, Game.time + 2000)  
+        const [closestRoom, path] = ownedRooms
+          .filter(r => r.controller.level >= 4)
+          .map(r => [r, findRoute(tgt, r.name, {})])
+          .filter(r => r[1] && r[1].length < 25)
+          .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
+        if (!closestRoom) {
+          this.log.warn(`Couldn't find room to claim ${tgt} from`)
+          // this.log.warn(`Couldn't find room to deliver ${type} ${JSON.stringify(decoders[type])}`)
+          continue
+        }
+        this.createThread(`claim_${tgt}`, createNest, closestRoom.name, tgt, Game.time + 2000)  
       }
     }
     yield * sleep(10)
@@ -123,7 +133,7 @@ function * symbolDecoding() {
         .filter(r => r[1] && r[1].length < 25)
         .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
       if (!closestRoom) {
-        this.log.warn(`Couldn't find room to deliver ${type}`)
+        // this.log.warn(`Couldn't find room to deliver ${type}`)
         // this.log.warn(`Couldn't find room to deliver ${type} ${JSON.stringify(decoders[type])}`)
         continue
       }
@@ -166,15 +176,17 @@ function* symbolGathering() {
   const roomIntel = Object.values(intel.rooms) // .filter(r => r.hostile)
   const monitoring = new Set()
   const collecting = new Set()
+  const conts = new Set()
   for (const int of roomIntel) {
     const { name, symbolContainers = [] } = int
     for (const c of symbolContainers) {
+      conts.add(c)
       if (int.ts + 10000 < Game.time) continue
       // continue // Disable this
       const dt = c.decayTime - Game.time
       if (dt < 100) continue
       const [closestRoom, path] = Object.values(Game.rooms)
-        .filter(r => r.controller && r.controller.my && r.storage)
+        .filter(r => r.controller && r.controller.my && r.storage && r.storage.store.energy > 10000)
         .map(r => [r, findRoute(r.name, name, {})])
         .filter(r => r[1] && r[1].length < 15)
         .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
@@ -225,11 +237,14 @@ function* symbolGathering() {
   y += size
   vis.text('Symbol Collection:', x, y, { ...textStyle, font: `bold ${size} sans-serif` })
   y += size
-  for(const room of collecting) {
-    const { symbolContainers = [] } = intel.rooms[room]
+  // for(const room of collecting) {
+  for (const int of roomIntel) {
+    const room = int.name
+    const { symbolContainers = [] } = int //intel.rooms[room]
     for (const s of symbolContainers) {
       if (s.decayTime < Game.time) continue
-      vis.text(`${room}: ${s.resourceType}=${s.amount} (${s.decayTime - Game.time})`, x, y, textStyle)
+      const style = { ...textStyle, color: collecting.has(room) ? 'green' : 'white' }
+      vis.text(`${room}: ${s.resourceType}=${s.amount} (${s.decayTime - Game.time})`, x, y, style)
       y += size
     }
   }

@@ -28,6 +28,7 @@ const states = ({
     if (creep.memory.stack && !creep.memory.stack.length) delete creep.memory.stack
     creep.memory.stack = creep.memory.stack || [creep.memory.role || baseState]
     this.creep = creep
+    if (creep.spawning) return
     this.runStack()
   },
   runStack () {
@@ -117,7 +118,7 @@ const states = ({
       this.pop()
       this.runStack()
     } else {
-      this.creep.travelTo(tgt, opts)
+      this.creep.moveTo(tgt, opts) // removed travelTo
       
       if (opts.returnData.nextPos) {
         const terrain = this.creep.room.getTerrain()
@@ -143,7 +144,7 @@ const states = ({
       this.pop()
       this.runStack()
     } else {
-      this.creep.travelTo(tgt, opts)
+      this.creep.moveTo(tgt, { range: 1, ...opts }) // removed travelTo
       if (opts.returnData.pathfinderReturn && opts.returnData.pathfinderReturn.incomplete) {
         this.pop()
       }
@@ -156,7 +157,7 @@ const states = ({
       this.pop()
       this.runStack()
     } else {
-      this.creep.travelTo(tgt, opts)
+      this.creep.moveTo(tgt, opts) // removed travelTo
     }
   },
   moveToRoom (target, opts = {}) {
@@ -180,7 +181,7 @@ const states = ({
       // this.push('flee', exits.map(e => ({ pos: e, range: 2 })))
       this.runStack()
     } else {
-      this.creep.travelTo(tgt, opts)
+      this.creep.moveTo(tgt, opts) // removed travelTo
     }
   },
   flee (targets) {

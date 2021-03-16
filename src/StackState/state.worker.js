@@ -17,8 +17,10 @@ export default {
         this.push('moveToRoom', new RoomPosition(25, 25, roomName))
         return this.runStack()
       }
-      const [resource] = this.creep.pos.findInRange(FIND_DROPPED_RESOURCES, 4)
-        .filter(r => r.resourceType === C.RESOURCE_ENERGY)
+      const [resource] = [
+        ...this.creep.pos.findInRange(FIND_DROPPED_RESOURCES, 4).filter(r => r.resourceType === C.RESOURCE_ENERGY),
+        ...this.creep.room.find(FIND_DROPPED_RESOURCES).filter(r => r.resourceType === C.RESOURCE_ENERGY && r.amount > 100)
+      ]
       if (resource) {
         this.push('pickup', resource.id)
         this.push('moveNear', resource.id)

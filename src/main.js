@@ -1,4 +1,5 @@
 import MemHack from './MemHack'
+import { Pathing } from './lib/pathfinding'
 import stats from './stats'
 import { kernel } from './kernel'
 import memoryManager from './MemoryManager'
@@ -49,6 +50,7 @@ export function loop() {
 
   kernel.tick()
   // memoryManager.posttick()
+  Pathing.runMoves()
   InterShardSegment.commit()
   stats.commit()
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })

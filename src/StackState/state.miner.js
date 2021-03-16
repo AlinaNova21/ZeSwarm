@@ -35,7 +35,7 @@ module.exports = {
         }
         if (!this.creep.pos.isEqualTo(csite.pos)) {
           this.creep.say('mv csite')
-          this.push('moveTo', csite.pos)
+          this.push('moveTo', csite.pos, { range: 0 })
           return this.runStack()
         }
         if (this.creep.carry.energy) {
@@ -52,7 +52,7 @@ module.exports = {
         return
       }
       if (cont && !this.creep.pos.isEqualTo(cont.pos)) {
-        this.push('moveTo', cont.pos)
+        this.push('moveTo', cont.pos, { range: 0 })
         return this.runStack()
       }
       if (tgt.energy) {

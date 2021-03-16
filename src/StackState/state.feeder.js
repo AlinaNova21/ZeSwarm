@@ -41,7 +41,17 @@ export default {
           this.push('moveNear', cont.id)  
         }
       } else {
-        this.push('flee', [{ pos: cont.pos, range: 3 }])
+        const [resource] = [
+          ...this.creep.pos.findInRange(FIND_DROPPED_RESOURCES, 4).filter(r => r.resourceType === C.RESOURCE_ENERGY),
+          ...this.creep.room.find(FIND_DROPPED_RESOURCES).filter(r => r.resourceType === C.RESOURCE_ENERGY && r.amount > 100)
+        ]
+        if (resource) {
+          this.push('pickup', resource.id)
+          this.push('moveNear', resource.id)
+          return this.runStack()
+        } else {
+          this.push('flee', [{ pos: cont.pos, range: 3 }])
+        }
       }      
     }
     return this.runStack()
