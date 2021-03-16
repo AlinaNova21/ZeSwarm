@@ -33,12 +33,12 @@ jobs:
           port: 443
           branch: default
           username: ags131
-          password: ${{ secrets.SPLUS1_PASSWORD }}
+          password_secret: SPLUS1_PASSWORD
         - host: server2.screepspl.us
           port: 443
           branch: default
           username: ags131
-          password: ${{ secrets.SPLUS2_PASSWORD }}
+          password_secret: SPLUS2_PASSWORD
     steps:
     - name: Download Artifacts
       uses: actions/download-artifact@v2
@@ -51,4 +51,4 @@ jobs:
         port: ${{ matrix.server.port }}
         branch: ${{ matrix.server.branch }}
         username: ${{ matrix.server.username }}
-        password: ${{ matrix.server.password }}
+        password: ${{ secrets[matrix.server.password_secret] }}
