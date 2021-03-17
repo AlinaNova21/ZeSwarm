@@ -32,6 +32,7 @@ jobs:
         server:
         - name: 'MMO Seasonal'
           token_secret: MMO_TOKEN
+          branch: ZeSwarm_v3
           path: /season/
         - name: ScreepsPlus1
           host: server1.screepspl.us
