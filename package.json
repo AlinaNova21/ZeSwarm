@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "standard src/**/*.js",
-    "build": "rollup -c",
+    "build": "rm dist/* && rollup -c",
     "push:mmo": "screeps-api --server mmo download -d tmp && rm -f tmp/zeswarm* && yarn build --configMulti --output.dir tmp && screeps-api --server mmo upload tmp/*.js",
     "push:seasonal": "yarn build && yarn run push --server seasonal",
     "push:botarena": "yarn build && yarn run push --server botarena",

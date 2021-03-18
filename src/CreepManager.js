@@ -90,13 +90,13 @@ function * creepSaysThread () {
         this.createThread(`creepSay_${creep.name}`, creepSayWords, creep.name, startPhrase)
         continue
       }
-      if (creep.memory.role === 'scout' && Math.random() > 0.6) {
+      if (creep.memory.role && creep.memory.role.startsWith('scout') && Math.random() > 0.4) {
         let txt = sayings[Math.floor(Math.random() * sayings.length)]
         const { room } = creep
         if (room.controller && room.controller.owner && room.controller.owner.username && !room.controller.my) {
           const user = room.controller.owner.username
           txt = psayings[Math.floor(Math.random() * psayings.length)]
-          if (Math.random() > 0.7) {
+          if (Math.random() > 0.5) {
             const smileys = '😀😁😃😄😆😉😊☺️😛😜😝😈👁️'
             txt = smileys.substr(Math.floor(Math.random() * (smileys.length / 2)) * 2, 2)
           }

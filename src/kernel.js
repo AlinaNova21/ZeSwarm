@@ -264,3 +264,16 @@ export function * watchdog(name, fn, ...args) {
     yield
   }
 }
+
+
+export function * threadManager(threads, interval = 5) {
+  interval = Math.max(interval, 1)
+  while (true) {
+    for (const [name, fn, ...args] of threads) {
+      if (!this.hasThread(name)) {
+        this.createThread(name, fn, ...args)
+      }
+    }
+    yield* sleep(interval)
+  }
+}

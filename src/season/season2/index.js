@@ -1,16 +1,20 @@
 import C from "../../constants"
 import { getSegment } from "../../MemoryManager"
 import intel from '/Intel'
-import { kernel, restartThread, sleep } from "../../kernel"
+import { kernel, threadManager, sleep } from "../../kernel"
 import { createTicket, expandBody } from '../../SpawnManager'
 import groupBy from 'lodash/groupBy'
 import config from '/config'
 import { createNest } from '/ExpansionPlanner'
+import { SYMBOL_COLORS, SYMBOL_MAP } from "./util"
 
 const average = a => a.reduce((l,v) => l + v, 0) / a.length
 
 if (Game.shard.name === 'shardSeason') {
-  kernel.createProcess('SymbolManager', restartThread, symbolManager)
+  kernel.createProcess('SymbolManager', threadManager, [
+    ['symbolManager', symbolManager],
+    ['testing', testing]
+  ])
 }
 
 const routeCache = new Map()
@@ -103,6 +107,17 @@ function * symbolManager () {
     this.log.info(`Tick ${Game.time} ${seg.decoders.length} ${seg.containers.length}`)
     yield* symbolGathering.call(this)
     yield* symbolDecoding.call(this)
+    // createTicket('testing', {
+    //   parent: 'room_W21N12',
+    //   count: 2,
+    //   weight: 100,
+    //   body: [C.MOVE],
+    //   memory: {
+    //     stack: [
+    //       ['scoutVision', 'W23N21']
+    //     ]
+    //   }
+    // })
     yield
   }
 }
@@ -117,7 +132,7 @@ function * symbolDecoding() {
   }
   for (const roomName in Game.rooms) {
     const room = Game.rooms[roomName]
-    if (!room || !room.controller || !room.controller.my || !room.storage) continue
+    if (!room || !room.controller || !room.controller.my || !room.storage || room.storage.store.energy < 10000) continue
     for(const type in room.storage.store) {
       if (!SYMBOLS.includes(type)) continue
       const filt = r => {
@@ -198,7 +213,7 @@ function* symbolGathering() {
       }
       const rtt = path.length * 100
       const tripsPossible = Math.floor(1500 / rtt)
-      const maxBodyParts = Math.floor(closestRoom.energyCapacityAvailable / 100)
+      const maxBodyParts = Math.min(Math.min(25, Math.ceil(c.amount / 50)), Math.floor(closestRoom.energyCapacityAvailable / 100))
       const tripsNeeded = Math.ceil(c.amount / (maxBodyParts * 50))
       const count = Math.ceil(tripsNeeded / tripsPossible)
       createTicket(`symbolContainer_haulers_${c.id}`, {
@@ -225,13 +240,15 @@ function* symbolGathering() {
   let y = 6
   const size = 1
   const textStyle = { font: `${size} sans-serif`, align: 'left' }
+  const start = Game.cpu.getUsed()
   const vis = new RoomVisual()
   vis.text(`Score: ${Game.score}`, x, y, { ...textStyle, font: `bold ${size} sans-serif` })
   y += size
   for (const [sym, amt] of Object.entries(Game.symbols).sort((a,b) => a[1] - b[1])) {
     if (!amt) continue
-    vis.text(sym, x, y, textStyle)
-    vis.text(amt, x + 8, y, textStyle)
+    vis.resource(sym, x, y-0.3, size * 0.9)
+    vis.text(`  ${sym.slice(7)}`, x, y, textStyle)
+    vis.text(amt, x + 8, y, { ...textStyle, align: 'right' })
     y += size
   }
   y += size
@@ -243,11 +260,14 @@ function* symbolGathering() {
     const { symbolContainers = [] } = int //intel.rooms[room]
     for (const s of symbolContainers) {
       if (s.decayTime < Game.time) continue
-      const style = { ...textStyle, color: collecting.has(room) ? 'green' : 'white' }
-      vis.text(`${room}: ${s.resourceType}=${s.amount} (${s.decayTime - Game.time})`, x, y, style)
+      const style = { ...textStyle, color: collecting.has(room) ? 'white' : 'gray' }
+      vis.resource(s.resourceType, x + 5, y - 0.3, size * 0.9)
+      vis.text(`${room}:     ${s.resourceType.slice(7)}=${s.amount} (${s.decayTime - Game.time})`, x, y, style)
       y += size
     }
   }
+  const end = Game.cpu.getUsed()
+  // vis.text(end - start, x, y, textStyle)
   // yield * sleep(5)
 }
 
@@ -264,6 +284,27 @@ function* symbolContainer(roomName, scId, closestRoom, decayTime, dist) {
         stack: [['hauler', roomName, scId, closestRoom, Game.rooms[closestRoom].storage.id, C.RESOURCE_SCORE]]
       }
     })
+    yield
+  }
+}
+
+function relPoly(x, y, poly, scale = 1) {
+  return poly.map(p => {
+    p[0] += x * scale
+    p[1] += y * scale
+    return p
+  })
+}
+function * testing () {
+  while(true) {    
+    yield
+    continue
+    const start = Game.cpu.getUsed()
+    const vis = new RoomVisual()
+    SYMBOLS.forEach((sym, i) => vis.resource(sym, 1 + i, 25, 1))
+    const end = Game.cpu.getUsed()
+    const dur = end - start
+    console.log(dur, SYMBOLS.length, dur / SYMBOLS.length)
     yield
   }
 }

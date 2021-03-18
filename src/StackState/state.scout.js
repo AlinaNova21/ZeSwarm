@@ -11,10 +11,10 @@ const SIGN_COOLDOWN = 50
 module.exports = {
   scoutVision (roomName) {
     if (this.creep.room.name !== roomName) {
-      this.push('moveToRoom', roomName)
-      return this.runStack()
+      // this.push('moveToRoom', roomName)
+      // return this.runStack()
     }
-    const park = (this.creep.room.controller && this.creep.room.controller.pos) || new RoomPosition(25, 25, roomName)
+    const park = (this.creep.room.name === roomName && this.creep.room.controller && this.creep.room.controller.pos) || new RoomPosition(25, 25, roomName)
     if (!this.creep.pos.inRangeTo(park, 3)) {
       this.push('moveInRange', park, 3)
       return this.runStack()

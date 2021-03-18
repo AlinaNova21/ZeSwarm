@@ -59,25 +59,28 @@ const TerrainCache = {
 			// if (this.cache.size > 20) {
 			// 	this.cache.clear();
 			// }
-			while (this.cache.size > this.limit) {
-				let oldest = ''
-				let minTime = Game.time
-				for (const [room, time] of this.lru.entries()) {
-					if (time < minTime) {
-						oldest = room
-						minTime = time
-					}
-				}
-				log.info(`Removing ${oldest} from terrain cache`)
-				this.lru.delete(oldest)
-				this.cache.delete(oldest)
-			}
+			this.trim()
 			terrain = new TerrainMatrix(new Room.Terrain(roomName));
 			this.cache.set(roomName, terrain);
 		}
 		this.lru.set(roomName, Game.time)
 		return terrain;
 	},
+	trim () {
+		while (this.cache.size > this.limit) {
+			let oldest = ''
+			let minTime = Game.time
+			for (const [room, time] of this.lru.entries()) {
+				if (time < minTime) {
+					oldest = room
+					minTime = time
+				}
+			}
+			log.info(`Removing ${oldest} from terrain cache`)
+			this.lru.delete(oldest)
+			this.cache.delete(oldest)
+		}
+	}
 };
 
 class PathingManager {
@@ -89,15 +92,35 @@ class PathingManager {
 		this.getCreepEntity = options.getCreepEntity || ((instance) => instance);
 		this.avoidRooms = options.avoidRooms || [];
 		this.matrixCache = new Map();
+		this.matrixCacheLRU = new Map();
 		this.roomMoves = new Map();
 		this.lastMoveTime = Game.time;
 	}
 
+	trimMatrixCache() {
+		while (this.matrixCache.size > 200) {
+			let oldest = ''
+			let minTime = Game.time
+			for (const [room, time] of this.matrixCacheLRU.entries()) {
+				if (time < minTime) {
+					oldest = room
+					minTime = time
+				}
+			}
+			log.info(`Removing ${oldest} from terrain cache`)
+			this.matrixCacheLRU.delete(oldest)
+			this.matrixCache.delete(oldest)
+		}
+
+	}
+
 	clearMatrixCache() {
+		this.matrixCacheLRU.clear();
 		this.matrixCache.clear();
 	}
 
 	clearMatrixCacheRoom(roomName) {
+		this.matrixCacheLRU.delete(roomName);
 		this.matrixCache.delete(roomName);
 	}
 
@@ -446,9 +469,10 @@ class PathingManager {
 
 	cleanup() {
 		this.roomMoves.clear();
-		if (this.matrixCache.size > 200) {
-			this.clearMatrixCache();
-		}
+		this.trimMatrixCache()
+		// if (this.matrixCache.size > 200) {
+		// 	this.clearMatrixCache();
+		// }
 	}
 
 	getCreepTargetInfo(creep, roomName) {
@@ -779,6 +803,16 @@ class PathingManager {
 					matrix = matrix ? matrix.clone() : new PathFinder.CostMatrix();
 					costCallback(roomName, matrix);
 				}
+				if (Memory.rooms[roomName] && Memory.rooms[roomName]._walls) {
+					matrix = matrix ? matrix.clone() : new PathFinder.CostMatrix();
+					const cm = PathFinder.CostMatrix.deserialize(Memory.rooms[roomName]._walls)
+					for (let y = 0; y < 50; y++) {
+						for (let x = 0; x < 50; x++) {
+							const v = cm.get(x, y)
+							if (v) matrix.set(v, x, y)
+						}
+					}
+				}
 				if (roomName === startRoomName) {
 					startRoomMatrix = matrix;
 				}
@@ -992,6 +1026,7 @@ class PathingManager {
 		if (!cache || Game.time >= time + MATRIX_CACHE_TIME) {
 			this.matrixCache.set(roomName, [cache = {}, Game.time]);
 		}
+		this.matrixCacheLRU.set(roomName, Game.time)
 		if (!cache[key]) {
 			const room = Game.rooms[roomName];
 			if (room) {
@@ -1095,9 +1130,10 @@ export const Pathing = new PathingManager({
 	/* avoidRooms: [], */
 
 	// this event will be called every time creep enters new room:
-	/* onRoomEnter(creep, roomName) {
-		console.log(`Creep ${creep.name} entered room ${roomName}`);
-	}, */
+	// onRoomEnter(creep, roomName) {
+	// 	console.log(`Creep ${creep.name} entered room ${roomName}`);
+		
+	// },
 
 	// manager will use this function to make creeps stay in range of their target
 	getCreepWorkingTarget(creep) {

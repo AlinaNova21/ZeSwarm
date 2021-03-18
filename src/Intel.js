@@ -124,6 +124,14 @@ export class Intel extends Process {
       return { id, pos: [x, y], body, hits, hitsMax, my: my || undefined, username, hostile: !my || undefined }
     }
     const extra = {}
+    const objects = room.find(C.FIND_STRUCTURES)
+    const invaderCore = objects.find(o => o.structureType === C.STRUCTURE_INVADER_CORE)
+    if (invaderCore) {
+      extra.invaderCore = {
+        ...smap(invaderCore),
+        level: invaderCore.level
+      }
+    }
     if (C.FIND_SCORE_CONTAINERS) {
       extra.scoreContainers = room.find(C.FIND_SCORE_CONTAINERS).map(({ id, pos: { x, y }, decayTime }) => ({ id, pos: [x, y], decayTime }))
     }
@@ -139,7 +147,7 @@ export class Intel extends Process {
     hr[room.name] = {
       hostile: (level && !my) || undefined,
       name,
-      level: level || undefined,
+      level: (invaderCore && invaderCore.level) || level || undefined,
       owner,
       reserver,
       spawns: room.spawns.length || undefined,

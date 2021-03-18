@@ -19,12 +19,12 @@ async function run() {
   const owned = new Set()
   const candidates = new Set()
   const external = [
-    ['W21N24','symbol_gimmel', 'gt500'],
-    ['W27N28','symbol_pe', 'gt500'],
-    ['W23N28','symbol_sim', 'gt500'],
-    ['W23N21','symbol_lamedh', 'gt500'],
-    ['W29N22','symbol_taw', 'gt500'],
-    ['W29N26','symbol_nun', 'gt500'],
+    ['W21N24','symbol_gimmel', 'GT500'],
+    ['W27N28','symbol_pe', 'GT500'],
+    ['W23N28','symbol_sim', 'GT500'],
+    ['W23N21','symbol_lamedh', 'GT500'],
+    ['W29N22','symbol_taw', 'GT500'],
+    ['W29N26','symbol_nun', 'GT500'],
     ['W11N12','symbol_kaph', 'Montblanc'],
     ['W11N17','symbol_nun', 'Montblanc'],
     ['W14N18','symbol_yodh', 'Montblanc'],
@@ -34,12 +34,13 @@ async function run() {
   const existing = []
   for (const room of Object.values(data.rooms)) {
     const [dec] = room.symbolDecoders
-    if (room.level) {
+    if (room.level && dec) {
       owned.add(dec.resourceType)
       existing.push([room.name, room.level, dec.resourceType, room.owner])
     }
   }
   for (const [room, sym, user] of external) {
+    if (existing.find(([r]) => r === room)) continue
     owned.add(sym)
     existing.push([room, 0, sym, user])
   }

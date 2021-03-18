@@ -319,7 +319,7 @@ function * miningManager (homeRoomName, roomName) {
       // const maxWorkParts = (homeRoom.energyCapacityAvailable - 50)
       const wantedWork = remote ? 1 : (maxEnergy ? Math.ceil(maxWork / neededWork) : 1)
       const hasRoads = !remote && homeRoom.storage
-      const cbody = expandBody([maxParts, C.CARRY, maxParts * (hasRoads ? 0.5 : 1), C.MOVE])
+      const cbody = expandBody([maxParts, C.CARRY, Math.ceil(maxParts * (hasRoads ? 0.5 : 1)), C.MOVE])
       const wbody = expandBody([1, C.CARRY, remote ? 3 : 1, C.MOVE, remote ? 6 : neededWork, C.WORK])
       const cgroup = `${id}c`
       const wgroup = `${id}w`

@@ -14,7 +14,7 @@ export default {
         this.push('transfer', toId, resourceType)
         this.push('moveNear', toId)
       } else {
-        this.push('moveToRoom', toRoom)
+        this.push('moveToRoom', toRoom, { maxOps: 200000 })
       }
     } else {
       if (this.creep.pos.roomName === fromRoom) {
