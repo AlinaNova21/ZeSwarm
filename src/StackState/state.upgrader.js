@@ -1,4 +1,4 @@
-import C from '/constants'
+import { C } from '@/constants'
 
 export default {
   upgrader(cache = {}) {
@@ -32,7 +32,7 @@ export default {
       return this.runStack()
     } else {
       if (room.name !== homeRoom.name) {
-        this.push('moveToRoom', new RoomPosition(25, 25, homeRoom.name))
+        this.push('moveToRoom', homeRoom.name)
         return this.runStack()
       }
       const upCnt = Math.ceil(this.creep.carry.energy / cache.work)

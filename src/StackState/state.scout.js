@@ -1,9 +1,9 @@
-const log = require('/log')
-const intel = require('/Intel')
+const log = require('@/log')
+const intel = require('@/Intel')
 const size = require('lodash/size')
 
-const C = require('/constants')
-const { allies, noSign } = require('/config')
+const C = require('@/constants')
+const config = require('@/config')
 const SIGN_MSG = `Territory of ZeSwarm - ${C.USER}`
 const SIGN_MY_MSG = `ZeSwarm - https://github.com/ags131/ZeSwarm`
 const SIGN_COOLDOWN = 50
@@ -42,15 +42,15 @@ module.exports = {
     // const target = intel.outdated && intel.outdated.length && intel.outdated[Math.floor(Math.random() * intel.outdated.length)]
     // if (target && false) {
     //   console.log(target)
-    //   this.push('moveToRoom', new RoomPosition(25, 25, target), { preferHighway: true })
+    //   this.push('moveToRoom', target, { preferHighway: true })
     // }
 
     const user = controller && ((controller.owner && controller.owner.username) || (controller.reservation && controller.reservation.username))
     const mine = controller && controller.my
-    const friend = !mine && user && (noSign.includes(user) || allies.includes(user))
+    const friend = !mine && user && (config.noSign.includes(user) || config.allies.includes(user))
     const hostile = !mine && !friend && controller && controller.level > 0 && !controller.my
 
-    if (hostile) return log.warn(`${room.name} is hostile!`)
+    if (hostile) return this.log.warn(`${room.name} is hostile!`)
 
     let lastdir = 0
     if (pos.y === 0) lastdir = C.TOP
@@ -60,7 +60,7 @@ module.exports = {
 
     const exits = Game.map.describeExits(room.name)
     const portals = room.find(FIND_STRUCTURES, { filter: { structureType: C.STRUCTURE_PORTAL } }).filter(p => !p.destination.shard || p.destination.shard === Game.shard.name)
-    const choices = [C.TOP,C.BOTTOM,C.LEFT,C.RIGHT].filter(d => d !== lastdir && exits[d])
+    const choices = [C.TOP,C.BOTTOM,C.LEFT,C.RIGHT].filter(d => d !== lastdir && exits[d] && d !== state.incomplete)
     const rooms = new Set()
     portals.forEach(p => rooms.add(p.destination.room))
     let ri = 100
@@ -77,6 +77,7 @@ module.exports = {
       choices.splice(ind, 1)
       delete state.incomplete
     }
+    intel.rooms = intel.rooms || {}
     const oldest = choices.reduce((l,dir) => {
       const int = intel.rooms[exits[dir]]
       const age = int ? Game.time - int.ts : 1e10
@@ -131,14 +132,17 @@ module.exports = {
       if (incomplete) {
         state.incomplete = dir
         this.creep.say(`Inc ${dir}`)
-        return //this.runStack()
+        // return this.runStack()
+        this.push('noop')
+        return
       }
       Game.map.visual.poly(path, { opacity: 1, strokeWidth: 1 })
       if (exit.structureType === C.STRUCTURE_PORTAL) {
-        this.push('moveTo', exit, { roomCallback })
+        this.push('travelTo', exit, { roomCallback, range: 0 })
       } else {
         this.push('moveOntoExit', dir)
-        this.push('moveNear', exit, { roomCallback, maxRooms: 1 })
+        // this.push('moveNear', exit, { roomCallback, maxRooms: 1 })
+        this.push('travelTo', exit, { roomCallback, range: 1, maxRooms: 1 })
       }
       this.runStack()
     }

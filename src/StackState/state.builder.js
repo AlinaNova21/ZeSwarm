@@ -1,4 +1,4 @@
-import C from '/constants'
+import { C } from '@/constants'
 import * as R from 'ramda'
 
 const minHP = R.reduce(R.minBy(R.prop('hits')), Infinity)
@@ -26,12 +26,13 @@ export default {
         return this.pop()
       }
       const priority = {
-        [C.STRUCTURE_EXTENSION]: 2,
-        [C.STRUCTURE_TOWER]: 3,
-        [C.STRUCTURE_SPAWN]: 5
+        [C.STRUCTURE_EXTENSION]: 12,
+        [C.STRUCTURE_TOWER]: 13,
+        [C.STRUCTURE_SPAWN]: 15,
+        [C.STRUCTURE_OBSERVER]: 5
       }
       if (!room.containers.length) {
-        priority[C.STRUCTURE_CONTAINER] = 10
+        priority[C.STRUCTURE_CONTAINER] = 20
       }
       const [site] = sites.reduce(([tgt, v1], site) => {
         const v2 = ((priority[site.structureType] || 1) * 10000) + ((site.progress / site.progressTotal) * 100)

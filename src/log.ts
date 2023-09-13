@@ -1,12 +1,12 @@
 // Use for HTML styling (Colors loosely match screeps_console)
-export const LogLevel = {
-  SILLY: -1,
-  DEBUG: 0,
-  INFO: 1,
-  ALERT: 2,
-  WARN: 3,
-  ERROR: 4,
-  FATAL: 5
+export enum LogLevel {
+  SILLY = -1,
+  DEBUG,
+  INFO,
+  ALERT,
+  WARN,
+  ERROR,
+  FATAL
 }
 
 const styles = {
@@ -23,47 +23,33 @@ const styles = {
 let y = 0
 let tick = 0
 
-export class Logger {
-  static get LogLevel () {
-    return LogLevel
-  }
+type DeferedLogFunction = () => string
 
+export class Logger {
+  public level: LogLevel = LogLevel.INFO
+  public prefix: string
+  
   constructor (prefix = '') {
     this.prefix = prefix ? prefix + ' ' : ''
     this.level = LogLevel.INFO
-    this._log = console.log // This allows for console hooking
   }
 
-  withPrefix (prefix) {
+  withPrefix (prefix: string) {
     return new Logger(prefix)
   }
 
-  hook (level = 'info') {
-    Object.defineProperty(console, 'log', {
-      value: (...a) => {
-        this[level](a.join(' '))
-      }
-    })
-  }
-
-  unhook () {
-    Object.defineProperty(console, 'log', {
-      value: this._log
-    })
-  }
-
-  log (level, message) {
+  log(level: LogLevel, message: string | DeferedLogFunction) {
     if (level >= this.level) {
       if (typeof message === 'function') {
         message = message()
       }
       const style = styles[level] || styles.default
-      this._log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix}${message}</log>`)
+      console.log(`<log severity="${level}" style="${style}">[${level}] ${this.prefix}${message}</log>`)
       // this.vlog(level, `[${level}] ${this.prefix} ${message}`)
     }
   }
 
-  vlog (level, message) {
+  vlog (level: LogLevel, message: string) {
     if (tick !== Game.time) y = 0.2
     tick = Game.time
     const style = styles[level] || styles.default
@@ -75,30 +61,35 @@ export class Logger {
     y += 0.8
   }
 
-  debug (message) {
+  debug (message: string | DeferedLogFunction) {
     this.log(LogLevel.DEBUG, message)
   }
 
-  info (message) {
+  info(message: string | DeferedLogFunction) {
     this.log(LogLevel.INFO, message)
   }
 
-  warn (message) {
+  warn(message: string | DeferedLogFunction) {
     this.log(LogLevel.WARN, message)
   }
 
-  alert (message) {
+  alert(message: string | DeferedLogFunction) {
     this.log(LogLevel.ALERT, message)
   }
 
-  error (message) {
+  error(message: string | DeferedLogFunction | Error) {
     if (message instanceof Error) {
       // message = ErrorMapper.map(message)
+      message = message.stack
     }
     this.log(LogLevel.ERROR, message)
   }
 
-  fatal (message) {
+  fatal(message: string | DeferedLogFunction | Error) {
+    if (message instanceof Error) {
+      // message = ErrorMapper.map(message)
+      message = message.stack
+    }
     this.log(LogLevel.FATAL, message)
   }
 }

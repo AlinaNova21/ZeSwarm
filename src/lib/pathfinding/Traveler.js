@@ -154,7 +154,7 @@ class Traveler {
   /**
      * check if room should be avoided by findRoute algorithm
      * @param roomName
-     * @returns {RoomMemory|number}
+     * @returns {boolean}
      */
   static checkAvoid (roomName) {
     return Memory.rooms && Memory.rooms[roomName] && Memory.rooms[roomName].avoid
@@ -226,6 +226,7 @@ class Traveler {
      * @returns {PathfinderReturn}
      */
   static findTravelPath (origin, destination, options = {}) {
+    // @ts-ignore
     _.defaults(options, {
       ignoreCreeps: true,
       maxOps: DEFAULT_MAXOPS,
@@ -357,7 +358,7 @@ class Traveler {
         let parsed
         if (options.preferHighway) {
           parsed = /^[WE]([0-9]+)[NS]([0-9]+)$/.exec(roomName)
-          const isHighway = (parsed[1] % 10 === 0) || (parsed[2] % 10 === 0)
+          const isHighway = (+parsed[1] % 10 === 0) || (+parsed[2] % 10 === 0)
           if (isHighway) {
             return 1
           }
@@ -367,8 +368,8 @@ class Traveler {
           if (!parsed) {
             parsed = /^[WE]([0-9]+)[NS]([0-9]+)$/.exec(roomName)
           }
-          const fMod = parsed[1] % 10
-          const sMod = parsed[2] % 10
+          const fMod = +parsed[1] % 10
+          const sMod = +parsed[2] % 10
           const isSK = !(fMod === 5 && sMod === 5) &&
                         ((fMod >= 4) && (fMod <= 6)) &&
                         ((sMod >= 4) && (sMod <= 6))
@@ -379,10 +380,12 @@ class Traveler {
         return highwayBias
       }
     })
+    // @ts-ignore
     if (!_.isArray(ret)) {
       console.log(`couldn't findRoute to ${destination}`)
-      return
+      return {}
     }
+    if (ret == -2) return {}
     for (const value of ret) {
       allowedRooms[value.room] = true
     }
@@ -524,29 +527,29 @@ class Traveler {
      * @param cleanup
      */
   static patchMemory (cleanup = false) {
-    if (!Memory.empire) {
-      return
-    }
-    if (!Memory.empire.hostileRooms) {
-      return
-    }
-    let count = 0
-    for (const roomName in Memory.empire.hostileRooms) {
-      if (Memory.empire.hostileRooms[roomName]) {
-        if (!Memory.rooms[roomName]) {
-          Memory.rooms[roomName] = {}
-        }
-        Memory.rooms[roomName].avoid = 1
-        count++
-      }
-      if (cleanup) {
-        delete Memory.empire.hostileRooms[roomName]
-      }
-    }
-    if (cleanup) {
-      delete Memory.empire.hostileRooms
-    }
-    console.log(`TRAVELER: room avoidance data patched for ${count} rooms`)
+    // if (!Memory.empire) {
+    //   return
+    // }
+    // if (!Memory.empire.hostileRooms) {
+    //   return
+    // }
+    // let count = 0
+    // for (const roomName in Memory.empire.hostileRooms) {
+    //   if (Memory.empire.hostileRooms[roomName]) {
+    //     if (!Memory.rooms[roomName]) {
+    //       Memory.rooms[roomName] = {}
+    //     }
+    //     Memory.rooms[roomName].avoid = 1
+    //     count++
+    //   }
+    //   if (cleanup) {
+    //     delete Memory.empire.hostileRooms[roomName]
+    //   }
+    // }
+    // if (cleanup) {
+    //   delete Memory.empire.hostileRooms
+    // }
+    // console.log(`TRAVELER: room avoidance data patched for ${count} rooms`)
   }
 
   static deserializeState (travelData, destination) {

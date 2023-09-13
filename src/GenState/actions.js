@@ -1,7 +1,8 @@
 import SafeObject from '../lib/SafeObject'
-import { Pathing } from '../lib/pathfinding'
+import { IN_ROOM, Pathing } from '../lib/pathfinding'
 import { Traveler } from '../Traveler'
 import { resolveTarget } from './common'
+export { sleep } from '../kernel'
 
 export const creepActions = {}
 export const genStates = {}
@@ -15,6 +16,7 @@ export const claimController = wrap('claimController')
 export const reserveController = wrap('reserveController')
 export const attackController = wrap('attackController')
 export const signController = wrap('signController')
+export const move = wrap('move')
 export const moveTo = wrap('moveTo')
 export const build = wrap('build')
 export const harvest = wrap('harvest')
@@ -23,6 +25,9 @@ export const pickup = wrap('pickup')
 export const withdraw = wrap('withdraw')
 export const transfer = wrap('transfer')
 
+/**
+ * @returns {(creep: Creep, ...args: any[]) => Generator<void, CreepActionReturnCode, void>}
+ */
 function wrap (funcName) {
   return function* (creep, ...args) {
     const ret = creep[funcName].apply(creep, args)
@@ -61,25 +66,36 @@ export function * moveInRange (creep, target, range, opts = {}) {
 }
 
 export function* moveToRoom(creep, target, opts = {}) {
-  let [x, y] = [25, 25]
-  if (typeof target === 'string' && target.match(/^[EW]\d+[NS]\d+$/)) {
-    target = { x, y, roomName: target }
+  // let [x, y] = [25, 25]
+  // if (typeof target === 'string' && target.match(/^[EW]\d+[NS]\d+$/)) {
+  //   target = { x, y, roomName: target }
+  // }
+  // const terrain = Game.map.getRoomTerrain(target.roomName)
+  // if (terrain.get(target.x, target.y) !== 0) {
+  //   while (terrain.get(x, y) !== 0) {
+  //     x = Math.floor(Math.random() * 20) + 15
+  //     y = Math.floor(Math.random() * 20) + 15
+  //   }
+  //   target.x = x
+  //   target.y = y
+  // }
+  // const tgt = resolveTarget(target)
+  // while (isValidTgt(tgt) && creep.pos.roomName !== tgt.roomName) {
+  //   yield * travelTo(creep, tgt, opts)
+  // }
+  if (target.roomName) {
+    target = target.roomName
   }
-  const terrain = Game.map.getRoomTerrain(target.roomName)
-  if (terrain.get(target.x, target.y) !== 0) {
-    while (terrain.get(x, y) !== 0) {
-      x = Math.floor(Math.random() * 20) + 15
-      y = Math.floor(Math.random() * 20) + 15
-    }
-    target.x = x
-    target.y = y
-  }
-  const tgt = resolveTarget(target)
-  while (isValidTgt(tgt) && creep.pos.roomName !== tgt.roomName) {
-    yield * travelTo(creep, tgt, opts)
+  while (this.creep.moveToRoom(target, opts) !== IN_ROOM) {
+    yield
   }
 }
 
+/**
+ * @template T
+ * @param {SafeObject<T>|RoomObject} tgt 
+ * @returns {boolean}
+ */
 export function isValidTgt(tgt) {
   return tgt && (tgt instanceof SafeObject ? tgt.valid : true)
 }

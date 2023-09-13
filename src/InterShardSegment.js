@@ -2,6 +2,7 @@ const cache = new Map()
 
 const remote = new Proxy({}, {
   get(target, name) {
+    if (typeof name !== 'string') return
     return InterShardSegment.shardData(name)
   }
 })

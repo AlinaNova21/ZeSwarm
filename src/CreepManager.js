@@ -1,7 +1,8 @@
+// @ts-ignore
 import StackState from './StackState'
 import GenState from './GenState'
 import { kernel, sleep, restartThread } from './kernel'
-import { sayings, psayings } from '/sayings'
+import { sayings, psayings } from './sayings'
 
 kernel.createProcess('CreepManager', restartThread, creepManager)
 
@@ -24,10 +25,12 @@ function * creepManager () {
 
 function * creepIDThread () {
   const roles = {
+    builder: '🔨',
     miningCollector: '🚚',
     miningWorker: '⛏️',
     worker: '👷',
     upgrader: '⬆️',
+    upgradeHauler: '🚛',
     hauler: '🚛',
     scout: '👁️',
     scoutVision: '🕵️',
@@ -42,7 +45,7 @@ function * creepIDThread () {
     for (const { room, pos: { x, y }, memory: { role, run } } of Object.values(Game.creeps)) {
       const icon = roles[role] || roles[run] || ''
       if (icon) {
-        room.visual.text(icon, x, y + 0.1, { size: 0.4 })
+        room.visual.text(icon, x, y + 0.1, { font: 0.4 })
       }
       yield true
     }
@@ -150,6 +153,10 @@ function * creepThreadManager () {
   }
 }
 
+/**
+ * 
+ * @type {GeneratorThreadFn}
+ */
 function * newStackStateThread (creepName) {
   while (Game.creeps[creepName]) {
     const creep = Game.creeps[creepName]
@@ -159,10 +166,13 @@ function * newStackStateThread (creepName) {
       StackState.runCreep(creep)
     } catch (err) {
       this.log.error(`Creep ${creep} failed to run ${err.stack}`)
+      creep.room.visual.text(err.toString(), creep.pos.x, creep.pos.y, {
+        color: '#FF0000'
+      })
     }
     const end = Game.cpu.getUsed()
     const dur = end - start
-    creep.room.visual.text(dur.toFixed(2), creep.pos.x, creep.pos.y - 0.5, { size: 0.4, opacity: 0.7 })
+    creep.room.visual.text(dur.toFixed(2), creep.pos.x, creep.pos.y - 0.5, { font: 0.4, opacity: 0.7 })
     yield
   }
   delete Memory.creeps[creepName]

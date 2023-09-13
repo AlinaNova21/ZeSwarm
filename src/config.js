@@ -6,12 +6,13 @@
 
 /**
  * @typedef {Object} ShardConfig
- * @property {boolean} sellExcessPixels
- * @property {string[]} allies
- * @property {string[]} allowPassage
- * @property {string[]} noSign
- * @property {RaidConfig} raids
- * @property {Object} extraConfig
+ * @property {boolean} [sellExcessPixels]
+ * @property {string[]} [allies]
+ * @property {string[]} [allowPassage]
+ * @property {string[]} [noSign]
+ * @property {RaidConfig} [raids]
+ * @property {Object} [extraConfig]
+ * @property {boolean} [expansion]
  */
 
 /** @type {string[]} */ 
@@ -30,22 +31,25 @@ const NO_SIGN_DEFAULT = []
  */
 const shards = {
   shardSeason: {
-    allies: ['psy372', 'modus', 'gt500'],
-    noSign: ['psy372', 'modus'],
-    expansion: false,
+    allies: ['psy372'],
+    noSign: ['psy372'],
+    expansion: true,
   },
   screepsplus1: {
     allies: [],
     allowPassage: ['Saruss'],
+    expansion: true,
   },
   screepsplus2: {
     allies: [],
     allowPassage: [],
+    expansion: true,
   },
   botarena: {
     raids: {
       enabled: true
-    }
+    },
+    expansion: true,
   }
 }
 
@@ -60,4 +64,4 @@ const {
   } = {}
 } = shards
 
-export default { sellExcessPixels, allies, allowPassage, noSign, raids, extraConfig }
+module.exports = { sellExcessPixels, allies, allowPassage, noSign, raids, extraConfig }

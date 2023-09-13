@@ -1,11 +1,12 @@
 // rollup.config.js
-import commonjs from 'rollup-plugin-commonjs'
-import resolve from 'rollup-plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
+import resolve from '@rollup/plugin-node-resolve'
 import rootImport from 'rollup-plugin-root-import'
+import typescript from '@rollup/plugin-typescript'
 
 export default args => {
   const input = {
-    'zeswarm.kernel': 'src/kernel.js',
+    'zeswarm.kernel': 'src/kernel.ts',
     'zeswarm.config': 'src/config.js',
     main: 'src/main.js',
   }
@@ -35,7 +36,7 @@ export default args => {
     plugins: [
       {
         name: 'custom',
-        banner: '/* ZeSwarm v1.1 */',
+        banner: '/* ZeSwarm - https://github.com/ags131/ZeSwarm */',
         renderChunk(code, info, opts) {
           code = code.replace(/require\('\.\/(.+?)\.js'\)/g, (m, f) => `require('${f}')`)
           return { code }
@@ -57,6 +58,7 @@ export default args => {
         // module: true,
         preferBuiltins: false
       }),
+      typescript(),
       commonjs(),
     ]
   }

@@ -1,9 +1,24 @@
-import { Logger, LogLevel } from './log'
 import shuffle from 'lodash/shuffle'
+import { Logger, LogLevel } from './log'
 import stats from './stats'
 
-export class Thread {
-  constructor(process, name, fn, args = []) {
+type ThreadGeneratorResponse = void | true
+type ThreadGenerator = Generator<void, ThreadGeneratorResponse, void>
+type ThreadFn = (...args: any[]) => void
+
+type ThreadConstructor = (...args: any[]) => ThreadGenerator
+
+/**
+ * @typedef {Generator<void,void,void>} ThreadGenerator
+ */
+export class Thread<T extends Process = Process> implements Iterable<ThreadGeneratorResponse> {
+  private gen: ThreadGenerator
+  readonly process: T
+  readonly name: string
+  readonly fullName: string
+  readonly processName: string
+
+  constructor(process: T, name: string, fn: ThreadConstructor, args: any[] = []) {
     this.process = process
     this.processName = process.processName
     this.fullName = `${process.processName}:${name}`
@@ -26,15 +41,15 @@ export class Thread {
 
   [Symbol.iterator]() { return this }
 
-  createThread (name, fn, ...args) {
+  createThread (name: string, fn: ThreadConstructor, ...args: any[]) {
     return this.process.createThread(name, fn, ...args)
   }
 
-  destroyThread(name) {
+  destroyThread(name: any) {
     return this.process.destroyThread(name)
   }
 
-  hasThread(name) {
+  hasThread(name: string) {
     return this.process.hasThread(name)
   }
 
@@ -43,26 +58,29 @@ export class Thread {
   }
 }
 export class Process {
-  constructor (kernel, processName) {
+  readonly threads: Set<string> = new Set()
+  readonly memory: any = {}
+  readonly log: Logger
+  readonly kernel: Kernel
+  readonly processName: string
+  constructor (kernel: Kernel, processName: string) {
     this.kernel = kernel
     this.processName = processName
-    this.memory = {}
-    this.threads = new Set()
     this.log = new Logger(`[${processName}]`)
     Object.freeze(this)
   }
 
-  createThread (name, fn, ...args) {
+  createThread (name: string, fn: ThreadConstructor, ...args: string[]) {
     this.threads.add(name)
     return this.kernel.createThread(this.processName, name, fn, ...args)
   }
 
-  destroyThread (name) {
+  destroyThread (name: string) {
     this.threads.delete(name)
     return this.kernel.destroyThread(`${this.processName}:${name}`)
   }
 
-  hasThread (name) {
+  hasThread (name: string) {
     return this.kernel.hasThread(`${this.processName}:${name}`)
   }
 
@@ -73,13 +91,21 @@ export class Process {
   }
 }
 
+type SchedulerQueue = [string, Thread][]
+type SchedulerState = {
+  queue: SchedulerQueue,
+  current: string
+}
+
 export class Kernel {
+  readonly threads = new Map<string, Thread>()
+  readonly processes = new Map<string, Process>()
+  readonly pidGen = calcCPUPID()
+  readonly startTick = Game.time
+  readonly log = new Logger('[Kernel]')
+  scheduler: SchedulerState
+  limitOffset = 0
   constructor () {
-    this.threads = new Map()
-    this.processes = new Map()
-    this.pidGen = calcCPUPID()
-    this.startTick = Game.time
-    this.log = new Logger('[Kernel]')
     this.log.info(`Kernel Created`)
   }
 
@@ -87,8 +113,15 @@ export class Kernel {
     if (Game.cpu.bucket < 1000) return
     const uptime = Game.time - this.startTick
     let cnt = 0
-    const { value: limit = 0 } = this.pidGen.next()
-    this.scheduler = {}
+    let { value: limit = 0 } = this.pidGen.next()
+    if (Game.cpu.bucket < 2000) {
+      limit = Math.max(Game.cpu.limit * 0.1, 10)
+    }
+    limit = Math.max(10, limit - this.limitOffset)
+    this.scheduler = {
+      queue: [],
+      current: ''
+    }
     const scheduler = loopScheduler(this.threads, limit, this.scheduler)
     for (const val of scheduler) { // eslint-disable-line no-unused-vars
       if (typeof val === 'string') {
@@ -102,7 +135,7 @@ export class Kernel {
       iterations: cnt,
       uptime
     })
-    this.log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit}  Bucket: ${Game.cpu.bucket}`)
+    this.log.info(`CPU Limit for tick: ${limit.toFixed(2)}/${Game.cpu.limit} (Offset: ${this.limitOffset})  Bucket: ${Game.cpu.bucket}`)
     this.log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Uptime: ${uptime}  Threads: ${this.threads.size}  Iterations: ${cnt}`)
     // log.log(cnt < this.threads.size ? LogLevel.WARN : LogLevel.INFO, `Ran ${this.threads. size} threads with a total of ${cnt} iterations`)
   }
@@ -114,11 +147,11 @@ export class Kernel {
     }
   }
 
-  hasThread (name) {
+  hasThread (name: string) {
     return this.threads.has(name)
   }
 
-  createThread (processName, name, fn, ...args) {
+  createThread (processName: string, name: string, fn: ThreadConstructor, ...args: any[]) {
     const process = this.processes.get(processName)
     if (!process) throw new Error(`Tried creating thread '${name}' for missing process '${processName}'`)
     const thread = new Thread(process, name, fn, args)
@@ -128,26 +161,25 @@ export class Kernel {
     }
   }
 
-  destroyThread (name) {
-    const thread = this.threads.get(name)
+  destroyThread (name: string) {
     return this.threads.delete(name)
   }
 
-  hasProcess (name) {
+  hasProcess (name: string) {
     return this.processes.has(name)
   }
 
-  addProcess (name, process) {
+  addProcess (name: string, process: Process) {
     this.processes.set(name, process)
   }
   
-  createProcess (name, fn, ...args) {
-    const process = new Process(this, name, fn, args)
+  createProcess (name: string, fn: ThreadConstructor, ...args: any[]) {
+    const process = new Process(this, name)
     this.addProcess(name, process)
     process.createThread('main', fn, ...args)
   }
 
-  destroyProcess (name) {
+  destroyProcess (name: string) {
     const proc = this.processes.get(name)
     proc.kill()
     return this.processes.delete(name)
@@ -156,7 +188,7 @@ export class Kernel {
 
 export const kernel = new Kernel()
 
-export function * PID (Kp, Ki, Kd, Mi, statName) {
+export function * PID (Kp: number, Ki: number, Kd: number, Mi: number, statName: string) {
   let e = 0
   let i = 0
   let v = 0
@@ -175,6 +207,7 @@ export function * PID (Kp, Ki, Kd, Mi, statName) {
       })
     }
   }
+  return 0
 }
 
 function * calcCPUPID () {
@@ -193,10 +226,11 @@ function * calcCPUPID () {
     // console.table({e, i, Up, Ui, output, bucket: Game.cpu.bucket, limit})
     yield limit || minLimit
   }
+  return 0
 }
 
-function * loopScheduler (threads, limit, state = {}) {
-  const queue = shuffle(Array.from(threads.entries()))
+function * loopScheduler (threads: Map<string, Thread>, limit: number, state: SchedulerState) {
+  const queue: SchedulerQueue = shuffle(Array.from(threads.entries()))
   state.queue = queue
   const counts = {}
   const cpu = {}
@@ -228,7 +262,7 @@ function * loopScheduler (threads, limit, state = {}) {
     state.current = null
 
     if (Game.cpu.getUsed() > limit) {
-      logger.info(`CPU Limit reached`)
+      logger.info(`CPU Limit reached! Last thread: ${item[0]}`)
       const report = queue.slice(queue.indexOf(item))
         .map(i => [i[0], cpu[i[0]]])
         .filter(i => i[1] > 2)
@@ -240,12 +274,13 @@ function * loopScheduler (threads, limit, state = {}) {
   }
 }
 
-export function * sleep (ticks) {
+/** Sleeps the thread for N ticks */
+export function * sleep (ticks: number): ThreadGenerator {
   const end = Game.time + ticks
   while (Game.time < end) yield
 }
 
-export function * restartThread (fn, ...args) {
+export function * restartThread (fn: ThreadConstructor, ...args: any[]) {
   while (true) {
     try {
       yield * fn.apply(this, args)
@@ -256,7 +291,7 @@ export function * restartThread (fn, ...args) {
   }
 }
 
-export function * watchdog(name, fn, ...args) {
+export function * watchdog(name: any, fn: any, ...args: any[]) {
   while (true) {
     if (!this.hasThread(name)) {
       this.createThread(name, fn, ...args)
@@ -266,7 +301,7 @@ export function * watchdog(name, fn, ...args) {
 }
 
 
-export function * threadManager(threads, interval = 5) {
+export function * threadManager(threads: any, interval = 5) {
   interval = Math.max(interval, 1)
   while (true) {
     for (const [name, fn, ...args] of threads) {

@@ -20,12 +20,22 @@ function * wallTracking () {
       const mem = Memory.rooms[room.name] = Memory.rooms[room.name] || {}
 			// if (mem._wallsTS > Game.time - 1000) continue
 			const walls = room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_WALL)
+      let hasWalls = false
 			const cm = new PathFinder.CostMatrix()
 			for (const wall of walls) {
 				cm.set(wall.pos.x, wall.pos.y, 255)
+        hasWalls = true
 			}
-			mem._walls = cm.serialize()
-			mem._wallsTS = Game.time
+      if (hasWalls) {
+        mem._walls = cm.serialize()
+        mem._wallsTS = Game.time
+      } else {
+        delete mem._walls
+        delete mem._wallsTS
+        if (Object.keys(mem).length === 0) {
+          delete Memory.rooms[room.name]
+        }
+      }
 		}
     yield
   }

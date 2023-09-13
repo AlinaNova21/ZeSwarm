@@ -1,13 +1,10 @@
-// import config from '/etc/stats'
-import { Logger } from '/log'
-import C from './constants'
+// import config from '@/etc/stats'
+// import C from '@/constants'
+import { Logger } from '@/log'
 /* USAGE:
 Configure CONFIG below
 At VERY top of main.js:
 > const stats = require('stats')
-
-At top of loop():
-> stats.reset()
 
 At bottom of loop():
 > stats.commit()
@@ -69,65 +66,55 @@ const CONFIG = {
   }
 }
 
-export class InfluxDB {
+type StatTags = {
+  [key: string]: string
+}
+
+type StatValues = {
+  [key: string]: number
+}
+
+type StatEntry = {
+  name: string
+  tags: StatTags
+  values: StatValues
+}
+
+export class Stats {
+  public opts: any
+  public log: Logger = new Logger('[stats]')
+  public readonly startTick = Game.time
+  public readonly shard = (Game.shard && Game.shard.name) || 'unknown'
+  public readonly user = 'ags131' //C.USER
+  public stats: StatEntry[] = []
+
+  private _cpuAtReset: number
+
   get mem () {
     Memory[this.opts.key] = Memory[this.opts.key] || { index: 0, last: 0 }
     return Memory[this.opts.key]
   }
 
-  register () {}
-
-  pretick () {
-    this.reset()
-  }
-
-  posttick () {
-    this.commit()
-  }
-
   constructor (opts = {}) {
     this.opts = Object.assign(CONFIG, opts)
-    this.log = new Logger('stats')
-    global.influxdb = this
     this.reset()
-    this.startTick = Game.time
-    this.shard = (Game.shard && Game.shard.name) || 'unknown'
-    this.user = C.USER // _.find(Game.spawns, v => v).owner.username
+    /* @ts-ignore */
+    require.initGlobals = require.initGlobals || {}
+    /* @ts-ignore */
+    require.initGlobals.main = () => this.reset()
   }
 
   reset () {
     if (Game.time === this.startTick) return // Don't reset on new tick
+    this._cpuAtReset = Game.cpu.getUsed()
     this.stats = []
-    this.cpuReset = Game.cpu.getUsed()
-
-    if (!this.opts.measureMemoryParse) return
-    const start = Game.cpu.getUsed()
-    if (this.lastTime && global.LastMemory && Game.time === (this.lastTime + 1)) {
-      delete global.Memory
-      global.Memory = global.LastMemory
-      RawMemory._parsed = global.LastMemory
-      this.log.info('Tick has same GID!')
-    } else {
-      Memory // eslint-disable-line no-unused-expressions
-      global.LastMemory = RawMemory._parsed
-    }
-    this.lastTime = Game.time
-    const end = Game.cpu.getUsed()
-    const el = end - start
-    this.memoryParseTime = el
-    this.addStat('memory', {}, {
-      parse: el,
-      size: RawMemory.get().length
-    })
-    this.endReset = Game.cpu.getUsed()
-    this.log.info(`Entry: ${this.cpuReset.toFixed(3)} - Exit: ${(this.endReset - this.cpuReset).toFixed(3)} - Mem: ${this.memoryParseTime.toFixed(3)} (${(RawMemory.get().length / 1024).toFixed(2)}kb)`)
   }
 
-  addSimpleStat (name, value = 0) {
+  addSimpleStat (name: string, value: number = 0) {
     this.addStat(name, {}, { value })
   }
 
-  addStat (name, tags = {}, values = {}) {
+  addStat (name: string, tags: StatTags = {}, values: StatValues = {}) {
     this.stats.push({ name, tags, values })
   }
 
@@ -135,7 +122,7 @@ export class InfluxDB {
     this.addStat('time', {}, {
       tick: Game.time,
       timestamp: Date.now(),
-      duration: Memory.lastDur,
+      // duration: Memory.lastDur,
       globalUptime: Game.time - this.startTick
     })
     this.addStat('gcl', {}, {
@@ -147,7 +134,8 @@ export class InfluxDB {
     this.addStat('market', {}, {
       credits: Game.market.credits
     })
-    _.each(Game.rooms, room => {
+    const rooms = Object.values(Game.rooms)
+    rooms.forEach(room => {
       const { controller, storage, terminal } = room
       if (!controller || !controller.my) return
       this.addStat('room', {
@@ -173,12 +161,12 @@ export class InfluxDB {
       if (storage) {
         this.addStat('storage', {
           room: room.name
-        }, storage.store)
+        }, storage.store as any)
       }
       if (terminal) {
         this.addStat('terminal', {
           room: room.name
-        }, terminal.store)
+        }, terminal.store as any)
       }
       const start = Game.cpu.getUsed()
       const events = room.getEventLog()
@@ -222,33 +210,33 @@ export class InfluxDB {
         }
       }
       const etm = ['melee', 'ranged', 'rangedMass', 'dismantle', 'hitBack', 'nuke' ]
-      for (const { event, objectId, data } of events) {
-        switch (event) {
-          case C.EVENT_ATTACK:
-            eventStats.attack.all += data.amount
-            eventStats.attack[etm[data.attackType - 1]] += data.amount
+      for (const e of events) {
+        switch (e.event) {
+          case EVENT_ATTACK:
+            eventStats.attack.all += e.data.damage
+            eventStats.attack[etm[e.data.attackType - 1]] += e.data.damage
             break
-          case C.EVENT_BUILD:
-            eventStats.build.amount += data.amount
-            eventStats.build.energySpent += data.energySpent
+          case EVENT_BUILD:
+            eventStats.build.amount += e.data.amount
+            eventStats.build.energySpent += e.data.energySpent
             break
-          case C.EVENT_HARVEST:
-            eventStats.harvest.amount += data.amount
+          case EVENT_HARVEST:
+            eventStats.harvest.amount += e.data.amount
             break
-          case C.EVENT_HEAL:
-            eventStats.heal.all += data.amount
-            eventStats.heal[etm[data.healType - 1]] += data.amount
+          case EVENT_HEAL:
+            eventStats.heal.all += e.data.amount
+            eventStats.heal[etm[e.data.healType - 1]] += e.data.amount
             break
-          case C.EVENT_REPAIR:
-            eventStats.repair.amount += data.amount
-            eventStats.repair.energySpent += data.energySpent
+          case EVENT_REPAIR:
+            eventStats.repair.amount += e.data.amount
+            eventStats.repair.energySpent += e.data.energySpent
             break
-          case C.EVENT_RESERVE_CONTROLLER:
-            eventStats.reserveController.amount += data.amount
+          case EVENT_RESERVE_CONTROLLER:
+            eventStats.reserveController.amount += e.data.amount
             break
-          case C.EVENT_UPGRADE_CONTROLLER:
-            eventStats.upgradeController.amount += data.amount
-            eventStats.upgradeController.energySpent += data.energySpent
+          case EVENT_UPGRADE_CONTROLLER:
+            eventStats.upgradeController.amount += e.data.amount
+            eventStats.upgradeController.energySpent += e.data.energySpent
             break
         }
       }      
@@ -259,7 +247,7 @@ export class InfluxDB {
       }
     })
     if (typeof Game.cpu.getHeapStatistics === 'function') {
-      this.addStat('cpu.heapStatistics', {}, Game.cpu.getHeapStatistics())
+      this.addStat('cpu.heapStatistics', {}, Game.cpu.getHeapStatistics() as any)
     }
     const used = Game.cpu.getUsed()
     this.addStat('cpu', {}, {
@@ -267,12 +255,12 @@ export class InfluxDB {
       used: used,
       getUsed: used,
       limit: Game.cpu.limit,
-      start: this.cpuReset,
+      start: this._cpuAtReset,
       percent: (used / Game.cpu.limit) * 100
     })
   }
 
-  commit (opts) {
+  commit (opts?: any) {
     if (!opts) {
       if (this.opts.baseStats) this.addBaseStats()
       if (this.opts.output) {
@@ -289,7 +277,7 @@ export class InfluxDB {
     stats += `${Game.time}\n`
     stats += `${Date.now()}\n`
     const format = this[`format${opts.driver}`].bind(this)
-    _.each(this.stats, (v, k) => {
+    this.stats.forEach(v => {
       stats += format(v)
     })
     const end = Game.cpu.getUsed()
@@ -307,40 +295,38 @@ export class InfluxDB {
     }
   }
 
-  formatInfluxDB (stat) {
+  formatInfluxDB (stat: StatEntry) {
     const { name, tags, values } = stat
     const ltags = Object.assign({}, tags, { user: this.user, shard: this.shard })
     return `${name},${this.kv(ltags)} ${this.kv(values)}\n`
   }
   
-  formatPrometheus (stat) {
+  formatPrometheus(stat: StatEntry) {
     const { name, tags, values } = stat
     const ltags = Object.assign({}, tags, { user: this.user, shard: this.shard })
-    let out = ''
     const ts = Date.now()
-    return _.map(values, (v, k) => [`${name}_${k}`.replace(/\./g, '_').replace(/([a-z])([A-Z])/g, (_, a, b) => `${a}_${b}`).toLowerCase(), v])
-      .filter(([,v]) => !isNaN(v))
+    return Object.entries(values)
+      .map(([k, v]) => [`${name}_${k}`.replace(/\./g, '_').replace(/([a-z])([A-Z])/g, (_, a, b) => `${a}_${b}`).toLowerCase(), v])
+      .filter(([,v]) => typeof v === 'number' && !isNaN(v))
       .map(([k,v]) => `${k}{${this.kvQuoted(ltags).join(',')}} ${v} ${ts}\n`)
       .join('')
   }
 
-  formatGraphite (stat) {
+  formatGraphite(stat: StatEntry) {
     const { name, tags, values } = stat
-    if (!this.prefix) {
-      this.prefix = `${this.shard}` // .${this.shard}`
-    }
-    const pre = [this.prefix, this.kv(tags, '.').join('.'), name].filter(v => v).join('.')
+    const prefix = `${this.shard}` // .${this.shard}`
+    const pre = [prefix, this.kv(tags, '.').join('.'), name].filter(v => v).join('.')
     return this.kv(values, ' ').map(v => `${pre}.${v}\n`).join('')
   }
 
-  kv (obj, sep = '=') {
-    return _.map(obj, (v, k) => `${k}${sep}${v}`)
+  kv(obj: StatTags | StatValues, sep = '=') {
+    return Object.entries(obj).map(([k, v]) => `${k}${sep}${v}`)
   }
   
-  kvQuoted (obj, sep = '=') {
-    return _.map(obj, (v, k) => `${k}${sep}"${v}"`)
+  kvQuoted(obj: StatTags | StatValues, sep = '=') {
+    return Object.entries(obj).map(([k, v]) => `${k}${sep}"${v}"`)
   }
 }
 
-const driver = new InfluxDB(config)
-export default driver
+const defaultInstance = new Stats(config)
+export default defaultInstance

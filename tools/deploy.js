@@ -7,13 +7,15 @@ if (process.argv.length < 3) {
   process.exit(0)
 }
 
+const { version } = require('../package.json')
+
 const config = {
   server: process.argv[2],
   room: process.argv[3]
 }
 
-const BRANCH = 'ZeSwarm_v1.1'
-// const BRANCH='default'
+// const BRANCH = 'ZeSwarm_v1.1'
+const BRANCH = 'default'
 ScreepsAPI.fromConfig(config.server).then(async api => {
   const ret = await api.raw.user.badge({ type: 24, color1: '#ff0000', color2: '#ffb400', color3: '#ff6a27', param: 0, flip: false })
   if (ret.ok) console.log('Badge Set')
@@ -63,7 +65,7 @@ ScreepsAPI.fromConfig(config.server).then(async api => {
       await sleep(10000)
     }
   }
-  console.log('ZeSwarm v1.1 ready.')
+  console.log(`ZeSwarm v${version} ready.`)
 })
 
 async function sleep (ms) {

@@ -1,4 +1,5 @@
 import { kernel, restartThread, sleep } from './kernel'
+import _ from 'lodash'
 
 const minBy = _.minBy
 const map = _.map
@@ -11,6 +12,7 @@ kernel.createProcess('MemoryManager', restartThread, memoryManager)
 let log = null
 
 class MemoryManager {
+  /** @returns {import('@/types').MemoryManagerMemory} */
   get mem() {
     return this.memget()
   }
@@ -80,7 +82,7 @@ class MemoryManager {
       console.log(`ERROR: Failed to set active. Reseting Active List ${e.stack}`)
       this.mem.active = [0]
     }
-    Object.keys(RawMemory.segments).filter(k => k < 80).forEach(k => delete RawMemory.segments[k])
+    Object.keys(RawMemory.segments).filter(k => +k < 80).forEach(k => delete RawMemory.segments[k])
     let rem = 10 - Object.keys(RawMemory.segments).length
     _.each(this.mem.pendingSaves, (v, id) => {
       if (rem--) {
@@ -167,14 +169,14 @@ class MemoryManager {
 interface SegmentExtension {
   // Returns undefined if segment isn't loaded,
   // else parsed JSON if contents is JSON, else string
-  load(id: Number): SegmentValue | undefined;
+  load(id: number): SegmentValue | undefined;
   // marks segment for saving, implementations
   // may save immediately or wait until end of tick
   // subsequent load calls within the same tick should
   // return this value
-  save(id: Number, value: SegmentValue): void;
+  save(id: number, value: SegmentValue): void;
   // Should add ID to active list
-  activate(id: Number): void;
+  activate(id: number): void;
 }
 
 interface SegmentValue {}

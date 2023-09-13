@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "standard src/**/*.js",
-    "build": "rm dist/* && rollup -c",
+    "build": "rm dist/*; rollup -c",
     "push:mmo": "screeps-api --server mmo download -d tmp && rm -f tmp/zeswarm* && yarn build --configMulti --output.dir tmp && screeps-api --server mmo upload tmp/*.js",
     "push:seasonal": "yarn build && yarn run push --server seasonal",
     "push:botarena": "yarn build && yarn run push --server botarena",
@@ -18,6 +18,7 @@
     "push:splus1": "yarn build && yarn run push --server splus",
     "push:splus2": "yarn build && yarn run push --server splus2",
     "push:atanner": "yarn build && yarn run push --server atanner",
+    "push:home": "yarn build && yarn run push --server home",
     "push:all": "yarn build && yarn run push --server test && yarn run push --server splus && yarn run push --server splus2 && yarn run push --server atanner",
     "push": "screeps-api upload dist/*.js",
     "console": "node tools/console.js",
@@ -35,13 +36,20 @@
   },
   "homepage": "https://github.com/ags131/screeps#readme",
   "dependencies": {
-    "@types/screeps": "^3.2.0",
+    "@rollup/plugin-alias": "^3.1.2",
+    "@rollup/plugin-commonjs": "^18.0.0",
+    "@rollup/plugin-node-resolve": "^11.2.1",
+    "@rollup/plugin-typescript": "^8.2.1",
+    "@types/ramda": "^0.27.40",
+    "@types/screeps": "*",
     "buckets-js": "^1.98.2",
+    "kafkajs": "^1.15.0",
+    "msgpuck": "^0.7.6",
     "ramda": "^0.26.1",
     "rollup": "^2.23.0",
-    "rollup-plugin-commonjs": "^10.0.1",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-root-import": "^1.0.0"
+    "rollup-plugin-root-import": "^1.0.0",
+    "tslib": "^2.5.0",
+    "typescript": "^4.2.3"
   },
   "screeps_bot": true,
   "devDependencies": {

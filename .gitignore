@@ -10,3 +10,4 @@ test
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+spawn_srv

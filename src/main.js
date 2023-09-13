@@ -3,9 +3,9 @@ import { Pathing } from './lib/pathfinding'
 import stats from './stats'
 import { kernel } from './kernel'
 import memoryManager from './MemoryManager'
-import log from '/log'
+import log from '@/log'
 import size from 'lodash/size'
-import C from './constants'
+import { C } from './constants'
 import InterShardSegment from './InterShardSegment'
 
 import SafeObject from './lib/SafeObject'
@@ -25,11 +25,11 @@ if (!Memory.lastTick) {
 
 export function loop() {
   MemHack.pretick()
-  stats.reset()
   stats.addStat('memory', {}, {
     parse: MemHack.parseTime,
     used: RawMemory.get().length
   })
+
   const now = Date.now()
   const lt = Memory.lastTick
   Memory.lastTick = now
@@ -49,13 +49,19 @@ export function loop() {
   vis.text(`Avg ${(avg / 1000).toFixed(3)}s`, 25, 6, { size: 3 })
 
   kernel.tick()
+  const postKernel = Game.cpu.getUsed()
   // memoryManager.posttick()
   Pathing.runMoves()
   InterShardSegment.commit()
   stats.commit()
+  const memStart = Game.cpu.getUsed()
+  RawMemory.set(JSON.stringify(Memory))
+  delete RawMemory._parsed
+  const memEnd = Game.cpu.getUsed()
+  const memString = memEnd - memStart
   vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })
   log.info(`CPU: Used: ${Game.cpu.getUsed().toFixed(3)} Limit: ${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
-  log.info(`MEMORY: Used: ${(RawMemory.get().length / 1024).toFixed(3)}KB`)
+  log.info(`MEMORY: Used: ${(RawMemory.get().length / 1024).toFixed(3)}KB Stringify: ${memString.toFixed(3)}ms`)
   try {
     // eslint-disable-next-line camelcase
     const { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
@@ -65,4 +71,5 @@ export function loop() {
     log.warn('HEAP: Unavailable')
   }
   console.log()
+  kernel.limitOffset = Math.ceil(Game.cpu.getUsed() - postKernel) + 1
 }

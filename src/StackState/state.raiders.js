@@ -1,4 +1,5 @@
-const C = require('/constants')
+const C = require('@/constants')
+const { isHostile } = require('@/DefenseManager')
 
 module.exports = {
   defender (cache) {
@@ -12,7 +13,7 @@ module.exports = {
       cache.heal = this.creep.getActiveBodyparts(C.HEAL)
     }
     const { room } = this.creep
-    const hostiles = room.find(C.FIND_HOSTILE_CREEPS)
+    const hostiles = room.find(C.FIND_HOSTILE_CREEPS).filter(isHostile)
     const tgt = this.creep.pos.findClosestByRange(hostiles)
     if (!tgt) return
     room.visual.line(this.creep.pos, tgt.pos, { color: 'red' })

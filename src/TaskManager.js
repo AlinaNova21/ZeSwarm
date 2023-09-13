@@ -1,4 +1,4 @@
-import { Tree }  from '/lib/Tree'
+import { Tree }  from '@/lib/Tree'
 import { Logger } from './log'
 import { kernel } from './kernel'
 

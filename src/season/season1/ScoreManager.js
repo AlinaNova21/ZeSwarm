@@ -2,7 +2,7 @@ import intel from '../Intel'
 import { kernel, restartThread, sleep } from '../kernel'
 import { Logger } from '../log'
 import { createTicket, expandBody } from '../SpawnManager'
-import C from '../constants'
+import { C } from '../constants'
 import config from '../config'
 
 if (Game.shard.name === 'shardSeason') {

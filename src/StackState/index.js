@@ -1,5 +1,7 @@
-const log = require('/log')
-const C = require('/constants')
+// @ts-nocheck
+const { Logger } = require('@/log')
+const C = require('@/constants')
+const { IN_ROOM } = require('../lib/pathfinding')
 const otherStates = [
   require('./state.scout'),
   require('./state.worker'),
@@ -13,9 +15,7 @@ const otherStates = [
   require('./state.testing')
 ]
 const states = ({
-  get log () {
-    return log
-  },
+  log: new Logger('[StackState]'),
   get stack () {
     return this.creep.memory.stack
   },
@@ -39,7 +39,7 @@ const states = ({
     if (func) {
       func.apply(this, args)
     } else {
-      this.log.error(`Invalid state ${name}`)
+      this.log.error(`Invalid state ${name} ${this} ${Object.keys(this)}`)
     }
   },
   push (...arg) {
@@ -118,7 +118,11 @@ const states = ({
       this.pop()
       this.runStack()
     } else {
-      this.creep.moveTo(tgt, opts) // removed travelTo
+      const ret = this.creep.moveTo(tgt, opts) // removed travelTo
+      if (ret === C.ERR_NO_PATH) {
+        this.pop()
+        return this.runStack()
+      }
       
       if (opts.returnData.nextPos) {
         const terrain = this.creep.room.getTerrain()
@@ -139,7 +143,10 @@ const states = ({
     }
     opts.returnData = opts.returnData || {}
     const tgt = this.resolveTarget(target)
-    if (!tgt) this.pop()
+    if (!tgt || tgt == null) {
+      this.pop()
+      return this.runStack()
+    }
     if (this.creep.pos.isNearTo(tgt)) {
       this.pop()
       this.runStack()
@@ -161,30 +168,41 @@ const states = ({
     }
   },
   moveToRoom (target, opts = {}) {
-    let [x, y] = [25, 25]
-    if (typeof target === 'string' && target.match(/^[EW]\d+[NS]\d+$/)) {
-      target = { x, y, roomName: target }
+    this.log.info(`[${this.creep.name}] moveToRoom ${target}`)
+    if (target.roomName) {
       this.pop()
-      this.push('moveToRoom', target, opts)
+      this.push('moveToRoom', target.roomName, opts)
+      return this.runStack()
     }
-    const terrain = Game.map.getRoomTerrain(target.roomName)
-    if (terrain.get(target.x, target.y) !== 0) {
-      while (terrain.get(target.x, target.y) !== 0) {
-        target.x = Math.floor(Math.random() * 20) + 15
-        target.y = Math.floor(Math.random() * 20) + 15
-      }
+    const ret = this.creep.moveToRoom(target, opts)
+    if (ret === IN_ROOM) {
       this.pop()
-      this.push('moveToRoom', target, opts)
+      return this.runStack()
     }
-    const tgt = this.resolveTarget(target)
-    if (this.creep.pos.roomName === tgt.roomName) {
-      // const exits = this.creep.room.find(C.FIND_EXIT)
-      this.pop()
-      // this.push('flee', exits.map(e => ({ pos: e, range: 2 })))
-      this.runStack()
-    } else {
-      this.creep.moveTo(tgt, opts) // removed travelTo
-    }
+    // let [x, y] = [25, 25]
+    // if (typeof target === 'string' && target.match(/^[EW]\d+[NS]\d+$/)) {
+    //   target = { x, y, roomName: target }
+    //   this.pop()
+    //   this.push('moveToRoom', target, opts)
+    // }
+    // const terrain = Game.map.getRoomTerrain(target.roomName)
+    // if (terrain.get(target.x, target.y) !== 0) {
+    //   while (terrain.get(target.x, target.y) !== 0) {
+    //     target.x = Math.floor(Math.random() * 20) + 15
+    //     target.y = Math.floor(Math.random() * 20) + 15
+    //   }
+    //   this.pop()
+    //   this.push('moveToRoom', target, opts)
+    // }
+    // const tgt = this.resolveTarget(target)
+    // if (this.creep.pos.roomName === tgt.roomName) {
+    //   // const exits = this.creep.room.find(C.FIND_EXIT)
+    //   this.pop()
+    //   // this.push('flee', exits.map(e => ({ pos: e, range: 2 })))
+    //   this.runStack()
+    // } else {
+    //   this.creep.moveTo(tgt, opts) // removed travelTo
+    // }
   },
   flee (targets) {
     if (!Array.isArray(targets)) {
@@ -259,10 +277,11 @@ const states = ({
     this.runStack()
   }
 })
+// states.default = states
 module.exports = states
 
 for (const state of otherStates) {
-  Object.assign(states, state)
+  Object.assign(states, state.default || state)
 }
 
 const funcsToWrap = ['attack', 'rangedAttack', 'dismantle', 'heal', 'upgradeController', 'claimController', 'reserveController', 'attackController', 'signController', 'moveTo', 'build', 'harvest', 'repair', 'pickup', 'withdraw', 'transfer']

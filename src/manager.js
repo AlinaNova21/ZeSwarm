@@ -1,5 +1,5 @@
-import { kernel } from '/kernel'
-import C from './constants'
+import { kernel } from '@/kernel'
+import { C } from './constants'
 import { Logger } from './log'
 import { sleep, restartThread } from './kernel'
 import { createTicket, destroyTicket, expandBody, census } from './SpawnManager'
@@ -101,7 +101,7 @@ function* nestThread(name) {
     if (room.energyCapacityAvailable >= 550 && room.controller.level >= 2) {
       const neighbors = Object.values(Game.map.describeExits(room.name))
       log.info(`Found neighbors ${neighbors}`)
-      const lowEnergy = room.storage && room.storage.store[C.RESOURCE_ENERGY] < 3000
+      const lowEnergy = room.storage && room.storage.store[C.RESOURCE_ENERGY] < 10000
       const candidates = []
       for (const neighbor of neighbors) {
         const int = intel.rooms[neighbor]
@@ -119,7 +119,9 @@ function* nestThread(name) {
           }
         }
       }
-      const limit = room.spawns.length > 1 ? 10 : 2
+      const storageSupport = room.storage ? Math.min(room.storage.store[C.RESOURCE_ENERGY] / 5000) : 0
+
+      const limit = room.spawns.length > 1 ? 10 : (storageSupport || 2)
       candidates.sort((a,b) => b[1] - a[1])
       for (const [n,] of candidates.slice(0, limit)) {
         log.info(`Authorizing remote: ${n}`)
@@ -139,7 +141,7 @@ function* nestThread(name) {
     }
     let workers = 4
     if (room.controller.level === 2) {
-      workers += 4
+      // workers += 4
     }
     if (room.level === 3) {
       workers += 6
@@ -159,6 +161,18 @@ function* nestThread(name) {
         room: room.memory.donor || room.name
       }
     })
+    if (room.storage) {
+      createTicket(`builders_${room.name}`, {
+        parent: `room_${room.name}`,
+        count: 1,
+        weight: 10,
+        body: expandBody([6, MOVE, 6, WORK, 6, CARRY]),
+        memory: {
+          role: 'builder',
+          run: 'builder'
+        }
+      })
+    }
     if (room.controller.level > 1 && room.energyCapacityAvailable >= 400) {
       const lowEnergy = room.storage && room.storage.store.energy < 10000
       let count = Math.min(lowEnergy ? 1 : 3, Math.ceil(room.controller.level / 2))
@@ -186,21 +200,22 @@ function* nestThread(name) {
     if (room.energyCapacityAvailable >= 500) {
       const lowEnergy = room.storage && room.storage.store.energy < 20000
       const downgrade = room.controller.ticksToDowngrade && room.controller.ticksToDowngrade < 10000
-      let count = lowEnergy ? 1 : 3
+      let count = lowEnergy ? 1 : 2
       if (room.controller.level < 4) {
         count = 6
       }
-      if (room.storage && room.storage.store.energy > 60000) {
-        count += 2
-      }
-      if (room.storage && room.storage.store.energy > 100000) {
+      if (room.storage && room.storage.store.energy > 50000) {
         count += 1
       }
+      if (room.storage && room.storage.store.energy > 75000) {
+        count += 2
+      }
+      if (room.controller.level === 8) count = 1
       if (lowEnergy && !downgrade) count = 0
-      const creps = room.storage ? 1 : 3
+      const creps = 3 // room.storage  ? 1 : 3
       const baseCost = creps * 100 // MMMCCC
       const costPerWRep = 150 // MW
-      const wreps = Math.floor((room.energyCapacityAvailable - baseCost) / costPerWRep)
+      const wreps = room.controller.level === 8 ? 15 : Math.min(32, Math.floor((room.energyCapacityAvailable - baseCost) / costPerWRep))
       const mreps = Math.ceil((wreps + creps) / (room.storage ? 2 : 1))
       createTicket(`upgrader_${room.name}`, {
         parent: `room_${room.memory.donor || room.name}`,
@@ -209,22 +224,34 @@ function* nestThread(name) {
         body: expandBody([mreps, C.MOVE, creps, C.CARRY, wreps, C.WORK]),
         memory: {
           run: 'upgrader',
-          role: 'upgrader',
           homeRoom: room.name,
           room: room.memory.donor || room.name
         }
       })
       const [upCont] = room.controller.pos.findInRange(C.FIND_STRUCTURES, 3, { filter: { structureType: C.STRUCTURE_CONTAINER } })
       if (room.storage && upCont) {
+        const lowEnergy = room.storage && room.storage.store.energy < 20000
+        const higherEnergy = room.storage && room.storage.store.energy > 40000
+        const size = Math.floor(Math.min(20, Math.floor(room.energyCapacityAvailable / 150)) / 2) * 2
+        let count = lowEnergy ? 0 : (higherEnergy ? 3 : 2)
+        if (room.storage && room.storage.store.energy > 50000) {
+          count += 1
+        }
+        if (room.storage && room.storage.store.energy > 75000) {
+          count += 2
+        }
         createTicket(`upgrade_hauler_${room.name}`, {
           parent: `room_${room.name}`,
           weight: 5,
-          count: 1,
-          body: expandBody([room.storage ? 3 : 6, C.MOVE, 6, C.CARRY]),
+          count,
+          body: expandBody([size / (room.storage ? 2 : 1), C.MOVE, size, C.CARRY]),
           memory: {
-            stack: [
-              ['hauler', room.name, room.storage.id, room.name, upCont.id, C.RESOURCE_ENERGY]
-            ]
+            run: 'upgradeHauler',
+            homeRoom: room.name,
+            room: room.memory.donor || room.name
+            // stack: [
+            //   ['hauler', room.name, room.storage.id, room.name, upCont.id, C.RESOURCE_ENERGY]
+            // ]
           }
         })
         // hauler(fromRoom, fromId, toRoom, toId, resourceType = C.RESOURCE_ENERGY, cache = {}) {
@@ -236,7 +263,8 @@ function* nestThread(name) {
       createTicket(`scouts_${room.name}`, {
         valid: () => Game.rooms[room.name].controller.level >= 2,
         parent: `room_${room.name}`,
-        body: [C.TOUGH, C.MOVE],
+        // body: [C.TOUGH, C.MOVE],
+        body: [C.MOVE],
         memory: {
           role: 'scout'
         },
@@ -251,6 +279,10 @@ function* nestThread(name) {
 
 function * remoteThread (name, parent) {
   const log = this.log.withPrefix(`${this.log.prefix} [${name}]`)
+  createTicket(`room_${name}`, {
+    parent: `room_${parent}`,
+    weight: 1
+  })
   while (true) {
     if (!remotes.has(name)) return
     const key = `miningManager:${name}`
@@ -268,7 +300,7 @@ function * miningManager (homeRoomName, roomName) {
   const maxWork = remote ? 6 : 5
   const nodeName = `miningManager_${homeRoomName}`
   createTicket(`miningManager_${homeRoomName}`, {
-    parent: `room_${homeRoomName}`,
+    parent: `room_${roomName}`,
     weight: remote ? 1 : 20
   })
   while (true) {
@@ -301,11 +333,32 @@ function * miningManager (homeRoomName, roomName) {
       const dist = paths[id].length
       if (!Game.rooms[roomName]) yield * getVision(roomName, 100)
       const source = Game.getObjectById(id)
+      const mult = Math.ceil(source.energyCapacity / 3000)
       if (!source) {
         this.log.alert(`Issue finding source: ${id} ${x} ${y} ${roomName} vision: ${Game.rooms[roomName] ? 'T' : 'F'}`)
         yield true
         continue
       }
+      /**
+       * 
+       * @param {StructureSource} source 
+       * @returns {[x: number, y: number][])
+       */
+      const findFreeSpots = source => {
+        const terrain = Game.map.getRoomTerrain(roomName)
+        /** @type {[x: number, y: number][]} */
+        const ret = []
+        for (let y = -1; y <= 1; y++) {
+          for (let x = -1; x <= 1; x++) {
+            const [xx, yy] = [source.pos.x + x, source.pos.y + y]
+            if (!(terrain.get(xx, yy) & TERRAIN_MASK_WALL)) {
+              ret.push([xx,yy])
+            }
+          }
+        }
+        return ret
+      }
+      const maxWorkers = findFreeSpots(source).length
       const maxEnergy = (homeRoom.storage && homeRoom.storage.store.energy < 1000) ? Math.max(300, homeRoom.energyAvailable) : homeRoom.energyCapacityAvailable
       const energyPerTick = divide(either(source.energyCapacity, C.SOURCE_ENERGY_NEUTRAL_CAPACITY), C.ENERGY_REGEN_TIME)
       const roundTrip = multiply(dist + 20, 2)
@@ -313,11 +366,11 @@ function * miningManager (homeRoomName, roomName) {
       const carryRoundTrip = Math.ceil(divide(energyRoundTrip, 50))
       // log.info(`${id} ${energyPerTick} ${roundTrip} ${energyRoundTrip} ${carryRoundTrip}`)
       const neededCarry = add(4, max(2, carryRoundTrip))
-      const wantedCarry = (maxEnergy ? Math.ceil(neededCarry / maxParts) : 1)
+      const wantedCarry = ((maxEnergy || remote) ? Math.ceil(neededCarry / maxParts) : 1)
       const neededWork = clamp(1, maxWork, Math.floor((maxEnergy - 100) / (remote ? 150 : 100)))
       // const neededWork = energyPerTick / C.HARVEST_POWER
       // const maxWorkParts = (homeRoom.energyCapacityAvailable - 50)
-      const wantedWork = remote ? 1 : (maxEnergy ? Math.ceil(maxWork / neededWork) : 1)
+      const wantedWork = Math.min(maxWorkers, remote ? 1 : (maxEnergy ? Math.ceil(maxWork / neededWork) : 1))
       const hasRoads = !remote && homeRoom.storage
       const cbody = expandBody([maxParts, C.CARRY, Math.ceil(maxParts * (hasRoads ? 0.5 : 1)), C.MOVE])
       const wbody = expandBody([1, C.CARRY, remote ? 3 : 1, C.MOVE, remote ? 6 : neededWork, C.WORK])
@@ -328,7 +381,7 @@ function * miningManager (homeRoomName, roomName) {
         valid: () => Game.time < timeout,
         parent: nodeName,
         weight: 4,
-        count: wantedWork,
+        count: Math.min(wantedWork * mult, maxWorkers),
         body: wbody,
         memory: {
           role: 'miningWorker',

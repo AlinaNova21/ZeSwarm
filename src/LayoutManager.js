@@ -1,7 +1,7 @@
 /* global StructureController */
-import C from './constants'
+import { C } from './constants'
 import { distanceTransform, walkablePixelsForRoom, blockablePixelsForRoom, invertMatrix, multMatrix, getIndexed } from './DistanceTransform'
-import { kernel, restartThread } from '/kernel'
+import { kernel, restartThread } from '@/kernel'
 import { sleep } from './kernel'
 import minCut from './lib/mincut'
 
@@ -228,7 +228,7 @@ function * flex (room, blockAreas = []) {
   if (size(Game.constructionSites) >= C.MAX_CONSTRUCTION_SITES * 0.75) return
   const { controller: { level } } = room
   const offGrid = [C.STRUCTURE_CONTAINER, C.STRUCTURE_ROAD]
-  const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL, C.STRUCTURE_POWER_SPAWN]
+  const wanted = [C.STRUCTURE_SPAWN, C.STRUCTURE_TOWER, C.STRUCTURE_EXTENSION, C.STRUCTURE_STORAGE, C.STRUCTURE_TERMINAL, C.STRUCTURE_OBSERVER, C.STRUCTURE_POWER_SPAWN]
   const want = mapValues(pick(C.CONTROLLER_STRUCTURES, wanted), level)
   const allSites = room.find(C.FIND_MY_CONSTRUCTION_SITES)
   const sites = groupBy(allSites, 'structureType')
@@ -375,4 +375,24 @@ function drawCostMatrix (costMatrix, color = '#FF0000', visual) {
       }
     }
   }
+}
+
+function * diamond () {
+  const room = Object.values(Game.spawns)[0].room
+  const mod = 3
+  const t = room.getTerrain()
+  for (let y = 3; y < 47; y++) {
+    for (let x = 3; x < 47; x++) {
+      if (x % mod === 0 && y % mod === 0) {
+        let wall = 0
+        for (let yo = -1; yo <= 1; yo++)
+          for (let xo = -1; xo <= 1; xo++) {
+            wall |= t.get(x + xo, y + yo) & TERRAIN_MASK_WALL
+          }
+        if (wall) continue
+        room.visual.circle(x, y, { radius: 0.2, fill: 'red' })
+      }
+    }
+  }
+  yield
 }

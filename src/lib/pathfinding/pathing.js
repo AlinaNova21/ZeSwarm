@@ -1,7 +1,8 @@
 // github: https://github.com/NesCafe62/screeps-pathfinding
 
 import Utils from './pathing.utils'
-import { Logger } from '/log'
+import { Logger } from '@/log'
+import { LRUCache } from '../Caching';
 
 const log = new Logger('[Pathfinding]')
 
@@ -47,11 +48,16 @@ class TerrainMatrix {
 
 }
 
-const TerrainCache = {
+/** @type {LRUCache<string,TerrainMatrix>} */
+const TerrainCache = new LRUCache({
+	init: roomName => new TerrainMatrix(new Room.Terrain(roomName))
+})
+
+const TerrainCache2 = {
 
 	cache: new Map(),
 	lru: new Map(),
-	limit: 20,
+	limit: 100,
 
 	get(roomName) {
 		let terrain = this.cache.get(roomName);
@@ -98,7 +104,7 @@ class PathingManager {
 	}
 
 	trimMatrixCache() {
-		while (this.matrixCache.size > 200) {
+		while (this.matrixCache.size > 500) {
 			let oldest = ''
 			let minTime = Game.time
 			for (const [room, time] of this.matrixCacheLRU.entries()) {
@@ -745,8 +751,8 @@ class PathingManager {
 		}
 	}
 
-
 	// finding path
+	/** @param {import('@/types').PathingMoveOpts} defaultOptions */
 	findPath(startPos, targetPos, defaultOptions = {}) {
 		/* if (
 			defaultOptions.range === 0 &&
@@ -771,10 +777,10 @@ class PathingManager {
 		if (
 			findRoute &&
 			startRoomName !== targetRoomName &&
-			this.getRoomDistance(startPos, targetPos) >= 3
+			this.getRoomDistance(startPos, targetPos) >= 2
 		) {
 			const route = this.findRoute(startRoomName, targetRoomName, {avoidRooms, routeCallback});
-			if (route.length > 0) {
+			if (route !== -2 && route.length > 0) {
 				routeRooms = route.map(item => item.room);
 			} else {
 				console.log(`Pathfinder: Could not find route from ${startRoomName} to ${targetRoomName}. source: ${startPos} target: ${targetPos}`);
@@ -805,12 +811,11 @@ class PathingManager {
 				}
 				if (Memory.rooms[roomName] && Memory.rooms[roomName]._walls) {
 					matrix = matrix ? matrix.clone() : new PathFinder.CostMatrix();
+					// console.log(`Applying walls to ${roomName}`)
 					const cm = PathFinder.CostMatrix.deserialize(Memory.rooms[roomName]._walls)
-					for (let y = 0; y < 50; y++) {
-						for (let x = 0; x < 50; x++) {
-							const v = cm.get(x, y)
-							if (v) matrix.set(v, x, y)
-						}
+					for (let i = 0; i < 2500; i++) {
+						const v = cm._bits[i]
+						if (v > 0) matrix._bits[i] = v
 					}
 				}
 				if (roomName === startRoomName) {
@@ -827,6 +832,7 @@ class PathingManager {
 		} else if (targetPos.roomName !== startRoomName || options.moveOffExit) {
 			const targets = this.getTargetRangePositions(targetPos, range, options);
 			if (targets.length > 0) {
+				// @ts-expect-error
 				searchTargets = targets;
 			}
 		}
@@ -879,7 +885,10 @@ class PathingManager {
 
 	getTargetRangePositions(targetPos, range, options) {
 		const {moveOffExit, roomCallback} = options;
-		const {x, y} = targetPos;
+		const {
+			/** @type {number} */ x,
+			/** @type {number} */ y,
+		} = targetPos;
 		let minX = x - range;
 		let minY = y - range;
 		let maxX = x + range;
@@ -1136,12 +1145,14 @@ export const Pathing = new PathingManager({
 	// },
 
 	// manager will use this function to make creeps stay in range of their target
+	/** @returns {import('@/types').WorkingTarget | void} */
 	getCreepWorkingTarget(creep) {
 		const target = creep.memory._t;
 		if (!target) {
 			return;
 		}
 		const [x, y, roomName] = target.pos;
+		if (!roomName) return
 		return {
 			pos: new RoomPosition(x, y, roomName),
 			range: target.range,
@@ -1149,56 +1160,72 @@ export const Pathing = new PathingManager({
 		};
 	},
 
-	// get creep GameObject from creep wrapper object
-	/* getCreepInstance(creep) {
-		return creep;
-	}, */
+	/**
+	 * get creep GameObject from creep wrapper object
+	 * @param {SafeObject} creep
+	 * @return {Creep} 
+	 **/
+	// getCreepInstance(creep) {
+	// 	return Game.getObjectById(creep.id);
+	// },
 
-	// get creep wrapper object from creep GameObject
-	/* getCreepEntity(instance) {
-		return instance;
-	}, */
+	/**
+	 * get creep GameObject from creep wrapper object
+	 * @param {Creep} instance
+	 * @return {SafeObject}
+	 **/
+	// getCreepEntity(instance) {
+	// 	return new SafeObject(instance.id);
+	// },
 
 });
 // module.exports = Pathing;
 
 if (!Creep.prototype.originalMoveTo) {
 	Creep.prototype.originalMoveTo = Creep.prototype.moveTo;
+	// @ts-expect-error
 	Creep.prototype.moveTo = function(target, defaultOptions = {}) {
-		const options = {
+		return this.travelTo(target, defaultOptions)
+		// const options = {
 
-			range: DEFAULT_RANGE,
+		// 	range: DEFAULT_RANGE,
 
-			visualizePathStyle: DEFAULT_PATH_STYLE,
-			ignoreCreeps: true,
+		// 	visualizePathStyle: DEFAULT_PATH_STYLE,
+		// 	ignoreCreeps: true,
 
-			// uncomment this line to enable moveOffRoad behavior:
-			// moveOffRoad: true,
+		// 	// uncomment this line to enable moveOffRoad behavior:
+		// 	moveOffRoad: true,
 
-			...defaultOptions,
-			// convenient way of providing role specific movement options (remove previous line to use):
-			// ...CreepRoles[this.memory.role].getMoveOptions(defaultOptions)
-		};
+		// 	...defaultOptions,
+		// 	// convenient way of providing role specific movement options (remove previous line to use):
+		// 	// ...CreepRoles[this.memory.role].getMoveOptions(defaultOptions)
+		// };
 
-		// >> this part is optional. can remove it if you have own implementation of "getCreepWorkingTarget"
-		const targetPos = target.pos || target;
-		this.memory._t = {
-			pos: [targetPos.x, targetPos.y, targetPos.roomName],
-			range: options.range,
-			priority: options.priority
-		};
-		// <<
+		// // >> this part is optional. can remove it if you have own implementation of "getCreepWorkingTarget"
+		// const targetPos = target.pos || target;
+		// const [, xx, yy] = this.room.name.match(/^([EW]\d*)\d([NS]\d*)\d$/)
+		// const sectorRegex = new RegExp(`^${xx}\\d${yy}\\d$`)
+		// const notSameSector = !targetPos.roomName.match(sectorRegex)
+		// if (notSameSector) {
+		// 	// options.avoidRooms = ['W21N20', 'W22N20', 'W24N20', 'W25N20', 'W26N20', 'W20N19']
+		// }
+		// this.memory._t = {
+		// 	pos: [targetPos.x, targetPos.y, targetPos.roomName],
+		// 	range: options.range,
+		// 	priority: options.priority
+		// };
+		// // <<
 
-		if (
-			this.pos.inRangeTo(target, options.range) &&
-			(options.moveOffExit === false || !Utils.isPosExit(this.pos))
-		) {
-			if (options.moveOffRoad) {
-				Pathing.moveOffRoad(this, {...options, priority: -1000});
-			}
-			return IN_RANGE;
-		}
-		return Pathing.moveTo(this, target, options);
+		// if (
+		// 	this.pos.inRangeTo(target, options.range) &&
+		// 	(options.moveOffExit === false || !Utils.isPosExit(this.pos))
+		// ) {
+		// 	if (options.moveOffRoad) {
+		// 		Pathing.moveOffRoad(this, {...options, priority: -1000});
+		// 	}
+		// 	return IN_RANGE;
+		// }
+		// return Pathing.moveTo(this, target, options);
 	};
 }
 if (!PowerCreep.prototype.originalMoveTo) {
@@ -1207,6 +1234,8 @@ if (!PowerCreep.prototype.originalMoveTo) {
 }
 
 
+
+/** @param {import('@/types').PathingMoveOpts} defaultOptions */
 Creep.prototype.moveOffRoad = function(target = undefined, defaultOptions = {}) {
 	const options = {
 		range: DEFAULT_RANGE,

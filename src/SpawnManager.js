@@ -1,9 +1,9 @@
-import { kernel, restartThread } from '/kernel'
-import { Logger } from '/log'
-import C from '/constants'
-import { Tree } from '/lib/Tree'
+import { kernel, restartThread } from '@/kernel'
+import { Logger } from '@/log'
+import { C } from '@/constants'
+import { Tree } from '@/lib/Tree'
 import sortedIndexBy from 'lodash/sortedIndexBy'
-import { add, apply, chain, flip, map, reduce, repeat, pipe, splitEvery } from 'ramda'
+import { add, apply, chain, flip, map, reduce, repeat, pipe, splitEvery, sortBy } from 'ramda'
 
 export const bodyPartCost = a => C.BODYPART_COST[a]
 export const expandBody = pipe(splitEvery(2), chain(apply(flip(repeat))))
@@ -58,6 +58,7 @@ function * spawnManagerSpawnThread () {
     // for (const node of Object.values(tree.nodes)) {
     // log.info(`${node.treeWeight} ${node.id} ${node.parent}`)
     // }
+    // RawMemory.segments[85] = JSON.stringify(tree.nodes)
     for (const room of Object.values(Game.rooms)) {
       if (!room.controller || !room.controller.my) continue
       createTicket(`room_${room.name}`, { needed: 0, cost: 0, parent: 'root' })
@@ -82,11 +83,18 @@ function * spawnManagerSpawnThread () {
           needed.splice(ind, 0, node)
         }
       })
+      const extSortFn = sortBy(e => {
+        e.__dist = e.__dist || e.pos.getRangeTo(room.storage || room.spawns[0])
+        return e.__dist
+      })
+      const energyStructures = extSortFn([...room.extensions, ...room.spawns].filter(s => s.isActive()))
       for (const spawn of room.spawns) {
         if (!needed.length) break
+        if (!spawn.isActive()) continue
         if (spawn.spawning) continue
         const n = needed.pop()
         const t = tickets.get(n.id)
+        t.cost = bodyCost(t.body)
         if (room.energyAvailable < t.cost) {
           this.log.info(`Not enough energy to spawn ${t.group}. Needed: ${t.cost} Have: ${room.energyAvailable} in ${room.name}`)
           break
@@ -97,10 +105,12 @@ function * spawnManagerSpawnThread () {
         if (t.body.length > 50) {
           this.log.alert(`${room.name} body too long! ${t.body.length} ${id} ${t.memory.group}`)
         }
-        this.log.info(`${room.name} Spawning ${id} ${memory.group}`)
-        const ret = spawn.spawnCreep(t.body.slice(0, 50), id, { memory })
+        this.log.info(`${room.name} Spawning ${id} ${memory.group} ${t.cost}/${room.energyAvailable} ${t.body}`)
+        const ret = spawn.spawnCreep(t.body.slice(0, 50), id, { memory, energyStructures })
         if (ret === C.OK) {
           room.energyAvailable -= t.cost
+        } else {
+          this.log.alert(`${room.name} failed to spawn ${id}! ${ret}`)
         }
       }
     }

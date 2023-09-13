@@ -2,7 +2,7 @@ import intel from './Intel'
 import { kernel, restartThread, sleep } from './kernel'
 import { Logger } from './log'
 import { createTicket } from './SpawnManager'
-import C from './constants'
+import { C } from './constants'
 import config from './config'
 
 kernel.createProcess('expansionPlanner', restartThread, expansionPlanner)
@@ -44,7 +44,7 @@ function * expansionPlanner () {
     for (const int of Object.values(intel.rooms)) {
       if (!int.controller) continue // Not claimable
       if (int.owner || int.level) continue // Not claimable, already owned
-      if (int.sources.length < 2) continue // We want at least 2 sources
+      if (int.sources.length < 2 && Game.shard.name !== 'shardSeason') continue // We want at least 2 sources except on seasonal
       const [room, lRange] = rooms
         .filter(r => r.level >= 3)
         .map(r => [r, Game.map.findRoute(r.name, int.name, { routeCallback: avoidHostile })])

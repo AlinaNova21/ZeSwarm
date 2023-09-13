@@ -1,5 +1,5 @@
-import log from '/log'
-import C from '/constants'
+import log from '@/log'
+import { C } from '@/constants'
 import { createTask, destroyTask, findTask, getTask } from '../TaskManager'
 
 export default {

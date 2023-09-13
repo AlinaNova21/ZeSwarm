@@ -2,7 +2,7 @@ import intel from './Intel'
 import { kernel, restartThread, sleep } from './kernel'
 import { Logger } from './log'
 import { createTicket /*, destroyTicket */ } from './SpawnManager'
-import C from './constants'
+import { C } from './constants'
 import config from './config'
 
 if (config.raids.enabled) {

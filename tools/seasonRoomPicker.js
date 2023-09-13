@@ -25,11 +25,11 @@ async function run() {
     ['W23N21','symbol_lamedh', 'GT500'],
     ['W29N22','symbol_taw', 'GT500'],
     ['W29N26','symbol_nun', 'GT500'],
-    ['W11N12','symbol_kaph', 'Montblanc'],
-    ['W11N17','symbol_nun', 'Montblanc'],
-    ['W14N18','symbol_yodh', 'Montblanc'],
-    ['W18N13','symbol_mem', 'Montblanc'],
-    ['W18N17','symbol_pe', 'Montblanc'],
+    // ['W11N12','symbol_kaph', 'Montblanc'],
+    // ['W11N17','symbol_nun', 'Montblanc'],
+    // ['W14N18','symbol_yodh', 'Montblanc'],
+    // ['W18N13','symbol_mem', 'Montblanc'],
+    // ['W18N17','symbol_pe', 'Montblanc'],
   ]
   const existing = []
   for (const room of Object.values(data.rooms)) {

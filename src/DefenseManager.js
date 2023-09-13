@@ -1,5 +1,5 @@
-import { kernel, restartThread } from '/kernel'
-import C from '/constants'
+import { kernel, restartThread } from '@/kernel'
+import { C } from '@/constants'
 import { createTicket } from './SpawnManager'
 import config from './config'
 
@@ -17,7 +17,7 @@ function * defenseManagerTowersThread () {
     for (const roomName of rooms) {
       const room = Game.rooms[roomName]
       if (room.controller && !room.controller.my && room.controller.level !== 0) continue
-      if (!room.controller || room.controller.reservation || room.controller.level === 0) continue
+      if (!room.controller || (room.controller.reservation && room.controller.reservation.username !== C.USER)) continue
       let needDefenders = false
       const hostiles = room.find(C.FIND_HOSTILE_CREEPS).filter(isHostile)
       if (hostiles.length) {
@@ -53,9 +53,10 @@ function * defenseManagerTowersThread () {
           const invaderBody = [C.TOUGH, C.ATTACK, C.ATTACK, C.MOVE, C.MOVE, C.MOVE]
           const body = needDefenders ? neededBody : invaderBody
           this.log.alert(`No towers in ${roomName}, requesting defenders`)
+          const parent = room.memory.donor || room.name
           createTicket(`defender`, {
-            valid: () => Game.rooms[roomName].find(C.FIND_HOSTILE_CREEPS).length,
-            parent: `room_${room.name}`,
+            valid: () => Game.rooms[roomName] && Game.rooms[roomName].find(C.FIND_HOSTILE_CREEPS).length,
+            parent: `room_${parent}`,
             body,
             count: Math.max(2, Math.min(5, hostiles.length * 2)),
             weight: 100,
@@ -82,7 +83,7 @@ function * defenseManagerTowersThread () {
         }
         const roads = room.roads.filter(c => c.hits < c.hitsMax / 2)
         const road = roads.reduce((l, r) => l && l.hits < r.hits ? l : r, null)
-        if (road && room.storage && room.storage.store.energy > 20000) {
+        if (road && room.storage && room.storage.store.energy > 5000) {
           for (const tower of room.towers) {
             if (tower.energy > tower.energyCapacity / 2) {
               tower.repair(road)

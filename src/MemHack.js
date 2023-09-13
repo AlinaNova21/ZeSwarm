@@ -1,6 +1,5 @@
 // Usage:
 // At top of main: import MemHack from './MemHack'
-// At top of loop(): MemHack.pretick()
 // Thats it!
 const MemHack = {
   memory: null,
@@ -11,6 +10,8 @@ const MemHack = {
     const end = Game.cpu.getUsed()
     this.parseTime = end - start
     this.memory = RawMemory._parsed
+    // require.initGlobals = require.initGlobals || {}
+    // require.initGlobals.memHack = () => this.pretick()
   },
   pretick () {
     delete global.Memory

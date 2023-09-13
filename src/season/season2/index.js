@@ -1,14 +1,15 @@
-import C from "../../constants"
+import { C } from "../../constants"
 import { getSegment } from "../../MemoryManager"
-import intel from '/Intel'
+import intel from '@/Intel'
 import { kernel, threadManager, sleep } from "../../kernel"
 import { createTicket, expandBody } from '../../SpawnManager'
 import groupBy from 'lodash/groupBy'
-import config from '/config'
-import { createNest } from '/ExpansionPlanner'
+import config from '@/config'
+import { createNest } from '@/ExpansionPlanner'
 import { SYMBOL_COLORS, SYMBOL_MAP } from "./util"
 
 const average = a => a.reduce((l,v) => l + v, 0) / a.length
+const STORAGE_THRESHOLD = 20000
 
 if (Game.shard.name === 'shardSeason') {
   kernel.createProcess('SymbolManager', threadManager, [
@@ -34,7 +35,7 @@ function findRoute(src, dst, opts = {}) {
 }
 
 function * seasonManualClaiming () {
-  const targets = ['W21N12', 'W23N11']
+  const targets = ['W21N12', 'W23N11', 'W21N19', 'W21N21']
   while (true) {
     const ownedRooms = Object.values(Game.rooms).filter(r => r.controller && r.controller.my)
     if (Game.gcl.level > ownedRooms.length) {
@@ -87,19 +88,23 @@ function * symbolManager () {
     seg.containers = []
     for(const roomName in intel.rooms) {
       const room = intel.rooms[roomName]
-      seg.decoders.push(...room.symbolDecoders.map(o => ({
-        id: o.id,
-        pos: [...o.pos, roomName],
-        type: o.resourceType
-      })))
-      seg.containers.push(...room.symbolContainers.filter(o => o.decayTime > Game.time).map(o => ({
-        id: o.id,
-        pos: [...o.pos, roomName],
-        type: o.resourceType,
-        amount: o.amount,
-        decayTime: o.decayTime,
-        lastUpdated: room.ts
-      })))
+      if (room.symbolDecoders) {
+        seg.decoders.push(...room.symbolDecoders.map(o => ({
+          id: o.id,
+          pos: [...o.pos, roomName],
+          type: o.resourceType
+        })))
+      }
+      if (room.symbolContainers) {
+        seg.containers.push(...room.symbolContainers.filter(o => o.decayTime > Game.time).map(o => ({
+          id: o.id,
+          pos: [...o.pos, roomName],
+          type: o.resourceType,
+          amount: o.amount,
+          decayTime: o.decayTime,
+          lastUpdated: room.ts
+        })))
+      }
     }
     index.save()
     seg.save()
@@ -124,20 +129,27 @@ function * symbolManager () {
 
 function * symbolDecoding() {
   // const levels = Object.values(intel.rooms).filter(r => r.level).map(r => r.level)
+  // return // Disable
   const DECODE_MIN_RCL = 8 // Math.floor(average(levels))
   const delivering = new Set()
-  const decoders = groupBy(Object.values(intel.rooms).filter(r => r.symbolDecoders.length).map(r => ({ name: r.name, decoder: r.symbolDecoders[0] })), r => r.decoder.resourceType)
-  for (const sym of SYMBOLS) {
+  const decoders = groupBy(Object.values(intel.rooms)
+    .filter(r => r.symbolDecoders.length)
+    .map(r => ({ name: r.name, decoder: r.symbolDecoders[0] })), r => r.decoder.resourceType)
+  for (const sym of C.SYMBOLS) {
     decoders[sym] = decoders[sym] || []
   }
   for (const roomName in Game.rooms) {
     const room = Game.rooms[roomName]
-    if (!room || !room.controller || !room.controller.my || !room.storage || room.storage.store.energy < 10000) continue
+    if (!room || !room.controller || !room.controller.my || !room.storage || room.storage.store.energy < STORAGE_THRESHOLD) continue
     for(const type in room.storage.store) {
-      if (!SYMBOLS.includes(type)) continue
+      if (!C.SYMBOLS.includes(type)) continue
+      const [,xx,yy] = roomName.match(/^([EW]\d+)\d([NS]\d+)\d$/)
+      const sectorRegex = new RegExp(`^${xx}\\d${yy}\\d$`)
+      
       const filt = r => {
         const int = intel.rooms[r.name]
-        return int.owner
+        return r.name.match(sectorRegex)
+          && int.owner
           && [C.USER.toLowerCase(), ...config.allies].includes(int.owner.toLowerCase())
           && int.level >= DECODE_MIN_RCL
       }
@@ -153,10 +165,11 @@ function * symbolDecoding() {
         continue
       }
       // continue
-      const maxBodyParts = Math.min(Math.ceil(room.storage.store[type] / 50), Math.floor(room.energyCapacityAvailable / 100))
+      const ecMaxBodyParts = Math.floor(room.energyCapacityAvailable / 100)
+      const maxBodyParts = Math.min(25, Math.ceil(room.storage.store[type] / 50), ecMaxBodyParts)
       const stor = room.storage.safe()
-      createTicket(`symbolDecoder_haulers_${closestRoom.name}`, {
-        valid: () => stor.store[type],
+      createTicket(`symbolDecoder_haulers_${room.name}_${closestRoom.name}`, {
+        valid: () => stor.store[type] && stor.store.energy > STORAGE_THRESHOLD,
         parent: `room_${roomName}`,
         count: 1, // Math.ceil(room.storage.store[type] || 1 / (maxBodyParts * 50)),
         weight: 2,
@@ -166,7 +179,7 @@ function * symbolDecoding() {
           stack: [['hauler', roomName, room.storage.id, closestRoom.name, closestRoom.decoder.id, type]]
         }
       })
-      delivering.add(`${closestRoom.name} ${closestRoom.decoder.resourceType} ${stor.store[type]}`)
+      delivering.add(`${closestRoom.name} ${closestRoom.decoder.resourceType} ${stor.store[type]} ${maxBodyParts} ${ecMaxBodyParts}`)
     }
   }
 
@@ -193,6 +206,7 @@ function* symbolGathering() {
   const collecting = new Set()
   const conts = new Set()
   for (const int of roomIntel) {
+    if (int.walls) continue // Likely walled boundaries, pathing issues. 
     const { name, symbolContainers = [] } = int
     for (const c of symbolContainers) {
       conts.add(c)
@@ -201,26 +215,28 @@ function* symbolGathering() {
       const dt = c.decayTime - Game.time
       if (dt < 100) continue
       const [closestRoom, path] = Object.values(Game.rooms)
-        .filter(r => r.controller && r.controller.my && r.storage && r.storage.store.energy > 10000)
+        .filter(r => r.controller && r.controller.my && r.storage && (r.storage.store.energy > STORAGE_THRESHOLD || r.name === name))
         .map(r => [r, findRoute(r.name, name, {})])
         .filter(r => r[1] && r[1].length < 15)
         .reduce((l, n) => l && l[1].length < n[1].length ? l : n, null) || []
       if (!closestRoom) {
         continue
       }
-      if ((path.length * 50) > (dt + 50)) {
+      const sameRoom = closestRoom.name === name
+      if (!sameRoom && (path.length * 50) > (dt + 50)) {
         continue
       }
-      const rtt = path.length * 100
+      const rtt = (path.length * 100) || 100
       const tripsPossible = Math.floor(1500 / rtt)
       const maxBodyParts = Math.min(Math.min(25, Math.ceil(c.amount / 50)), Math.floor(closestRoom.energyCapacityAvailable / 100))
       const tripsNeeded = Math.ceil(c.amount / (maxBodyParts * 50))
+      const roomName = closestRoom.name
       const count = Math.ceil(tripsNeeded / tripsPossible)
       createTicket(`symbolContainer_haulers_${c.id}`, {
-        valid: () => c.decayTime - Game.time > path.length * 50,
+        valid: () => intel.rooms[name] && intel.rooms[name].symbolContainers && intel.rooms[name].symbolContainers.find(cc => cc.id === c.id) && (sameRoom || (c.decayTime - Game.time > path.length * 50 && Game.rooms[roomName].storage.store.energy > STORAGE_THRESHOLD)),
         parent: `room_${closestRoom.name}`,
         count, //: Math.ceil(c.amount || 1 / (maxBodyParts * 50)),
-        weight: 1,
+        weight: sameRoom ? 20 : 1,
         body: expandBody([maxBodyParts, C.MOVE, maxBodyParts, C.CARRY]),
         memory: {
           role: 'hauler',
@@ -262,7 +278,7 @@ function* symbolGathering() {
       if (s.decayTime < Game.time) continue
       const style = { ...textStyle, color: collecting.has(room) ? 'white' : 'gray' }
       vis.resource(s.resourceType, x + 5, y - 0.3, size * 0.9)
-      vis.text(`${room}:     ${s.resourceType.slice(7)}=${s.amount} (${s.decayTime - Game.time})`, x, y, style)
+      vis.text(`${(room+'   ').slice(0, 6)}       ${s.resourceType.slice(7)}=${s.amount} (${s.decayTime - Game.time})`, x, y, style)
       y += size
     }
   }

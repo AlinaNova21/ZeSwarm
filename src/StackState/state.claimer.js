@@ -1,4 +1,4 @@
-const C = require('/constants')
+const C = require('@/constants')
 
 module.exports = {
   claimRoom (roomName) {
@@ -8,7 +8,7 @@ module.exports = {
       this.creep.say(`mv ${roomName}`)
       return this.runStack()
     }
-    this.creep.say('Claiming!')
+    // this.creep.say('Claiming!')
     const { controller } = room
     Memory.rooms[room.name] = Memory.rooms[room.name] || {}
     Memory.rooms[room.name].donor = this.creep.memory.room
@@ -17,10 +17,18 @@ module.exports = {
     room.find(C.FIND_HOSTILE_STRUCTURES)
       .filter(s => !keep.includes(s.structureType))
       .forEach(s => s.destroy())
-    this.push('signController', controller.id, 'For ZeSwarm!')
-    this.push('claimController', controller.id)
+
+    if (controller.reservation) {
+      this.push('attackController', controller.id)
+      this.push('signControllerR', controller.id, 'Future ZeSwarm Nest')
+    } else {
+      this.push('claimController', controller.id)
+      this.push('signControllerR', controller.id, 'For ZeSwarm!')
+    }
     this.push('say', 'MINE!', true)
-    this.push('moveNear', controller.id)
+    if (!this.creep.pos.isNearTo(controller)) {
+      this.push('moveNear', controller.id)
+    }
     return this.runStack()
   }
 }

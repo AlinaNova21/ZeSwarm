@@ -1,6 +1,6 @@
-import C from '/constants'
+const C = require('@/constants')
 
-export default {
+module.exports = {
   worker (target, cache = {}) {
     if (!cache.work) {
       cache.work = this.creep.getActiveBodyparts(C.WORK)
@@ -14,7 +14,7 @@ export default {
     if (!this.creep.carry.energy) {
       const [, , roomName] = this.creep.name.split('.')
       if (roomName && this.creep.pos.roomName !== roomName) {
-        this.push('moveToRoom', new RoomPosition(25, 25, roomName))
+        this.push('moveToRoom', roomName)
         return this.runStack()
       }
       const [resource] = [
@@ -34,6 +34,13 @@ export default {
         return this.runStack()
       }
 
+      const ruin = this.creep.pos.findInRange(FIND_RUINS, 10).find(o => o.store[C.RESOURCE_ENERGY]);
+      if (ruin) {
+        this.push('withdraw', ruin.id, C.RESOURCE_ENERGY);
+        this.push('moveNear', ruin.pos);
+        return this.runStack()
+      }
+
       if (room.controller.level > 1) {
         const spawn = room.spawns[0]
         const cont = room.storage && room.storage.store.energy ? room.storage : (spawn && spawn.pos.findInRange(room.containers, 4)[0])
@@ -48,7 +55,7 @@ export default {
       if (creeps.length) {
         const creep = this.creep.pos.findClosestByRange(creeps)
         this.push('moveNear', creep.pos)
-        this.push('say', 'take miner')
+        this.push('say', '⛏️➡️⚡➡️👷')
         this.push('revTransfer', creep.id, C.RESOURCE_ENERGY)
         return this.runStack()
       }
@@ -66,7 +73,7 @@ export default {
       return this.runStack()
     } else {
       if (room.name !== homeRoom.name) {
-        this.push('moveToRoom', new RoomPosition(25, 25, homeRoom.name))
+        this.push('moveToRoom', homeRoom.name)
         return this.runStack()
       }
       // room.spawns[0].pos.findClosestByRange(room.containers)
@@ -75,13 +82,14 @@ export default {
       const storageLow = !controllerCritical && storage && (storage.store.energy || 0) < (storage.storeCapacity * 0.2)
       const storageCritical = storageLow && (storage.store.energy || 0) < (storage.storeCapacity * 0.1)
 
+      /** @type {Structure[]} */
       const s = [
         ...(homeRoom.towers || []),
         ...(homeRoom.spawns || [])
       ].filter(s => s.energy < s.energyCapacity)
       const feeder = room.spawns.length && room.spawns[0].pos.findInRange(C.FIND_MY_CREEPS, 7, { filter: c => c.memory.role === 'feeder' }).find(Boolean)
       if ((!feeder || storageCritical || !storage) && homeRoom.extensions) {
-        s.push(...homeRoom.extensions.filter(s => s.energy < s.energyCapacity))
+        s.push(...homeRoom.extensions.filter(s => s.store.getFreeCapacity()))
       }
       if (storageCritical) {
         // s.push(storage)
@@ -90,12 +98,12 @@ export default {
       let upgradeMode = false
       if (controller) {
         const csites = this.creep.room.find(C.FIND_MY_CONSTRUCTION_SITES) || []
-        upgradeMode |= controllerCritical
-        upgradeMode |= controller.level < RCL_LIMIT && hasAllWorkers && !s.length && (!csites.length || controller.level === 1) && !storageLow
-        upgradeMode &= !s.filter(s => s.structureType === C.STRUCTURE_TOWER).length
+        upgradeMode = upgradeMode || controllerCritical
+        upgradeMode = upgradeMode || controller.level < RCL_LIMIT && hasAllWorkers && !s.length && (!csites.length || controller.level === 1) && !storageLow
+        upgradeMode = upgradeMode && !s.filter(s => s.structureType === C.STRUCTURE_TOWER).length
       }
       if (upgradeMode) {
-        const upCnt = Math.ceil(this.creep.carry.energy / cache.work)
+        const upCnt = Math.ceil(this.creep.carry.energy / (cache.work * C.UPGRADE_CONTROLLER_POWER))
         this.push('repeat', upCnt, 'upgradeController', controller.id)
         this.push('moveInRange', controller.id, 3)
         return this.runStack()
@@ -109,7 +117,7 @@ export default {
         this.push('moveNear', closest.id)
         return this.runStack()
       } else {
-        this.creep.say('notgt')
+        this.creep.say('🚫🎯')
         this.push('builder')
         // this.push('flee', { pos: s.pos, range: 3 })
         return this.runStack()

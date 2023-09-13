@@ -1,7 +1,7 @@
-import C from '/constants'
-// import log from '/log'
+const C = require('@/constants')
+// import log from '@/log'
 
-export default {
+module.exports = {
   feeder (cache = {}) {
     if (!this.creep.store.getCapacity()) {
       this.creep.say('No CARRY', true)

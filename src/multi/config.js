@@ -18,10 +18,10 @@ const shards = {
     }
   },
   shard2: {
-    name: 'overmind',
-    gclLimit: 4,
+    name: 'zeswwarm',
+    gclLimit: 6,
     kernel: {
-      enabled: true
+      // enabled: true
     }
   },
   shard3: {

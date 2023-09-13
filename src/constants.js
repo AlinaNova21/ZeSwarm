@@ -1,11 +1,23 @@
+/*
+: {
+  USER?: string
+  USERNAME?: string
+  SEGMENTS?: {
+    [key: string]: number
+  }
+  [key: string]: any
+}
+*/
 const C = {}
 
 const findStructOwner = () => {
-  const s = Object.values(Game.structures).find(Boolean)
+  /** @type {AnyOwnedStructure} */
+  // @ts-expect-error
+  const s = Object.values(Game.structures).find(Boolean)// as AnyOwnedStructure
   return s && s.owner.username
 }
 
-C.USER = C.USERNAME = (Game.spawns.Spawn1 && Game.spawns.Spawn1.owner.username) || findStructOwner() || 'ZeSwarm'
+C.USER = C.USERNAME = findStructOwner() || 'ZeSwarm'
 
 // Import global constants
 Object.keys(global)
@@ -25,4 +37,5 @@ C.SEGMENTS = {
   INTEL: 2
 }
 
+C.C = C
 module.exports = C

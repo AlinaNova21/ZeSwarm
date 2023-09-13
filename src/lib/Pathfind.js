@@ -1,6 +1,6 @@
 import buckets from 'buckets-js'
 import portals from '../tmp/shard3.portals.min.js'
-
+import { getRoomNameFromXY, roomNameToXY } from './WorldMap'
 const mappedPortals = {}
 
 for (const [src, shard, dst, decayTime] of portals) {
@@ -12,40 +12,6 @@ for (const [src, shard, dst, decayTime] of portals) {
     mappedPortals[dst].push([shard, src, decayTime])
   }
 }
-
-export function getRoomNameFromXY (x, y) {
-  if (x < 0) {
-    x = 'W' + (-x - 1)
-  } else {
-    x = 'E' + (x)
-  }
-  if (y < 0) {
-    y = 'N' + (-y - 1)
-  } else {
-    y = 'S' + (y)
-  }
-  return '' + x + y
-}
-
-export function roomNameToXY (name) {
-  let xx = parseInt(name.substr(1), 10)
-  let verticalPos = 2
-  if (xx >= 100) {
-    verticalPos = 4
-  } else if (xx >= 10) {
-    verticalPos = 3
-  }
-  let yy = parseInt(name.substr(verticalPos + 1), 10)
-  const horizontalDir = name.charAt(0)
-  const verticalDir = name.charAt(verticalPos)
-  if (horizontalDir === 'W' || horizontalDir === 'w') {
-    xx = -xx - 1
-  }
-  if (verticalDir === 'N' || verticalDir === 'n') {
-    yy = -yy - 1
-  }
-  return [xx, yy]
-};
 
 export class Graph {
   constructor () {
@@ -135,6 +101,7 @@ export class MapGraph extends Graph {
 export function pathfind (graph, start, goal, { maxRooms = 16, maxCost = 1600 } = {}) {
   console.log(graph)
   // return { cost: 0, path: [] }
+  // @ts-ignore
   const frontier = new buckets.PriorityQueue((a, b) => b[1] - a[1])
   frontier.enqueue([start, 0])
   const cameFrom = {}
