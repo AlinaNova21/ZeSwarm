@@ -1,5 +1,15 @@
 
+declare global {
+  interface Memory {
+    __kvIndex?: Record<string, any>
+  }
+}
+
 class KVStore {
+  prefix: string
+  segments: number[]
+  data: Record<string, any>
+
   constructor () {
     this.prefix = ''
     this.segments = []
@@ -8,13 +18,16 @@ class KVStore {
     }
     this.data = {}
   }
-  get index () {
+  
+  get index (): Record<string, any> {
     return Memory.__kvIndex || {}
   }
-  set (k, v) {
+  
+  set (k: string, v: any): void {
     this.data[k] = v
   }
-  get (k) {
+  
+  get (k: string): any {
     return this.data[k]
   }
 }
