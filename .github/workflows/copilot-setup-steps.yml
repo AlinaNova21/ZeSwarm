@@ -112,57 +112,16 @@ jobs:
         pnpm add -D typescript-transform-paths
         pnpm add -D ts-node @types/node
         
-    - name: Create TypeScript configuration templates
+    - name: Verify migration tools
       run: |
-        # Create strict tsconfig for new files
-        cat > tsconfig.strict.json << 'EOF'
-        {
-          "extends": "./tsconfig.json",
-          "compilerOptions": {
-            "strict": true,
-            "noImplicitAny": true,
-            "noImplicitReturns": true,
-            "noImplicitThis": true,
-            "noUncheckedIndexedAccess": true,
-            "exactOptionalPropertyTypes": true
-          }
-        }
-        EOF
+        # Check that migration scripts exist
+        if [ ! -f "scripts/migrate-file.js" ]; then
+          echo "Warning: migrate-file.js script not found"
+        fi
         
-        # Create migration helper script
-        cat > scripts/migrate-file.js << 'EOF'
-        #!/usr/bin/env node
-        const fs = require('fs');
-        const path = require('path');
-        
-        const filePath = process.argv[2];
-        if (!filePath) {
-          console.error('Usage: node migrate-file.js <file.js>');
-          process.exit(1);
-        }
-        
-        const jsPath = path.resolve(filePath);
-        const tsPath = jsPath.replace(/\.js$/, '.ts');
-        
-        if (!fs.existsSync(jsPath)) {
-          console.error(`File not found: ${jsPath}`);
-          process.exit(1);
-        }
-        
-        // Simple migration: rename and add basic types
-        let content = fs.readFileSync(jsPath, 'utf8');
-        
-        // Add basic type annotations for common patterns
-        content = content.replace(/function\s+(\w+)\s*\(/g, 'function $1(');
-        content = content.replace(/const\s+(\w+)\s*=\s*\(/g, 'const $1 = (');
-        
-        fs.writeFileSync(tsPath, content);
-        fs.unlinkSync(jsPath);
-        
-        console.log(`Migrated ${jsPath} -> ${tsPath}`);
-        EOF
-        
-        chmod +x scripts/migrate-file.js
+        if [ ! -f "tsconfig.strict.json" ]; then
+          echo "Warning: tsconfig.strict.json not found"
+        fi
         
     - name: Environment summary
       run: |

@@ -10,14 +10,28 @@ The `copilot-setup-steps.yml` workflow is ready to configure your environment. R
 - Setup TypeScript development tools
 
 ### 2. Fix Existing TypeScript Files
-Current TS files have type errors due to missing Screeps type imports. Consider:
+Current TS files have type errors due to missing Screeps type imports. Configure @types/screeps properly:
+
+```bash
+# Install Screeps type definitions
+pnpm add -D @types/screeps
+```
 
 ```typescript
-// Add to top of TypeScript files
-declare const Game: any;
-declare const Memory: any;
-declare const RawMemory: any;
-// Or properly configure @types/screeps imports
+// Instead of manual declarations, import from @types/screeps:
+// No need for manual declares - @types/screeps provides:
+// - Game, Memory, RawMemory globals
+// - Creep, Room, Structure interfaces
+// - All Screeps API types
+
+// For custom Memory structure, extend the Memory interface:
+declare global {
+  interface Memory {
+    stats?: any;
+    config?: any;
+    // Add your custom memory properties here
+  }
+}
 ```
 
 ### 3. CI/CD Update
