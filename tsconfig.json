@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "checkJs": true,
+    "checkJs": false,
     "baseUrl": "src/",
     "rootDir": "src/",
     "outDir": "dist/",
@@ -12,11 +12,21 @@
     "experimentalDecorators": true,
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "sourceMap": false,
     "paths": {
       "@/*": ["./*"]
     }
   },
-  // "include": [
-  //   "src/**/*"
-  // ]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/tmp"
+  ]
 }
