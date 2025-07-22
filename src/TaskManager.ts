@@ -2,14 +2,27 @@ import { Tree }  from '@/lib/Tree'
 import { Logger } from './log'
 import { kernel } from './kernel'
 
-const tasks = new Map()
+interface TaskDefinition {
+  parent?: string
+  virtual?: boolean
+  name?: string
+  weight?: number
+  filter?: (task: TaskDefinition) => boolean
+}
+
+interface FindTaskOptions {
+  start?: string
+  filter?: (task: TaskDefinition) => boolean
+}
+
+const tasks = new Map<string, TaskDefinition>()
 const tree  = new Tree()
 const log = new Logger('[TaskManager]')
-const assigned = new Set()
+const assigned = new Set<string>()
 
 kernel.createProcess('TaskManager', TaskManager)
 
-function * TaskManager () {
+function * TaskManager (): Generator<void, void, void> {
   tree.root.virtual = true
   while (true) {
     for (const room of Object.values(Game.rooms)) {
@@ -21,7 +34,7 @@ function * TaskManager () {
   }
 }
 
-export function createTask(name, def) {
+export function createTask(name: string, def: TaskDefinition): void {
   if (def.parent && !tree.nodes[def.parent]) {
     log.warn(`Invalid Task ${name}: Parent ${def.parent} doesn't exist`)
     return
@@ -33,7 +46,7 @@ export function createTask(name, def) {
   node.treeWeight = node.weight + (tree.nodes[node.parent].treeWeight || 0)
 }
 
-export function destroyTask(name) {
+export function destroyTask(name: string): void {
   abandonTask(name)
   tasks.delete(name)
   tree.walkNode(name, node => {
@@ -45,17 +58,17 @@ export function destroyTask(name) {
   })
 }
 
-export function getTask(name) {
+export function getTask(name: string): TaskDefinition | undefined {
   return tasks.get(name)
 }
 
-export function findTask(opts) {
+export function findTask(opts: FindTaskOptions): TaskDefinition | undefined {
   const start = opts.start || 'root'
   const task = tree.walkNode(start, node => {
     const task = tasks.get(node.id)
     console.log(JSON.stringify(task), JSON.stringify(Array.from(tasks.values())))
-    if (!task || task.virtual || assigned.has(task.name)) return
-    if (typeof opts.filter === 'function' && !opts.filter(task)) return
+    if (!task || task.virtual || assigned.has(task.name)) return undefined
+    if (typeof opts.filter === 'function' && !opts.filter(task)) return undefined
     return task
   })
   if (task) {
@@ -64,6 +77,6 @@ export function findTask(opts) {
   return task
 }
 
-export function abandonTask(name) {
+export function abandonTask(name: string): void {
   assigned.delete(name)
 }

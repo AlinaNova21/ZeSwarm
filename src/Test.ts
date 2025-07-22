@@ -4,7 +4,7 @@ import { createTicket } from './SpawnManager'
 
 kernel.createProcess('Test', Test)
 
-function * Test () {
+function * Test (): Generator<void, void, void> {
   while (true) {
     for (const [,creep] of Object.entries(Game.creeps)) {
       if (!creep.memory.run && !creep.memory.role) {

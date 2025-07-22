@@ -1,4 +1,4 @@
-const sayings = `
+const sayings: string[] = `
 Wandering
 Scouting!
 Looking|for food
@@ -7,12 +7,12 @@ Coming|Through
 Hunting|rabbits
 ...
 `.split('\n').filter(s => s)
-const shooting = `
+const shooting: string[] = `
 🔫PEW PEW🔫
 🔫FIRE!!🔫
 Get Food
 `.split('\n').filter(s => s)
-const psayings = `
+const psayings: string[] = `
 Looking|for food|in|USER's|room
 Prepare|to be|eaten|USER
 Planning|to eat|USER
@@ -21,7 +21,8 @@ Planning|to eat|USER
 👁️
 `.split('\n').filter(s => s)
 
-module.exports = {
+export { sayings, shooting, psayings }
+export default {
   sayings,
   shooting,
   psayings
