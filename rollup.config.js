@@ -7,12 +7,12 @@ import typescript from '@rollup/plugin-typescript'
 export default args => {
   const input = {
     'zeswarm.kernel': 'src/kernel.ts',
-    'zeswarm.config': 'src/config.js',
-    main: 'src/main.js',
+    'zeswarm.config': 'src/config.ts',
+    main: 'src/main.ts',
   }
   if (args.configMulti) {
     input.main = 'src/multi/main.js'
-    input.zeswarm = 'src/main.js'
+    input.zeswarm = 'src/main.ts'
   }
   if (args.configTest) {
     input.main = 'src/main.test.js'
@@ -52,7 +52,7 @@ export default args => {
       rootImport({
         root: `${__dirname}/src`,
         useEntry: 'prepend',
-        extensions: '.js'
+        extensions: ['.js', '.ts']
       }),
       resolve({
         // module: true,

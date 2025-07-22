@@ -1,3 +1,5 @@
+// Types are provided by @types/screeps
+
 import MemHack from './MemHack'
 import { Pathing } from './lib/pathfinding'
 import stats from './stats'
@@ -17,13 +19,22 @@ import './processes'
 
 import './ui'
 
+// Extend Memory interface
+declare global {
+  interface Memory {
+    lastTick?: number
+    avgCnt?: number
+    avg?: number
+  }
+}
+
 SafeObject.attachPrototype()
 
 if (!Memory.lastTick) {
   Memory.lastTick = Date.now()
 }
 
-export function loop() {
+export function loop(): void {
   MemHack.pretick()
   stats.addStat('memory', {}, {
     parse: MemHack.parseTime,
@@ -45,8 +56,8 @@ export function loop() {
   log.info(`User: ${C.USER}`)
 
   const vis = new RoomVisual()
-  vis.text(`Tick Timing ${(t / 1000).toFixed(3)}s`, 25, 3, { size: 3 })
-  vis.text(`Avg ${(avg / 1000).toFixed(3)}s`, 25, 6, { size: 3 })
+  vis.text(`Tick Timing ${(t / 1000).toFixed(3)}s`, 25, 3, { font: 3 })
+  vis.text(`Avg ${(avg / 1000).toFixed(3)}s`, 25, 6, { font: 3 })
 
   kernel.tick()
   const postKernel = Game.cpu.getUsed()
@@ -56,16 +67,17 @@ export function loop() {
   stats.commit()
   const memStart = Game.cpu.getUsed()
   RawMemory.set(JSON.stringify(Memory))
-  delete RawMemory._parsed
+  // @ts-ignore: _parsed is an internal property
+  delete (RawMemory as any)._parsed
   const memEnd = Game.cpu.getUsed()
   const memString = memEnd - memStart
-  vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { size: 1 })
+  vis.text(`${Game.cpu.getUsed().toFixed(3)} cpu`, 25, 7, { font: 1 })
   log.info(`CPU: Used: ${Game.cpu.getUsed().toFixed(3)} Limit: ${Game.cpu.limit} Bucket: ${Game.cpu.bucket}`)
   log.info(`MEMORY: Used: ${(RawMemory.get().length / 1024).toFixed(3)}KB Stringify: ${memString.toFixed(3)}ms`)
   try {
     // eslint-disable-next-line camelcase
     const { used_heap_size, heap_size_limit, total_available_size } = Game.cpu.getHeapStatistics()
-    const MB = (v) => ((v / 1024) / 1024).toFixed(3)
+    const MB = (v: number): string => ((v / 1024) / 1024).toFixed(3)
     log.info(`HEAP: Used: ${MB(used_heap_size)}MB Available: ${MB(total_available_size)}MB Limit: ${MB(heap_size_limit)}MB`)
   } catch (e) {
     log.warn('HEAP: Unavailable')
